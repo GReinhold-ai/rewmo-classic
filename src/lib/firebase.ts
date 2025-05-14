@@ -1,4 +1,5 @@
-// src/lib/firebase.ts
+export {}; // ✅ Ensures TypeScript treats this as a module
+
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
