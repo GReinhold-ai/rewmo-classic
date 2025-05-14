@@ -1,7 +1,7 @@
 import React, { useState } from "react"; // required for JSX + state
 import { useRouter } from "next/router"; // if routing
 import { createUserWithEmailAndPassword } from "firebase/auth"; // if using Firebase
-import { auth } from "@/lib/firebase"; // your Firebase config
+import { auth } from "@/lib/firebaseClient"; // your Firebase config
 import { Button } from "@/components/ui/button"; // your custom button
 import Link from "next/link"; // for navigation
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getFirestore, collection, getDocs, DocumentData } from "firebase/firestore";
 import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebaseClient";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { saveAs } from "file-saver";

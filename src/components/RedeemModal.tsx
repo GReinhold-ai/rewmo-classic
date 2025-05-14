@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/firebaseClient';
 
 export default function RedeemModal({ onClose }: { onClose: () => void }) {
   const [selectedReward, setSelectedReward] = useState<string | null>(null);

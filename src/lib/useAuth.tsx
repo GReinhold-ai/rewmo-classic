@@ -1,7 +1,7 @@
 // src/lib/useAuth.tsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from './firebase'; // Ensure firebase is initialized here
+import { auth } from './firebaseClient'; // Ensure firebase is initialized here
 import React from "react";
 
 interface AuthContextProps {

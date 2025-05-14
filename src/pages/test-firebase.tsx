@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db } from '../lib/firebaseClient';
 
 export default function TestFirebasePage() {
   const [data, setData] = useState<{ value?: any; error?: string }>({});

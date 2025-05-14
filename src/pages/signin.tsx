@@ -1,7 +1,7 @@
 // pages/signin.tsx
 import React from "react";
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/firebaseClient';
 import { useRouter } from 'next/router';
 
 export default function SignIn() {

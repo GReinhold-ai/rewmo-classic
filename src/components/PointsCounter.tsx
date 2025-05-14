@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase'; // ✅ CORRECT RELATIVE PATH
+import { db } from '../lib/firebaseClient';
 
 export default function PointsCounter({ userId }: { userId: string }) {
   const [points, setPoints] = useState<number | null>(null);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase'; // ✅ fixed!
+import { db } from '@/lib/firebaseClient'; // ✅ fixed!
 
 const mockUserId = 'demoUser1'; // replace with auth uid later
 

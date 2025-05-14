@@ -1,6 +1,6 @@
 // src/lib/saveBankLinkStatus.ts
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { db } from './firebaseClient';
 
 export async function saveBankLinkStatus(userId: string) {
   try {
