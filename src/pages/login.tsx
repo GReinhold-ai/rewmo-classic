@@ -1,0 +1,37 @@
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { useAuth } from '@/lib/useAuth';
+import BottomTabBar from '@/components/BottomTabBar';
+
+export default function LoginPage() {
+  const { currentUser, login } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (currentUser) {
+      router.push('/dashboard');
+    }
+  }, [currentUser, router]);
+
+  const handleLogin = async () => {
+    try {
+      await login(); // Google login
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4">
+      <h1 className="text-2xl font-semibold mb-4">Sign in to Rewmo</h1>
+      <button
+        onClick={handleLogin}
+        className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 rounded shadow"
+      >
+        Sign in with Google
+      </button>
+
+      <BottomTabBar />
+    </div>
+  );
+}

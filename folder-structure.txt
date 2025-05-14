@@ -1,0 +1,24 @@
+Folder PATH listing for volume Windows
+Volume serial number is 88A1-A0CB
+C:\USERS\GARYL\ONEDRIVE\DOCUMENTS\REWMOAI\REWMO-AI\REWMO-CLASSIC\SRC
++---components
+¦       BottomTabBar.tsx
+¦       index.ts
+¦       RewardCard.tsx
+¦       
++---pages
+¦   ¦   analytics.tsx
+¦   ¦   dashboard.tsx
+¦   ¦   index.tsx
+¦   ¦   insights.tsx
+¦   ¦   profile.tsx
+¦   ¦   rewards.tsx
+¦   ¦   _app.tsx
+¦   ¦   _document.tsx
+¦   ¦   
+¦   +---api
+¦           hello.ts
+¦           
++---styles
+        globals.css
+        
