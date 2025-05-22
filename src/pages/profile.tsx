@@ -1,53 +1,42 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { auth } from "@/lib/firebaseClient";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import SimpleOnboarding from "@/components/SimpleOnboarding";
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        router.push("/");
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [router]);
+    // Show onboarding if not completed
+    const data = localStorage.getItem("rewmo-ai-suggestions");
+    if (!data) setShowOnboarding(true);
+    else setSuggestions(JSON.parse(data));
+  }, []);
 
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.push("/");
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    const data = localStorage.getItem("rewmo-ai-suggestions");
+    if (data) setSuggestions(JSON.parse(data));
   };
 
-  if (loading) {
-    return (
-      <main className="flex items-center justify-center min-h-screen text-gray-600">
-        Loading...
-      </main>
-    );
+  if (showOnboarding) {
+    return <SimpleOnboarding onComplete={handleOnboardingComplete} />;
   }
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-8 text-center">
-      <h1 className="text-2xl font-bold mb-2">Your Financial Insights</h1>
-      <p className="text-gray-600 mb-6">
-        Welcome, <span className="font-medium">{user?.displayName || user?.email}</span>
-      </p>
-
-      <p className="text-gray-500 mb-12">No insights saved yet.</p>
-
-      <button
-        onClick={handleSignOut}
-        className="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition"
-      >
-        Sign Out
-      </button>
-    </main>
+    <div className="max-w-xl mx-auto mt-20 text-center">
+      <h1 className="text-3xl font-bold mb-4 text-orange-600">Your Profile</h1>
+      <h2 className="text-xl font-semibold mb-2">AI Suggestions</h2>
+      {suggestions.length ? (
+        <ul className="space-y-3 mb-8">
+          {suggestions.map((s, i) => (
+            <li key={i} className="bg-orange-100 text-orange-800 rounded px-4 py-3 shadow">
+              {s}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No suggestions yet. Complete onboarding above!</p>
+      )}
+    </div>
   );
 }

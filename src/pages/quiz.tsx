@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { collection, doc, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/lib/AuthProvider";
 import React from "react";
 
 export default function QuizPage() {

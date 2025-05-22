@@ -1,31 +1,50 @@
+import React, { useState } from "react";
+import classNames from "classnames";
+
 interface RewardCardProps {
   title: string;
-  image: string;
-  asin: string;
-  userId: string;
-  tierBonus?: number;
+  description: string;
+  comingSoon?: boolean;
+  onClick?: () => void;
+  icon?: React.ReactNode;
 }
 
-export default function RewardCard({ title, image, asin, userId, tierBonus = 0 }: RewardCardProps) {
-  return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-all text-center">
-      <img src={image} alt={title} className="h-36 object-contain mb-2 rounded" />
-      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
+export const RewardCard: React.FC<RewardCardProps> = ({
+  title,
+  description,
+  comingSoon = false,
+  onClick,
+  icon,
+}) => {
+  const [showTooltip, setShowTooltip] = useState(false);
 
-      {tierBonus > 0 && (
-        <div className="text-xs text-green-700 bg-green-100 dark:bg-green-800/50 px-2 py-1 rounded-full mb-2">
-          +{tierBonus.toFixed(1)}% Bonus
+  return (
+    <div
+      className={classNames(
+        "relative bg-gray-200 text-black p-6 rounded-xl shadow text-center transition transform",
+        {
+          "cursor-pointer hover:scale-105 hover:shadow-lg": !!onClick && !comingSoon,
+          "opacity-60 cursor-not-allowed": comingSoon,
+        }
+      )}
+      onClick={comingSoon ? () => setShowTooltip(true) : onClick}
+      onMouseLeave={() => setShowTooltip(false)}
+      tabIndex={0}
+    >
+      {icon && <div className="mb-2 text-3xl flex justify-center">{icon}</div>}
+      <h2 className="font-semibold text-lg mb-2">{title}</h2>
+      <p className="text-sm">{description}</p>
+      {comingSoon && (
+        <span className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+          Coming Soon
+        </span>
+      )}
+      {comingSoon && showTooltip && (
+        <div className="absolute z-20 left-1/2 -translate-x-1/2 top-24 bg-black text-white px-4 py-2 rounded-lg shadow text-xs w-52">
+          This feature will launch soon.<br />
+          Want early access? <a href="/invite" className="underline text-orange-400">Join the waitlist!</a>
         </div>
       )}
-
-      <a
-        href={`https://www.amazon.com/dp/${asin}?tag=rewmoai-20&ascsubtag=${userId}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-2 bg-yellow-400 hover:bg-yellow-300 text-black px-4 py-2 rounded-full text-sm font-semibold"
-      >
-        Buy on Amazon
-      </a>
     </div>
   );
-}
+};

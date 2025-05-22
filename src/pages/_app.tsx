@@ -1,15 +1,16 @@
-import { AppProps } from "next/app";
+// src/pages/_app.tsx
+import type { AppProps } from "next/app";
+import Navbar from "@/components/Navbar";
+import { AuthProvider } from "@/lib/AuthProvider"; // <-- Import your provider!
 import "@/styles/globals.css";
-import { AuthProvider } from "@/lib/AuthProvider"; // make sure this path is correct
-import { Toaster } from "react-hot-toast";
 
-function MyApp({ Component, pageProps }: AppProps) {
+export default function App({ Component, pageProps }: AppProps) {
   return (
     <AuthProvider>
-      <Component {...pageProps} />
-      <Toaster position="top-right" />
+      <div className="min-h-screen bg-black">
+        <Navbar />
+        <Component {...pageProps} />
+      </div>
     </AuthProvider>
   );
 }
-
-export default MyApp;

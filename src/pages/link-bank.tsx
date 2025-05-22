@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { saveBankLinkStatus } from '@/lib/saveBankLinkStatus';
-import { useAuth } from '@/lib/useAuth'; // assumes you have a working auth hook
+import { useAuth } from "@/lib/AuthProvider";
 import BottomTabBar from '@/components/BottomTabBar';
 
 export default function LinkBankPage() {

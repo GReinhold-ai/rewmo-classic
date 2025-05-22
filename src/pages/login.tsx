@@ -1,6 +1,8 @@
+// File: src/pages/login.tsx
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '@/lib/useAuth';
+import { useAuth } from '@/lib/AuthProvider';
 import BottomTabBar from '@/components/BottomTabBar';
 
 export default function LoginPage() {
@@ -9,7 +11,18 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (currentUser) {
-      router.push('/dashboard');
+      // 1. Trigger backend onboarding once user logs in
+      fetch(`/api/agent/reward?userId=${currentUser.uid}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log("✅ Reward onboarding completed:", data);
+          // 2. Redirect to dashboard
+          router.push('/dashboard');
+        })
+        .catch(err => {
+          console.error("❌ Failed to onboard rewards:", err);
+          router.push('/dashboard'); // Still redirect, even if reward fails
+        });
     }
   }, [currentUser, router]);
 

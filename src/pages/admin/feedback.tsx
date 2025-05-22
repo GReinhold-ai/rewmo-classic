@@ -1,24 +1,43 @@
-import { useState } from 'react';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebaseClient'; // updated path
-import Layout from '../../components/Layout';
+import { useState } from "react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "../../lib/firebaseClient";
+import Layout from "../../components/Layout";
+import { useAuth } from "../../lib/AuthProvider"; // Import useAuth hook
 import React from "react";
 
 export default function FeedbackPage() {
+  const { currentUser } = useAuth(); // Get current user from context
   const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addDoc(collection(db, 'feedback'), {
-      rating,
-      comment,
-      submittedAt: serverTimestamp(),
-      userId: 'demo-user',
-      version: 'beta-0.1.0'
-    });
-    setSubmitted(true);
+    setLoading(true);
+    setErr(null);
+    try {
+      await addDoc(collection(db, "feedback"), {
+        rating,
+        comment,
+        submittedAt: serverTimestamp(),
+        userId: currentUser?.uid || currentUser?.email || "guest", // <--- Use signed-in user if available
+        version: "beta-0.1.0",
+      });
+      setSubmitted(true);
+      setComment("");
+      setRating(5);
+    } catch (error: any) {
+      setErr(error.message || "Error submitting feedback.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setSubmitted(false);
+    setErr(null);
   };
 
   return (
@@ -26,9 +45,18 @@ export default function FeedbackPage() {
       <div className="p-4 max-w-lg mx-auto">
         <h2 className="text-xl font-bold mb-4">Feedback</h2>
         {submitted ? (
-          <p className="text-green-600">✅ Thank you for your feedback!</p>
+          <div className="text-green-600 flex flex-col items-center space-y-3">
+            <p>✅ Thank you for your feedback!</p>
+            <button
+              className="bg-orange-500 text-white px-3 py-1 rounded"
+              onClick={handleReset}
+            >
+              Submit More Feedback
+            </button>
+          </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 bg-white rounded-xl p-6 shadow-md">
+            {err && <p className="text-red-500">{err}</p>}
             <label className="block">
               <span className="text-sm font-medium">Rate your experience (1–5):</span>
               <input
@@ -39,6 +67,7 @@ export default function FeedbackPage() {
                 max={5}
                 required
                 className="w-full border px-3 py-2 mt-1 rounded"
+                disabled={loading}
               />
             </label>
             <label className="block">
@@ -49,13 +78,15 @@ export default function FeedbackPage() {
                 className="w-full border px-3 py-2 mt-1 rounded"
                 rows={4}
                 required
+                disabled={loading}
               />
             </label>
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500"
+              className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition"
+              disabled={loading}
             >
-              Submit Feedback
+              {loading ? "Submitting..." : "Submit Feedback"}
             </button>
           </form>
         )}
