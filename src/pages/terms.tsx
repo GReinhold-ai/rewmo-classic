@@ -1,6 +1,7 @@
 // src/pages/terms.tsx
 
 import React from "react";
+import BottomTabBar from "@/components/BottomTabBar"; 
 
 export default function TermsOfService() {
   return (
@@ -68,5 +69,6 @@ export default function TermsOfService() {
         Email <a href="mailto:support@rewmo.ai" className="text-orange-600 underline">support@rewmo.ai</a> or write to: RewMoAI Legal Team, [Your Business Address]
       </p>
     </main>
+    <BottomTabBar />
   );
 }

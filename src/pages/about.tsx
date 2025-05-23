@@ -1,69 +1,106 @@
-// src/pages/about.tsx
-
 import React from "react";
+import Navbar from "@/components/Navbar"; // Make sure this exists and is imported correctly
+import Image from "next/image";
+import logo from "@/../public/logos/logo.png"; // Adjust the path if your logo is elsewhere
+import BottomTabBar from "@/components/BottomTabBar"; 
 
-export default function About() {
+export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-orange-50 flex flex-col items-center px-4 py-12">
-      <h1 className="text-4xl md:text-5xl font-extrabold text-center text-black mb-6">
-        RewMoAI: Wealth for Members, Not Institutions
-      </h1>
-      <p className="text-lg md:text-xl text-center max-w-3xl mb-6 text-gray-700">
-        For too long, financial institutions have made billions while everyday people fall behind—profiting from excessive fees, bloated executive salaries, and needless overhead.
-        <br />
-        <span className="text-orange-600 font-bold">
-          RewMoAI flips the script:
-        </span>{" "}
-        we give those profits back to you, the member—transforming every payment into real rewards and lifelong savings. No corporate bonuses. No fancy buildings. Just smarter AI, lower costs, and more cash in your pocket.
-      </p>
+    <>
+      <Navbar />
+      <main className="min-h-screen bg-neutral-50 pt-4 md:pt-10 pb-8 flex flex-col items-center">
+        <div className="flex flex-col items-center mb-4">
+          <Image
+            src={logo}
+            alt="RewmoAI Logo"
+            width={84}
+            height={84}
+            priority
+            className="mb-2 rounded-full border border-orange-500 shadow-md"
+          />
+          <h1 className="text-2xl md:text-3xl font-bold text-orange-600 mb-0.5 tracking-tight">
+            About RewmoAI
+          </h1>
+        </div>
 
-      <section className="w-full max-w-3xl mb-10">
-        <h2 className="text-2xl md:text-3xl font-bold text-orange-600 mb-3 text-center">
-          Our Guiding Principles
-        </h2>
-        <ul className="bg-white rounded-xl shadow p-6 md:p-8 grid gap-4 text-base md:text-lg">
-          <li>
-            <b>Members First:</b> Every decision is made for your benefit—not for shareholders or executives. If it doesn’t help you build wealth, we won’t do it.
-          </li>
-          <li>
-            <b>Total Quality Management (TQM):</b> We run RewMoAI using proven TQM principles—eliminating waste, maximizing efficiency, and delivering the highest quality experience for our members.
-          </li>
-          <li>
-            <b>Continuous Improvement:</b> We never settle. Our AI, our technology, and our processes are constantly evolving—driven by member feedback and a relentless pursuit of excellence. Every update is designed to make RewMoAI even better for you.
-          </li>
-          <li>
-            <b>Radical Transparency:</b> No hidden fees, no secrets. Our operations, costs, and rewards structures are clear and open—so you always know where your money is going and how it’s coming back to you.
-          </li>
-          <li>
-            <b>Lifelong Financial Empowerment:</b> Our mission goes beyond points or perks. We’re here to guide you—step by step—on your journey to financial independence, helping you turn everyday payments into lifelong wealth.
-          </li>
-        </ul>
-      </section>
+        {/* Principles Section */}
+        <section className="py-2 px-3 max-w-2xl mx-auto w-full">
+          <h2 className="text-lg md:text-xl font-semibold text-orange-600 mb-2 text-center tracking-tight">
+            Our Guiding Principles
+          </h2>
+          <div className="bg-white rounded-xl shadow p-4 md:p-5 space-y-3 md:space-y-4 mb-6 text-[0.94rem] md:text-base text-gray-700">
+            <div>
+              <span className="font-medium">Members First:</span> Every decision is made for your benefit—not for shareholders or executives. If it doesn’t help you build wealth, we won’t do it.
+            </div>
+            <div>
+              <span className="font-medium">Total Quality Management (TQM):</span> We run RewMoAI using proven TQM principles—eliminating waste, maximizing efficiency, and delivering the highest quality experience for our members.
+            </div>
+            <div>
+              <span className="font-medium">Continuous Improvement:</span> We never settle. Our AI, technology, and processes are constantly evolving—driven by member feedback and a relentless pursuit of excellence.
+            </div>
+            <div>
+              <span className="font-medium">Radical Transparency:</span> No hidden fees, no secrets. Our operations, costs, and rewards structures are clear and open—so you always know where your money is going and how it’s coming back to you.
+            </div>
+            <div>
+              <span className="font-medium">Lifelong Financial Empowerment:</span> Our mission goes beyond points or perks. We’re here to guide you—step by step—on your journey to financial independence, helping you turn everyday payments into lifelong wealth.
+            </div>
+            <div>
+              <span className="font-medium text-orange-600">American Data Security:</span> We use only U.S.-based AI models, cloud vendors, and technology partners. Your financial data never leaves the country and is never shared with foreign entities—ensuring your information is secure, private, and protected by American law.
+            </div>
+          </div>
+        </section>
 
-      <section className="max-w-2xl mb-10 text-center">
-        <h3 className="text-xl font-semibold mb-2 text-black">Why TQM Matters</h3>
-        <p className="mb-2 text-gray-700">
-          By committing to <b>Total Quality Management</b> and continuous improvement, RewMoAI ensures that:
-        </p>
-        <ul className="list-disc list-inside text-left mx-auto text-gray-700 mb-2">
-          <li>No dollar is wasted—every resource is optimized to maximize your rewards and savings</li>
-          <li>Your experience gets better every year, powered by your feedback and our data-driven insights</li>
-          <li>The value of your membership keeps growing—now and for the future</li>
-        </ul>
-      </section>
+        {/* TQM & AI Section */}
+        <section className="py-1 px-3 max-w-2xl mx-auto w-full">
+          <h2 className="text-lg md:text-xl font-semibold text-orange-600 mb-2 text-center">
+            How RewmoAI Works for You
+          </h2>
+          <div className="bg-white rounded-xl shadow p-4 md:p-5 space-y-3 mb-6 text-[0.93rem] md:text-base text-gray-700">
+            <div>
+              <span className="font-medium">AI-Driven Efficiency:</span> RewmoAI uses OpenAI’s advanced LLMs <span className="italic">(large language models)</span> and browser-based intelligence to scan, analyze, and optimize your finances in real time.
+            </div>
+            <div>
+              <span className="font-medium">TQM at Every Step:</span> Every process, recommendation, and interaction is continually optimized to deliver maximum value to you—with less waste, less friction, and fewer mistakes.
+            </div>
+            <div>
+              <span className="font-medium">Member-Powered Innovation:</span> Our technology evolves with your needs—every feature, update, and policy is driven by real member feedback and participation.
+            </div>
+          </div>
+        </section>
 
-      <div className="mt-6 mb-12">
-        <span className="inline-block bg-orange-600 text-white text-lg font-bold px-7 py-4 rounded-xl shadow">
-          RewMoAI: Turn your payments into prosperity—with a platform that’s always improving for you.
-        </span>
-      </div>
+        {/* AI Financial Education & Guidance */}
+        <section className="py-1 px-3 max-w-2xl mx-auto w-full">
+          <h2 className="text-lg md:text-xl font-semibold text-orange-600 mb-2 text-center">
+            Groundbreaking Financial Education & Guidance
+          </h2>
+          <div className="bg-white rounded-xl shadow p-4 md:p-5 space-y-3 mb-6 text-[0.93rem] md:text-base text-gray-700">
+            <div>
+              <span className="font-medium">Personalized Learning:</span> Every member gets access to a custom financial learning journey powered by RewmoAI and OpenAI—using live web data and the world’s best financial library, tailored to your goals, life stage, and participation.
+            </div>
+            <div>
+              <span className="font-medium">Real-Time Recommendations:</span> Your dashboard and notifications highlight new opportunities, reward programs, and wealth-building moves—updated daily as your activity and market conditions change.
+            </div>
+            <div>
+              <span className="font-medium">Direct Access to Experts:</span> You can ask questions, get guidance, and explore custom strategies—24/7, right in the app.
+            </div>
+          </div>
+        </section>
 
-      <a
-        href="/signup"
-        className="bg-black text-orange-200 px-8 py-4 rounded-xl font-bold text-xl shadow hover:bg-orange-600 hover:text-white transition"
-      >
-        Join RewMoAI Now
-      </a>
-    </main>
+        {/* Closing Block */}
+        <section className="py-1 px-3 max-w-2xl mx-auto w-full text-center">
+          <div className="bg-gradient-to-r from-orange-100 to-orange-50 border border-orange-200 rounded-xl p-4 md:p-5 shadow text-[0.94rem] md:text-base">
+            <div className="text-orange-600 font-bold text-lg mb-1">Ready to experience the future of financial rewards and guidance?</div>
+            <div className="text-gray-700 mb-2">Join RewmoAI today, and see how every payment can bring you closer to financial freedom.</div>
+            <a
+              href="/"
+              className="inline-block mt-2 px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition"
+            >
+              Join Rewmo Now
+            </a>
+          </div>
+        </section>
+      </main>
+      <BottomTabBar />
+    </>
   );
 }

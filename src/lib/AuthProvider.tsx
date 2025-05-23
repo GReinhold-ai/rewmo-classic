@@ -1,9 +1,10 @@
 // src/lib/AuthProvider.tsx
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from "firebase/auth";
-import { app } from "./firebaseClient";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
+import { auth } from "./firebaseClient";
 
+// --- Context Types
 interface AuthContextType {
   currentUser: User | null;
   login: () => Promise<void>;
@@ -12,23 +13,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+// --- Provider Implementation
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
+  // Listen for auth state changes
   useEffect(() => {
-    const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, setCurrentUser);
     return () => unsubscribe();
   }, []);
 
+  // Google login
   const login = async () => {
-    const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
   };
 
+  // Logout
   const logout = async () => {
-    const auth = getAuth(app);
     await signOut(auth);
   };
 
@@ -37,12 +39,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
-};
+// --- Hook for easy consumption
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
+  return ctx;
+}

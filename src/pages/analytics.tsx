@@ -1,55 +1,45 @@
-// pages/analytics.tsx
+// src/pages/analytics.tsx
 
-import { BarChart3, Activity, Star, ArrowUpCircle } from "lucide-react";
+import BottomTabBar from "@/components/BottomTabBar"; // adjust path if needed
 
 export default function AnalyticsPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-start px-4 py-10 bg-[#fafbfc]">
-      <div className="w-full max-w-xl mx-auto">
+    <>
+      <main className="min-h-screen flex flex-col items-center justify-start px-4 py-10 bg-[#fafbfc] font-sans">
+        {/* Logo (optional) */}
+        <img
+          src="/logos/logo.png"
+          alt="RewmoAI Logo"
+          className="h-10 w-auto mb-4"
+          style={{ maxWidth: 110 }}
+        />
+
         {/* Headline */}
-        <h1 className="flex items-center gap-2 text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-          <BarChart3 className="text-orange-500" size={32} />
-          Analytics
+        <h1 className="flex items-center gap-2 text-xl md:text-3xl font-semibold text-gray-900 mb-1 text-center">
+          Analytics & Insights
         </h1>
-        <div className="text-gray-600 mb-8 text-lg">
-          Visualize your spending and rewards with AI-powered insights.
+        <p className="mb-6 text-gray-500 text-center max-w-md text-sm md:text-base">
+          Get a real-time view of your rewards, spending, and savings. We’ll keep you updated with smart insights as you grow!
+        </p>
+
+        {/* Example Analytics Card */}
+        <div className="w-full max-w-md bg-white rounded-xl shadow p-6 mb-5 flex flex-col items-center">
+          <div className="text-4xl font-bold text-orange-500 mb-2">3,250</div>
+          <div className="text-gray-800 font-medium text-sm">Total Points Earned</div>
+          <div className="text-xs text-gray-400 mt-1">Across all rewards</div>
         </div>
 
-        {/* Analytics Card */}
-        <div className="bg-white rounded-xl shadow p-8 flex flex-col items-center mb-6">
-          {/* Placeholder Chart */}
-          <div className="w-full flex flex-col items-center mb-6">
-            <div className="w-40 h-24 bg-gradient-to-tr from-orange-200 via-white to-orange-100 rounded-lg flex items-center justify-center mb-2">
-              <Activity className="text-orange-400" size={44} />
-            </div>
-            <span className="text-gray-400 text-xs">Interactive charts coming soon…</span>
+        {/* Placeholder for more analytics (charts, etc.) */}
+        <div className="w-full max-w-md bg-white rounded-xl shadow p-4 mt-2 mb-2">
+          <div className="font-semibold text-gray-800 mb-1 text-base">
+            More analytics coming soon!
           </div>
-
-          {/* Example KPIs */}
-          <div className="flex flex-col md:flex-row gap-6 w-full justify-center">
-            <div className="flex flex-col items-center">
-              <Star className="text-yellow-500 mb-1" />
-              <div className="text-lg font-bold text-gray-700">3,240</div>
-              <div className="text-xs text-gray-500">Total Rewards Earned</div>
-            </div>
-            <div className="flex flex-col items-center">
-              <ArrowUpCircle className="text-green-500 mb-1" />
-              <div className="text-lg font-bold text-gray-700">$2,870</div>
-              <div className="text-xs text-gray-500">Spent Last 30 Days</div>
-            </div>
-            <div className="flex flex-col items-center">
-              <Star className="text-purple-500 mb-1" />
-              <div className="text-lg font-bold text-gray-700">Dining</div>
-              <div className="text-xs text-gray-500">Top Category</div>
-            </div>
+          <div className="text-xs text-gray-500">
+            Track your monthly progress, top categories, and smart AI recommendations.
           </div>
         </div>
-
-        {/* Callout */}
-        <div className="text-center mt-4 text-orange-500 font-medium">
-          Connect your account or upload transactions to unlock real-time analytics!
-        </div>
-      </div>
-    </main>
+      </main>
+      <BottomTabBar />
+    </>
   );
 }

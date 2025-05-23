@@ -1,172 +1,100 @@
 // src/pages/shopping.tsx
 
-import React, { useState } from "react";
-import products from "@/data/products";
+import { useState } from "react";
+import Navbar from "@/components/Navbar"; // Adjust if needed
+import BottomTabBar from "@/components/BottomTabBar"; 
 
-const filterOptions = [
-  { label: "All", value: "all" },
-  { label: "Made in America", value: "Made in America" },
-  { label: "Made in Australia", value: "Made in Australia" },
-  { label: "Sustainable", value: "Sustainable" },
+const filters = ["All", "Made in America", "Made in Australia", "Sustainable"];
+
+const vendors = [
+  {
+    name: "Amazon",
+    logo: "/logos/amazon.png",
+    link: "https://www.amazon.com/",
+    tags: ["All", "Made in America", "Sustainable", "Made in Australia"], // Added Australia
+  },
+  {
+    name: "Walmart",
+    logo: "/logos/walmart.png",
+    link: "https://www.walmart.com/",
+    tags: ["All", "Made in America"],
+  },
+  {
+    name: "Target",
+    logo: "/logos/target.png",
+    link: "https://www.target.com/",
+    tags: ["All", "Sustainable"],
+  },
+  // Add more vendors as needed!
 ];
 
-export default function Shopping() {
-  const [filter, setFilter] = useState("all");
-
-  const filteredProducts =
-    filter === "all"
-      ? products
-      : products.filter((p) => p.tags.includes(filter));
+export default function ShoppingPage() {
+  const [selectedFilter, setFilter] = useState("All");
+  const filteredVendors =
+    selectedFilter === "All"
+      ? vendors
+      : vendors.filter((v) => v.tags.includes(selectedFilter));
 
   return (
-    <div style={{ maxWidth: 1200, margin: "40px auto 0", padding: 24 }}>
-      <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>
-        Shopping Rewards
-      </h1>
-      <div style={{ color: "#333", marginBottom: 22, fontSize: 17 }}>
-        RewMo helps you earn rewards on products that match your values and lifestyle.<br />
-        Use the filters to shop <b>“Made in America”</b>, <b>“Made in Australia”</b>, or <b>Sustainable</b> picks!
-      </div>
-      <div style={{ display: "flex", gap: 14, marginBottom: 30, flexWrap: "wrap" }}>
-        {filterOptions.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => setFilter(opt.value)}
-            style={{
-              fontWeight: 700,
-              fontSize: 17,
-              background: filter === opt.value ? "#FF7900" : "#fff",
-              color: filter === opt.value ? "#fff" : "#333",
-              border: "2px solid #eee",
-              padding: "8px 25px",
-              borderRadius: 24,
-              cursor: "pointer",
-              boxShadow: filter === opt.value ? "0 2px 7px rgba(255,121,0,0.13)" : "none",
-              transition: "all 0.18s",
-            }}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-          gap: "28px",
-        }}
-      >
-        {filteredProducts.map((product) => {
-          const isComingSoon = product.vendor !== "Amazon";
-          return (
-            <div
-              key={product.id}
-              style={{
-                background: "#fff",
-                borderRadius: 18,
-                padding: "18px 18px 20px",
-                boxShadow: "0 4px 18px 0 rgba(40,40,40,0.07)",
-                position: "relative",
-                minHeight: 330,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-end",
-                marginBottom: 28,
-                overflow: "visible",
-              }}
+    <>
+      <Navbar />
+      <main className="min-h-screen bg-black text-white flex flex-col items-center px-3 pb-12 font-sans">
+        {/* Logo at the top */}
+        <img
+          src="/logos/logo.png"
+          alt="RewmoAI Logo"
+          className="h-12 w-auto mt-6 mb-2"
+          style={{ maxWidth: 120 }}
+        />
+
+        {/* Readable Headline */}
+        <h1 className="text-xl md:text-2xl font-semibold mb-1 mt-2 text-white tracking-tight text-center">
+          Shopping Rewards
+        </h1>
+        <p className="text-sm md:text-base text-gray-300 mb-3 text-center max-w-md">
+          Rewmo helps you earn rewards on products that match your values and lifestyle.<br />
+          Use the filters to shop <b>Made in America</b>, <b>Made in Australia</b>, or <b>Sustainable</b> picks!
+        </p>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2 justify-center mb-4">
+          {filters.map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                selectedFilter === f ? "bg-orange-500 text-white" : "bg-gray-900 text-gray-200"
+              } transition`}
+              style={{ minWidth: 95 }}
             >
-              {/* Coming Soon Badge */}
-              {isComingSoon && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: 14,
-                    left: 14,
-                    background: "#FF7900",
-                    color: "#fff",
-                    fontWeight: 800,
-                    fontSize: 16,
-                    borderRadius: 8,
-                    padding: "6px 20px",
-                    zIndex: 50,
-                    boxShadow: "0 1px 3px 0 rgba(0,0,0,0.18)",
-                    pointerEvents: "none",
-                    letterSpacing: 0.5,
-                    border: "2px solid #fff",
-                    textShadow: "0 1px 3px 0 rgba(0,0,0,0.18)",
-                    transition: "all 0.2s cubic-bezier(.42,0,.58,1.0)",
-                  }}
-                >
-                  Coming Soon
-                </span>
-              )}
-              {/* Vendor logo */}
+              {f}
+            </button>
+          ))}
+        </div>
+
+        {/* Vendor Logos */}
+        <div className="flex flex-wrap gap-6 justify-center py-2 w-full max-w-md">
+          {filteredVendors.map((vendor) => (
+            <a
+              href={vendor.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              key={vendor.name}
+              className="flex flex-col items-center hover:scale-105 transition"
+              style={{ minWidth: 90, minHeight: 90 }}
+            >
               <img
-                src={product.vendorLogo}
-                alt={product.vendor}
-                style={{
-                  height: 38,
-                  width: 38,
-                  objectFit: "contain",
-                  position: "absolute",
-                  top: 14,
-                  right: 14,
-                  background: "#fff",
-                  borderRadius: 8,
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                  padding: 5,
-                  zIndex: 10,
-                }}
+                src={vendor.logo}
+                alt={vendor.name}
+                className="h-14 w-14 object-contain mb-1 rounded-lg shadow border border-gray-700 bg-white"
+                style={{ background: "#fff" }}
               />
-              {/* Product image */}
-              <img
-                src={product.img}
-                alt={product.name}
-                style={{
-                  width: "100%",
-                  maxHeight: 120,
-                  objectFit: "contain",
-                  borderRadius: 10,
-                  marginBottom: 18,
-                  background: "#f4f4f4",
-                }}
-              />
-              {/* Product info */}
-              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 3 }}>
-                {product.name}
-              </div>
-              <div style={{ color: "#5b5b5b", marginBottom: 9, fontSize: 15 }}>
-                {product.desc}
-              </div>
-              {/* Shop & Earn button */}
-              <a
-                href={product.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "block",
-                  background: isComingSoon ? "#ddd" : "#FF7900",
-                  color: isComingSoon ? "#999" : "#fff",
-                  padding: "13px 0",
-                  textAlign: "center",
-                  borderRadius: 10,
-                  fontWeight: 700,
-                  fontSize: 17,
-                  marginTop: "auto",
-                  marginBottom: 0,
-                  textDecoration: "none",
-                  pointerEvents: isComingSoon ? "none" : "auto",
-                  boxShadow: "0 2px 8px rgba(255,121,0,0.10)",
-                  opacity: isComingSoon ? 0.7 : 1,
-                  cursor: isComingSoon ? "not-allowed" : "pointer",
-                }}
-              >
-                Shop & Earn
-              </a>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+              <span className="text-xs text-gray-300">{vendor.name}</span>
+            </a>
+          ))}
+        </div>
+      </main>
+      <BottomTabBar />
+    </>
   );
 }

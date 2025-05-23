@@ -1,75 +1,76 @@
-// pages/index.tsx
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { auth } from "@/lib/firebaseClient";
+import { onAuthStateChanged } from "firebase/auth";
+import { signInWithGoogle } from "@/lib/firebaseAuth";
 
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "../components/ui/button";
+export default function Home() {
+  const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
 
-export default function LandingPage() {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Grab first name or display name for "Welcome back"
+        const name =
+          user.displayName?.split(" ")[0] ||
+          user.email?.split("@")[0] ||
+          "Back";
+        setUserName(name);
+        setShowWelcome(true);
+        // Show welcome for 1.5s then redirect
+        setTimeout(() => {
+          router.replace("/about");
+        }, 1500);
+      } else {
+        setCheckingAuth(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  if (checkingAuth) {
+    // Show loader during auth check
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
+        <img src="/logos/logo.png" alt="RewmoAI Logo" className="w-16 h-16 mb-4" />
+        <span className="animate-pulse text-lg">Checking your account...</span>
+      </main>
+    );
+  }
+
+  if (showWelcome && userName) {
+    // Show welcome back message before redirecting
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
+        <img src="/logos/logo.png" alt="RewmoAI Logo" className="w-20 h-20 mb-5" />
+        <div className="text-2xl font-bold text-orange-400 mb-2">
+          Welcome back, {userName}!
+        </div>
+        <span className="text-lg text-gray-200 mb-8">Redirecting to your dashboard...</span>
+        <div className="animate-spin rounded-full border-4 border-orange-400 border-t-transparent h-8 w-8"></div>
+      </main>
+    );
+  }
+
+  // Not signed in, show the public homepage
   return (
-    <main className="min-h-screen w-full flex flex-col items-center justify-center bg-black text-white px-4 py-8">
-      {/* Hero section */}
-      <div className="flex flex-col items-center w-full max-w-lg">
-        {/* Logo */}
-        <Image
-          src="/rewmo-logo.png"
-          alt="RewmoAI Logo"
-          width={160}
-          height={112}
-          className="mb-6 mx-auto"
-        />
-
-        {/* Headline */}
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
-          Welcome to <span className="text-orange-600">RewmoAI</span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="text-base text-center mb-6 max-w-md text-gray-200">
-          Where your everyday spending unlocks real rewards.
-          <br />
-          Sign in to start earning and experience smarter financial insights.
-        </p>
-
-        {/* Sign-In Button */}
-        <Link href="/login">
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-md border-2 border-white mt-4">
-            Sign In to Start Earning
-          </Button>
-        </Link>
-      </div>
-
-      {/* Feature Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 w-full max-w-4xl">
-        <div className="bg-white text-black p-6 rounded-xl shadow text-center">
-          <h2 className="font-semibold text-lg mb-2">Shop & Earn</h2>
-          <p className="text-sm">
-            Earn rewards when you shop at Amazon, Target, and more.
-          </p>
-        </div>
-        <div className="bg-gray-300 text-black p-6 rounded-xl shadow text-center">
-          <h2 className="font-semibold text-lg mb-2">Smart AI Insights</h2>
-          <p className="text-sm">
-            Coming Soon — Personalized financial recommendations powered by AI.
-          </p>
-        </div>
-        <div className="bg-gray-300 text-black p-6 rounded-xl shadow text-center">
-          <h2 className="font-semibold text-lg mb-2">Rent & Mortgage Rewards</h2>
-          <p className="text-sm">
-            Coming Soon — Get rewarded for your biggest monthly expenses.
-          </p>
-        </div>
-      </div>
-
-      <footer className="mt-12 text-xs text-gray-400 flex flex-col items-center">
-  <p className="mb-2">Your data is safe. We never sell your personal information.</p>
-  <div className="flex space-x-4 justify-center">
-    <Link href="/about" className="hover:text-white">About</Link>
-    <Link href="/contact" className="hover:text-white">Contact</Link>
-    <Link href="/terms" className="hover:text-white">Terms</Link>
-    <Link href="/privacy" className="hover:text-white">Privacy</Link>
-  </div>
-</footer>
-
+    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-10 bg-black text-white">
+      <img
+        src="/logos/logo.png"
+        alt="RewmoAI Logo"
+        className="w-24 h-24 mb-4"
+      />
+      <h1 className="text-xl font-bold mb-2 text-white">Welcome to</h1>
+      <h2 className="text-3xl font-extrabold mb-8 text-orange-500">RewmoAI</h2>
+      <button
+        className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg shadow-lg mb-6"
+        onClick={signInWithGoogle}
+      >
+        Join Rewmo Now
+      </button>
     </main>
   );
 }

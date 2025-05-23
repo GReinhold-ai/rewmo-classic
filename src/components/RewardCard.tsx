@@ -1,13 +1,13 @@
-// src/components/RewardCard.tsx
 import React from "react";
+import clsx from "clsx";
 
-interface RewardCardProps {
+type RewardCardProps = {
   title: string;
   description: string;
-  icon?: React.ReactNode;
+  icon?: string; // Accept emoji or SVG string/component
   onClick?: () => void;
   comingSoon?: boolean;
-}
+};
 
 const RewardCard: React.FC<RewardCardProps> = ({
   title,
@@ -17,19 +17,31 @@ const RewardCard: React.FC<RewardCardProps> = ({
   comingSoon = false,
 }) => {
   return (
-    <div
-      className={`relative bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center justify-center min-h-[200px] transition transform hover:scale-105 cursor-pointer ${comingSoon ? "opacity-60 pointer-events-none" : ""}`}
+    <button
+      type="button"
       onClick={comingSoon ? undefined : onClick}
-    >
-      <div className="text-4xl mb-2">{icon}</div>
-      <h2 className="text-lg font-semibold text-black text-center mb-1">{title}</h2>
-      <p className="text-gray-700 text-center mb-2">{description}</p>
-      {comingSoon && (
-        <span className="absolute top-2 right-2 bg-orange-400 text-white text-xs px-2 py-1 rounded">
-          Coming Soon
-        </span>
+      disabled={comingSoon}
+      className={clsx(
+        "w-full rounded-xl shadow-md text-left flex flex-col items-start p-4 md:p-6 transition-all duration-200",
+        comingSoon
+          ? "bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300"
+          : "bg-white text-gray-900 hover:bg-orange-50 border border-transparent hover:shadow-lg active:shadow-inner cursor-pointer"
       )}
-    </div>
+      aria-label={comingSoon ? `${title} (Coming Soon)` : title}
+    >
+      <div className="text-3xl mb-2">{icon}</div>
+      <div className="flex flex-row items-center gap-2 mb-1">
+        <span className="font-semibold text-lg">{title}</span>
+        {comingSoon && (
+          <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-600 rounded text-xs font-bold">
+            Coming Soon
+          </span>
+        )}
+      </div>
+      <p className={clsx("text-sm", comingSoon ? "text-gray-400" : "text-gray-700")}>
+        {description}
+      </p>
+    </button>
   );
 };
 

@@ -4,6 +4,7 @@ import { collection, doc, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 import { useAuth } from "@/lib/AuthProvider";
 import React from "react";
+import BottomTabBar from "@/components/BottomTabBar"; 
 
 export default function QuizPage() {
   const router = useRouter();
@@ -105,5 +106,6 @@ export default function QuizPage() {
         </button>
       </form>
     </div>
+    <BottomTabBar />
   );
 }
