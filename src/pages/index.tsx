@@ -35,7 +35,7 @@ export default function Home() {
     // Show loader during auth check
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
-        <img src="/logos/logo.png" alt="RewmoAI Logo" className="w-16 h-16 mb-4" />
+        <img src="/logos/logo.png" alt="RewmoAI Logo" className="w-22 h-16 mb-4" />
         <span className="animate-pulse text-lg">Checking your account...</span>
       </main>
     );
