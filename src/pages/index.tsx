@@ -2,57 +2,49 @@
 
 import React from "react";
 import { useAuth } from "@/lib/AuthProvider";
-import Navbar from "@/components/Navbar";
 import BottomTabBar from "@/components/BottomTabBar";
 
 export default function LandingPage() {
-  const { signInWithGoogle, currentUser } = useAuth();
+  const { signInWithGoogle } = useAuth();
 
+  // Handles button click for all platforms
   const handleJoin = async () => {
     alert("Button click handler fired!");
     try {
+      alert("Attempting signInWithGoogle...");
       await signInWithGoogle();
+      alert("Google sign-in success!");
     } catch (err: any) {
-      alert("signInWithGoogle failed: " + err?.message || err);
+      alert("signInWithGoogle error: " + (err?.message || err));
     }
   };
 
   return (
     <>
-      <Navbar />
-      <main className="min-h-screen flex flex-col items-center justify-center px-4 py-10 bg-black font-sans">
-        {/* Logo */}
+      <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4">
         <img
           src="/logos/logo.png"
           alt="RewmoAI Logo"
-          className="h-16 w-auto mb-4 mt-4"
-          style={{ maxWidth: 160 }}
+          className="h-20 w-auto mt-10 mb-6"
+          style={{ maxWidth: 200 }}
         />
 
-        {/* Welcome text */}
-        <div className="mb-2 text-lg md:text-xl font-semibold text-orange-400 text-center tracking-wide drop-shadow">
-          Welcome to
-        </div>
-        <h1 className="text-3xl md:text-4xl font-extrabold text-orange-500 text-center mb-2 drop-shadow">
-          RewmoAI
+        <h1 className="text-3xl md:text-4xl font-bold text-orange-500 mb-3 text-center">
+          Welcome to <span className="text-orange-400">RewmoAI</span>
         </h1>
-
-        <p className="text-gray-200 text-base md:text-lg max-w-md text-center mb-6">
-          Unlock smarter financial rewards, personalized insights, and next-level savings—powered by AI.
+        <p className="text-lg md:text-xl mb-7 text-center max-w-md">
+          Unlock real rewards with every payment and personalized insights powered by AI.
         </p>
 
-        {/* Join Button */}
         <button
           onClick={handleJoin}
-          className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow transition mb-4 w-full max-w-xs text-lg"
+          className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full text-lg mb-6 transition"
         >
           Join Rewmo Now
         </button>
 
-        <div className="mt-8 w-full flex flex-col items-center">
-          <span className="text-xs text-gray-400 text-center max-w-xs">
-            Already a member? Just tap <b>Join</b> and log in to access your account!
-          </span>
+        <div className="text-gray-400 text-center mb-20">
+          Already a member? Just tap <span className="font-bold text-white">Join</span> and log in to access your account!
         </div>
       </main>
       <BottomTabBar />
