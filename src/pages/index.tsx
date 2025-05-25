@@ -1,33 +1,61 @@
+// src/pages/index.tsx
+
 import React from "react";
-import { signInWithGoogle } from "@/lib/AuthProvider";
-// ...other imports
+import { useAuth } from "@/lib/AuthProvider";
+import Navbar from "@/components/Navbar";
+import BottomTabBar from "@/components/BottomTabBar";
 
 export default function LandingPage() {
-  // ...any other state/logic
+  const { signInWithGoogle, currentUser } = useAuth();
 
-  // Diagnostic handler
   const handleJoin = async () => {
-    alert('Join button pressed'); // Debug: fires on ANY tap
+    alert("Button click handler fired!");
     try {
       await signInWithGoogle();
-      alert('Google sign-in triggered'); // Usually won't show, but proves if it makes it this far
-    } catch (e) {
-      alert('Sign-in error: ' + (e && e.message ? e.message : e));
+    } catch (err: any) {
+      alert("signInWithGoogle failed: " + err?.message || err);
     }
   };
 
   return (
-    <main className="...">
-      {/* ...logo, hero content, etc... */}
-      <button
-        type="button"
-        onClick={handleJoin}
-        className="px-6 py-3 mt-8 bg-orange-500 rounded-lg text-white font-bold shadow hover:bg-orange-600 transition text-lg"
-        style={{ minWidth: 200 }}
-      >
-        Join Rewmo Now
-      </button>
-      {/* ...rest of page... */}
-    </main>
+    <>
+      <Navbar />
+      <main className="min-h-screen flex flex-col items-center justify-center px-4 py-10 bg-black font-sans">
+        {/* Logo */}
+        <img
+          src="/logos/logo.png"
+          alt="RewmoAI Logo"
+          className="h-16 w-auto mb-4 mt-4"
+          style={{ maxWidth: 160 }}
+        />
+
+        {/* Welcome text */}
+        <div className="mb-2 text-lg md:text-xl font-semibold text-orange-400 text-center tracking-wide drop-shadow">
+          Welcome to
+        </div>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-orange-500 text-center mb-2 drop-shadow">
+          RewmoAI
+        </h1>
+
+        <p className="text-gray-200 text-base md:text-lg max-w-md text-center mb-6">
+          Unlock smarter financial rewards, personalized insights, and next-level savings—powered by AI.
+        </p>
+
+        {/* Join Button */}
+        <button
+          onClick={handleJoin}
+          className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow transition mb-4 w-full max-w-xs text-lg"
+        >
+          Join Rewmo Now
+        </button>
+
+        <div className="mt-8 w-full flex flex-col items-center">
+          <span className="text-xs text-gray-400 text-center max-w-xs">
+            Already a member? Just tap <b>Join</b> and log in to access your account!
+          </span>
+        </div>
+      </main>
+      <BottomTabBar />
+    </>
   );
 }
