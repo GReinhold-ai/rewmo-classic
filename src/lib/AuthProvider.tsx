@@ -1,41 +1,62 @@
 // src/lib/AuthProvider.tsx
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from "firebase/auth";
-import app from "./firebaseClient"; // adjust if using named import
+import { getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut, User } from "firebase/auth";
+import { app } from "./firebaseClient";
 
-const AuthContext = createContext<any>(null);
+interface AuthContextType {
+  currentUser: User | null;
+  login: () => void;
+  logout: () => void;
+  signInWithGoogle: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  currentUser: null,
+  login: () => {},
+  logout: () => {},
+  signInWithGoogle: async () => {},
+});
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const auth = getAuth(app);
-
-  // Your signInWithGoogle function
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
-  };
-
-  // Your signOut function
-  const logout = async () => {
-    await signOut(auth);
-  };
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, setCurrentUser);
+    const auth = getAuth(app);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
     return () => unsubscribe();
   }, []);
 
-  // 🟠 ADD signInWithGoogle to the context value!
+  const signInWithGoogle = async () => {
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // iOS browsers require redirect flow
+    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (isiOS) {
+      await signInWithRedirect(auth, provider);
+    } else {
+      await signInWithPopup(auth, provider);
+    }
+  };
+
+  const login = signInWithGoogle;
+  const logoutUser = () => {
+    const auth = getAuth(app);
+    signOut(auth);
+    setCurrentUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ currentUser, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ currentUser, login, logout: logoutUser, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-// Custom hook
-export function useAuth() {
-  return useContext(AuthContext);
 }
