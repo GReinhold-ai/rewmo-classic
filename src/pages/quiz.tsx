@@ -45,7 +45,7 @@ const questions: QuizQuestion[] = [
 ];
 
 export default function QuizPage() {
-  const { currentUser, login } = useAuth();
+ const { currentUser, signInWithGoogle } = useAuth();
   const [answers, setAnswers] = useState<{ [id: string]: string }>({});
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");

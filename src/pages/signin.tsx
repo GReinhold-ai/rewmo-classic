@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/lib/AuthProvider";
 
 export default function SignInPage() {
-  const { currentUser, login } = useAuth();
+  const { currentUser, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
