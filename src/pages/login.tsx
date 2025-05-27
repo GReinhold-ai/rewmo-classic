@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthProvider';
 import BottomTabBar from '@/components/BottomTabBar';
 
 export default function LoginPage() {
-  const { currentUser, login } = useAuth();
+  const { currentUser, signInWithGoogle } = useAuth(); // <- CHANGED
   const router = useRouter();
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     try {
-      await login(); // Google login
+      await signInWithGoogle(); // CHANGED
     } catch (error) {
       console.error('Login failed:', error);
     }
