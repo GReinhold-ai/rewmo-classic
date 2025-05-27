@@ -1,7 +1,6 @@
 // src/pages/shopping.tsx
 
 import { useState } from "react";
-import Navbar from "@/components/Navbar"; // Adjust if needed
 import BottomTabBar from "@/components/BottomTabBar"; 
 
 const filters = ["All", "Made in America", "Made in Australia", "Sustainable"];
@@ -37,7 +36,6 @@ export default function ShoppingPage() {
 
   return (
     <>
-      <Navbar />
       <main className="min-h-screen bg-black text-white flex flex-col items-center px-3 pb-12 font-sans">
         {/* Logo at the top */}
         <img
@@ -47,7 +45,7 @@ export default function ShoppingPage() {
           style={{ maxWidth: 120 }}
         />
 
-        {/* Readable Headline */}
+        {/* Headline */}
         <h1 className="text-xl md:text-2xl font-semibold mb-1 mt-2 text-white tracking-tight text-center">
           Shopping Rewards
         </h1>
