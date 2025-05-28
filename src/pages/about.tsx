@@ -1,17 +1,12 @@
-// src/pages/about.tsx
-
 import React from "react";
-import Navbar from "@/components/Navbar"; // Only use if not in layout/app wrapper
 import Image from "next/image";
-import logo from "@/../public/logos/logo.png"; // Adjust path if necessary
-import BottomTabBar from "@/components/BottomTabBar"; 
+import Link from "next/link";
+import logo from "@/../public/logos/logo.png"; // Adjust as needed
+import BottomTabBar from "@/components/BottomTabBar";
 
 export default function AboutPage() {
   return (
     <>
-      {/* Top menu (remove if already in global layout) */}
-      <Navbar />
-
       <main className="min-h-screen bg-neutral-50 pt-4 md:pt-10 pb-8 flex flex-col items-center">
         {/* Logo & Heading */}
         <div className="flex flex-col items-center mb-4">
@@ -23,14 +18,14 @@ export default function AboutPage() {
             priority
             className="mb-2 rounded-full border border-orange-500 shadow-md"
           />
-          <h1 className="text-xl md:text-2xl font-bold text-orange-600 mb-1 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-orange-600 mb-1 tracking-tight text-center">
             About RewmoAI
           </h1>
         </div>
 
         {/* Principles Section */}
         <section className="py-2 px-3 max-w-2xl mx-auto w-full">
-          <h2 className="text-base md:text-lg font-semibold text-orange-600 mb-2 text-center tracking-tight">
+          <h2 className="text-lg md:text-xl font-semibold text-orange-600 mb-2 text-center tracking-tight">
             Our Guiding Principles
           </h2>
           <div className="bg-white rounded-xl shadow p-4 md:p-5 space-y-3 md:space-y-4 mb-6 text-sm md:text-base text-gray-700">
@@ -57,7 +52,7 @@ export default function AboutPage() {
 
         {/* TQM & AI Section */}
         <section className="py-1 px-3 max-w-2xl mx-auto w-full">
-          <h2 className="text-base md:text-lg font-semibold text-orange-600 mb-2 text-center">
+          <h2 className="text-lg md:text-xl font-semibold text-orange-600 mb-2 text-center">
             How RewmoAI Works for You
           </h2>
           <div className="bg-white rounded-xl shadow p-4 md:p-5 space-y-3 mb-6 text-sm md:text-base text-gray-700">
@@ -75,7 +70,7 @@ export default function AboutPage() {
 
         {/* AI Financial Education & Guidance */}
         <section className="py-1 px-3 max-w-2xl mx-auto w-full">
-          <h2 className="text-base md:text-lg font-semibold text-orange-600 mb-2 text-center">
+          <h2 className="text-lg md:text-xl font-semibold text-orange-600 mb-2 text-center">
             Groundbreaking Financial Education & Guidance
           </h2>
           <div className="bg-white rounded-xl shadow p-4 md:p-5 space-y-3 mb-6 text-sm md:text-base text-gray-700">
@@ -96,18 +91,19 @@ export default function AboutPage() {
           <div className="bg-gradient-to-r from-orange-100 to-orange-50 border border-orange-200 rounded-xl p-4 md:p-5 shadow text-sm md:text-base">
             <div className="text-orange-600 font-bold text-lg mb-1">Ready to experience the future of financial rewards and guidance?</div>
             <div className="text-gray-700 mb-2">Join RewmoAI today, and see how every payment can bring you closer to financial freedom.</div>
-            <a
-              href="/"
-              className="inline-block mt-2 px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition"
-            >
-              Join Rewmo Now
-            </a>
+            <Link href="/" passHref legacyBehavior>
+              <a className="inline-block mt-2 px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition">
+                Join Rewmo Now
+              </a>
+            </Link>
           </div>
         </section>
       </main>
 
-      {/* Only one bottom bar menu */}
-      <BottomTabBar />
+      {/* Only show bottom bar on mobile */}
+      <div className="md:hidden">
+        <BottomTabBar />
+      </div>
     </>
   );
 }

@@ -1,10 +1,8 @@
+// src/lib/AuthProvider.tsx
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import {
-  getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect,
-  GoogleAuthProvider, signOut, User
-} from "firebase/auth";
-import { setDoc, doc, serverTimestamp, getDoc, updateDoc, increment } from "firebase/firestore";
-import { app, db } from "./firebaseClient";
+import { getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut, User } from "firebase/auth";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { app } from "./firebaseClient";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -21,12 +19,6 @@ function isIOS() {
   );
 }
 
-function getReferralCodeFromURL(): string | null {
-  if (typeof window === "undefined") return null;
-  const params = new URLSearchParams(window.location.search);
-  return params.get("ref");
-}
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -35,44 +27,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
 
+      // Firestore user doc creation logic
       if (user) {
-        // Only do referral logic if user is new (you may want a better new-user check in production)
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-        const alreadyExists = userDoc.exists();
-
-        // Get referral code from URL (works only on first login, on client)
-        const refCode = getReferralCodeFromURL();
-
-        // User creation & referral tracking
-        await setDoc(
-          userDocRef,
-          {
+        const db = getFirestore(app);
+        const userRef = doc(db, "users", user.uid);
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) {
+          await setDoc(userRef, {
             uid: user.uid,
             email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            provider: "google",
-            lastSignIn: serverTimestamp(),
-            referralCode: user.uid, // user’s own code for sharing
-            ...(refCode && !alreadyExists ? { referredBy: refCode } : {}), // Only set on first login
-          },
-          { merge: true }
-        );
-
-        // If this is a NEW user and they signed up with a ref, increment the referrer
-        if (refCode && !alreadyExists) {
-          const referrerRef = doc(db, "users", refCode);
-          try {
-            await updateDoc(referrerRef, {
-              referralCount: increment(1),
-              lastReferral: serverTimestamp(),
-              // Add more fields/rewards as you wish!
-            });
-          } catch (err) {
-            // Ignore error if referrer not found
-            console.warn("Referral failed: ", err);
-          }
+            name: user.displayName,
+            createdAt: new Date().toISOString(),
+          });
         }
       }
     });
