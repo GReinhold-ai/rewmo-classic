@@ -1,6 +1,5 @@
 // src/pages/index.tsx
 
-import React from "react";
 import { Navbar } from "@/components";
 import { useAuth } from "@/lib/AuthProvider";
 
