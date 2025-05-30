@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ShoppingBag, UserPlus, Home, Robot, Flag, Leaf } from "lucide-react";
+import { ShoppingBag, UserPlus, Home, Bot, Flag, Leaf } from "lucide-react";
 
 export default function RewardsPage() {
   return (
@@ -54,7 +54,7 @@ export default function RewardsPage() {
         {/* AI Smart Boosts */}
         <Link href="/shopping" className="transition-transform hover:-translate-y-1">
           <div className="bg-white/60 text-gray-500 rounded-xl shadow-lg p-5 flex flex-col gap-2 hover:ring-2 hover:ring-orange-200 cursor-pointer h-full">
-            <Robot className="w-8 h-8 text-orange-400 mb-1" />
+            <Bot className="w-8 h-8 text-orange-400 mb-1" />
             <h2 className="text-lg font-bold flex items-center">
               AI Smart Boosts
               <span className="ml-2 px-2 py-0.5 bg-orange-200 text-orange-700 rounded text-xs font-semibold">Coming Soon</span>
