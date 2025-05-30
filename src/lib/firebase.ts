@@ -5,10 +5,13 @@ import { getAuth } from "firebase/auth";
 
 // Your Firebase config here (replace with your actual values)
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  // ...other config
+  apiKey: "AIzaSyC3G_b8h3mcjrBD9oU1veDX03Mp3Jn4uYo",
+  authDomain: "rewmoai.firebaseapp.com",
+  projectId: "rewmoai",
+  storageBucket: "rewmoai.firebasestorage.app",
+  messagingSenderId: "1006457256424",
+  appId: "1:1006457256424:web:d674a57e19969845c60c5d",
+  measurementId: "G-RWYF3HYL79"
 };
 
 // Prevent re-initialization
