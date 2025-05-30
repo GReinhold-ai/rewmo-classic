@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
-import { db } from "@/lib/firebase"; // Update this path if needed
+import { db } from "./firebase"; // Update this path if needed
 
 // Utility: Generate short referral code (REF-xxxxxx)
 function generateShortCode(length = 6) {
