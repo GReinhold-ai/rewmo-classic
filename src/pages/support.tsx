@@ -1,5 +1,4 @@
-// src/pages/support.tsx
-import { useState } from "react";
+import React, { useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient"; // update path as needed
 
@@ -20,32 +19,29 @@ export default function Support() {
   }
 
   return (
-    <div className="max-w-lg mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold mb-5">Contact Support</h1>
-      {submitted && (
-        <div className="bg-green-100 text-green-700 rounded p-3 mb-5">
-          Thanks! We received your message and will respond soon.
-        </div>
-      )}
-      <form onSubmit={handleSubmit}>
+    <main className="min-h-screen flex flex-col items-center justify-center py-12 px-4">
+      <h1 className="text-2xl font-bold mb-4 text-orange-600">Support</h1>
+      <form onSubmit={handleSubmit} className="max-w-md w-full space-y-3">
         <textarea
-          className="w-full border border-gray-300 rounded p-2 mb-4"
-          rows={5}
-          placeholder="Your question or message..."
+          className="w-full border rounded p-2"
+          placeholder="Describe your issue or question..."
           value={message}
-          onChange={e => setMessage(e.target.value)}
-          required
+          onChange={(e) => setMessage(e.target.value)}
+          rows={4}
         />
         <button
           type="submit"
-          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 font-semibold"
+          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
+          disabled={submitted || !message.trim()}
         >
-          Submit
+          {submitted ? "Submitted!" : "Submit"}
         </button>
+        {submitted && (
+          <p className="text-green-600 text-sm mt-2">
+            Thank you for reaching out! We'll get back to you soon.
+          </p>
+        )}
       </form>
-      <p className="text-sm text-gray-400 mt-5">
-        Or email us at <a href="mailto:support@rewmo.ai" className="underline">support@rewmo.ai</a>
-      </p>
-    </div>
+    </main>
   );
 }

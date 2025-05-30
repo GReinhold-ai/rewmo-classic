@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react'; // <--- Add React import for JSX
 
 interface SuggestionFormProps {
   userId: string;
@@ -25,22 +25,21 @@ export default function SuggestionForm({ userId }: SuggestionFormProps) {
   };
 
   return (
-    <form onSubmit={submitSuggestion} className="max-w-md mx-auto my-8 p-4 rounded-xl bg-gray-100 shadow">
+    <form onSubmit={submitSuggestion} className="space-y-2">
       <textarea
-        placeholder="Your suggestion or feedback..."
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        required
-        className="border rounded p-2 w-full min-h-[90px]"
+        placeholder="Share your suggestion..."
+        className="w-full border rounded p-2"
       />
       <button
         type="submit"
-        className="mt-2 px-4 py-2 bg-orange-500 text-white rounded"
-        disabled={!value}
+        className="bg-orange-500 text-white rounded px-4 py-1"
+        disabled={!value.trim()}
       >
-        Submit Suggestion
+        Submit
       </button>
-      {status && <div className="mt-2 text-center text-sm">{status}</div>}
+      {status && <div className="text-sm text-green-500 mt-2">{status}</div>}
     </form>
   );
 }

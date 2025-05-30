@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { getAISuggestions } from "@/lib/aiSuggestions";
 
 export default function SimpleOnboarding({ onComplete }: { onComplete: () => void }) {
@@ -18,28 +18,26 @@ export default function SimpleOnboarding({ onComplete }: { onComplete: () => voi
   };
 
   return (
-    <div className="bg-white rounded-xl shadow p-8 w-full max-w-md text-center mx-auto mt-12">
-      <h2 className="text-2xl font-bold mb-4 text-orange-600">Welcome to RewmoAI!</h2>
-      <p className="mb-6">What's your top financial goal?</p>
-      <div className="space-y-3 mb-6">
-        {["Save more", "Pay off debt", "Invest", "Other"].map((g) => (
-          <button
-            key={g}
-            className={`w-full rounded py-2 font-semibold border ${goal === g ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-800"} transition`}
-            onClick={() => setGoal(g)}
-            type="button"
-          >
-            {g}
-          </button>
-        ))}
-      </div>
+    <div className="max-w-md mx-auto py-8">
+      <h2 className="text-xl font-semibold mb-4 text-orange-500">Let's set your first goal!</h2>
+      <input
+        type="text"
+        value={goal || ""}
+        onChange={e => setGoal(e.target.value)}
+        placeholder="Enter your savings goal (e.g. $10,000)"
+        className="w-full border rounded px-3 py-2 mb-4"
+      />
       <button
-        className="btn w-full bg-orange-500 text-white py-2 rounded mt-2 disabled:bg-gray-300"
-        disabled={!goal || loading}
         onClick={handleNext}
+        disabled={loading || !goal}
+        className="bg-orange-500 text-white font-semibold px-4 py-2 rounded w-full disabled:opacity-60"
       >
         {loading ? "Saving..." : "Next"}
       </button>
+      {/* Example of fixing an apostrophe (if used in JSX) */}
+      <div className="text-xs text-gray-500 mt-2">
+        You can&apos;t change your goal after setup.
+      </div>
     </div>
   );
 }
