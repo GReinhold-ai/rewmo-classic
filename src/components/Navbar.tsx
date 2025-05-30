@@ -6,7 +6,7 @@ import { Menu, X } from "lucide-react";
 
 const ADMIN_EMAILS = [
   "gary.reinhold@leafpays.com",
-  // Add other admin emails here
+  // Add more admin emails as needed
 ];
 
 const navLinks = [
@@ -23,8 +23,8 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email || "");
 
-  // ** Hide nav on the landing page **
-  if (router.pathname === "/") return null;
+  // HIDE NAV ON LANDING IF NOT SIGNED IN
+  if (router.pathname === "/" && !currentUser) return null;
 
   const isActive = (href: string) => router.pathname === href;
 
