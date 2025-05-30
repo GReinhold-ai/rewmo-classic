@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useAuth } from "@/lib/AuthProvider";
-import { Menu, X } from "lucide-react"; // Lucide icons; run: npm install lucide-react
+import { Menu, X } from "lucide-react";
 
-const ADMIN_EMAILS = ["you@example.com", "gary.reinhold@leafpays.com"]; // Add admin emails
+const ADMIN_EMAILS = [
+  "gary.reinhold@leafpays.com",
+  // Add other admin emails here
+];
 
 const navLinks = [
   { href: "/about", label: "About" },
@@ -15,15 +18,14 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const { currentUser, signInWithGoogle, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email || "");
 
-  // Hide navbar if not signed in
-  if (!currentUser) return null;
+  // ** Hide nav on the landing page **
+  if (router.pathname === "/") return null;
 
-  // Highlight active link (optional)
   const isActive = (href: string) => router.pathname === href;
 
   return (
@@ -54,13 +56,15 @@ export default function Navbar() {
             Admin
           </Link>
         )}
-        <span className="ml-4 text-sm text-gray-200">{currentUser.email}</span>
-        <button
-          onClick={logout}
-          className="ml-2 px-3 py-1 rounded bg-orange-500 hover:bg-orange-600 text-white text-sm"
-        >
-          Sign Out
-        </button>
+        <span className="ml-4 text-sm text-gray-200">{currentUser?.email}</span>
+        {currentUser && (
+          <button
+            onClick={logout}
+            className="ml-2 px-3 py-1 rounded bg-orange-500 hover:bg-orange-600 text-white text-sm"
+          >
+            Sign Out
+          </button>
+        )}
       </div>
 
       {/* Mobile Hamburger */}
@@ -100,16 +104,18 @@ export default function Navbar() {
               </Link>
             )}
             <div className="flex items-center w-full mt-3">
-              <span className="text-sm text-gray-200 flex-1">{currentUser.email}</span>
-              <button
-                onClick={() => {
-                  setMobileOpen(false);
-                  logout();
-                }}
-                className="ml-2 px-3 py-1 rounded bg-orange-500 hover:bg-orange-600 text-white text-sm"
-              >
-                Sign Out
-              </button>
+              <span className="text-sm text-gray-200 flex-1">{currentUser?.email}</span>
+              {currentUser && (
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    logout();
+                  }}
+                  className="ml-2 px-3 py-1 rounded bg-orange-500 hover:bg-orange-600 text-white text-sm"
+                >
+                  Sign Out
+                </button>
+              )}
             </div>
           </div>
         </div>
