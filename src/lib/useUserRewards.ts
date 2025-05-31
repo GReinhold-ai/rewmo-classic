@@ -1,26 +1,24 @@
-import { useState, useEffect } from "react";
+// src/lib/useUserRewards.ts
+import { useEffect, useState } from "react";
+import { db } from "./firebaseClient"; // or your firebase file
 import { doc, onSnapshot } from "firebase/firestore";
-import { useAuth } from "@/lib/AuthProvider";
-import { db } from "@/lib/firebaseClient"; // Adjust import if needed
 
-export function useUserRewards() {
-  const { currentUser } = useAuth();
-  const [rewardPoints, setRewardPoints] = useState<number | null>(null);
+export function useUserRewards(uid?: string | null) {
+  const [points, setPoints] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!currentUser) {
-      setRewardPoints(null);
+    if (!uid) {
+      setPoints(0);
+      setLoading(false);
       return;
     }
-
-    // Example: users/{uid}/rewards/summary with { points: number }
-    const docRef = doc(db, "users", currentUser.uid, "rewards", "summary");
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      setRewardPoints(docSnap.exists() ? docSnap.data().points || 0 : 0);
+    const unsub = onSnapshot(doc(db, "users", uid), (docSnap) => {
+      setPoints(docSnap.exists() ? docSnap.data().points ?? 0 : 0);
+      setLoading(false);
     });
+    return () => unsub();
+  }, [uid]);
 
-    return () => unsubscribe();
-  }, [currentUser]);
-
-  return { rewardPoints };
+  return { points, loading };
 }

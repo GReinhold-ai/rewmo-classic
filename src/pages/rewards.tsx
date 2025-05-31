@@ -1,61 +1,68 @@
+// src/pages/rewards.tsx
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { ShoppingBag, UserPlus, Home, Bot, Flag, Leaf, Copy } from "lucide-react";
-import { useAuth } from "@/lib/AuthProvider";
-import { useUserRewards } from "@/lib/useUserRewards";
+import { useAuth } from "@/lib/useAuth";
+import { useUserRewards } from "@/lib/useUserRewards"; // Make sure this hook exists!
 
 export default function RewardsPage() {
   const { currentUser } = useAuth();
-  const { rewardPoints } = useUserRewards();
+  const { points, loading } = useUserRewards(currentUser?.uid); // Returns { points, loading }
   const [copied, setCopied] = useState(false);
 
-  const referralCode =
-    currentUser?.referralCode ||
-    currentUser?.uid ||
-    "";
+  // Referral code logic (uses referralCode if present, else uid, else "")
+  const referralCode = currentUser?.referralCode || currentUser?.uid || "";
 
   const referralUrl = referralCode
     ? `https://rewmo.ai/?ref=${referralCode}`
     : "";
 
-  const handleCopy = async () => {
+  const handleCopy = () => {
     if (!referralUrl) return;
-    await navigator.clipboard.writeText(referralUrl);
+    navigator.clipboard.writeText(referralUrl);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center pb-10">
-      {/* Referral/Rewards Header */}
-      {currentUser && (
-        <div className="w-full max-w-2xl mt-8 mb-5 flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Referral Code Section */}
-          <div className="bg-orange-100 text-orange-900 rounded-xl shadow p-4 flex flex-col md:flex-row items-center gap-2 md:gap-4 border border-orange-200 flex-1">
-            <span className="font-semibold">Your Referral Link:</span>
-            <div className="flex items-center bg-white rounded-lg px-3 py-1 font-mono text-sm border border-orange-200">
-              <span className="truncate max-w-xs">{referralUrl}</span>
-              <button
-                aria-label="Copy referral link"
-                className="ml-2 p-1 rounded hover:bg-orange-200"
-                onClick={handleCopy}
-              >
-                <Copy className="w-4 h-4 text-orange-500" />
-              </button>
-              {copied && (
-                <span className="ml-2 text-xs text-green-600 font-semibold">Copied!</span>
-              )}
+      {/* Top Section: Points and Referral */}
+      <div className="w-full max-w-2xl mt-8 mb-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+        {currentUser && (
+          <>
+            {/* Referral code block */}
+            <div className="flex flex-col items-center md:items-start w-full md:w-auto">
+              <span className="text-xs uppercase text-gray-400 tracking-wide mb-1">Your Referral Link</span>
+              <div className="flex items-center space-x-2 bg-orange-100/70 border border-orange-200 rounded-xl px-3 py-1">
+                <span className="font-mono text-orange-700 text-sm truncate max-w-[180px]">{referralUrl}</span>
+                <button
+                  onClick={handleCopy}
+                  className="ml-2 text-orange-500 hover:text-orange-700 focus:outline-none"
+                  aria-label="Copy referral link"
+                  tabIndex={0}
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+                {copied && (
+                  <span className="ml-2 text-xs text-green-600 font-semibold">Copied!</span>
+                )}
+              </div>
             </div>
-          </div>
-          {/* Reward Points */}
-          <div className="flex flex-col items-center mt-4 md:mt-0 flex-shrink-0">
-            <span className="text-xs text-orange-200 font-semibold">Reward Balance</span>
-            <span className="text-2xl font-extrabold text-orange-400 tabular-nums">
-              {typeof rewardPoints === "number" ? rewardPoints.toLocaleString() : "—"} pts
-            </span>
-          </div>
-        </div>
-      )}
+            {/* Points display */}
+            <div className="flex flex-col items-center md:items-end w-full md:w-auto">
+              <span className="text-xs uppercase text-gray-400 tracking-wide mb-1">Your Points</span>
+              <div className="text-2xl font-extrabold text-orange-400 bg-white/90 rounded-xl px-4 py-1 border border-orange-100 shadow">
+                {loading
+                  ? "Loading..."
+                  : typeof points === "number"
+                  ? points.toLocaleString()
+                  : "--"}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Banner/Info Block */}
       <div className="w-full max-w-2xl mb-6">
