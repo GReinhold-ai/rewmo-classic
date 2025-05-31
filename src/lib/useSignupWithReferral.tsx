@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { db } from "@/lib/firebase"; // Use alias, not relative path
+import { db } from "./firebase"; // <- RELATIVE PATH, not alias!
 
 // Utility: Generate short referral code (REF-xxxxxx)
 function generateShortCode(length = 6) {
@@ -41,10 +41,8 @@ export function useSignupWithReferral() {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-
-      // Destructure user and additionalUserInfo safely
-      // @ts-ignore - additionalUserInfo is usually present on the result object
-      const { user, additionalUserInfo } = result;
+      const user = result.user;
+      const additionalUserInfo = result.additionalUserInfo;
 
       // Only set user profile for new users
       if (additionalUserInfo?.isNewUser) {
