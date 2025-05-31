@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { db } from "./firebase"; // Path is correct for your structure
+import { db } from "@/lib/firebase"; // Use alias, not relative path
 
 // Utility: Generate short referral code (REF-xxxxxx)
 function generateShortCode(length = 6) {
@@ -42,9 +42,9 @@ export function useSignupWithReferral() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
 
-      // Fix for TypeScript: extract additionalUserInfo safely
-      const { user } = result;
-      const additionalUserInfo = (result as any).additionalUserInfo || {};
+      // Destructure user and additionalUserInfo safely
+      // @ts-ignore - additionalUserInfo is usually present on the result object
+      const { user, additionalUserInfo } = result;
 
       // Only set user profile for new users
       if (additionalUserInfo?.isNewUser) {
@@ -52,19 +52,23 @@ export function useSignupWithReferral() {
         // Otherwise, use user.uid as referralCode
         const referralCode = generateShortCode(6); // or: user.uid;
 
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          email: user.email,
-          name: user.displayName || "",
-          photoURL: user.photoURL || "",
-          referralCode,
-          rewardPoints: 0,
-          referralCount: 0,
-          referredBy: referralFromURL || "",
-          membershipTier: "Silver",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            uid: user.uid,
+            email: user.email,
+            name: user.displayName || "",
+            photoURL: user.photoURL || "",
+            referralCode,
+            rewardPoints: 0,
+            referralCount: 0,
+            referredBy: referralFromURL || "",
+            membershipTier: "Silver",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
       }
       setLoading(false);
       return result; // pass along to app context if needed
