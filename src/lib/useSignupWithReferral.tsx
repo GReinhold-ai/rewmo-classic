@@ -1,9 +1,7 @@
-// src/lib/useSignupWithReferral.tsx
-
 import { useState, useEffect } from "react";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { db } from "./firebase"; // <- RELATIVE PATH, not alias!
+import { db } from "./firebase.ts"; // Explicit .ts extension for Vercel
 
 // Utility: Generate short referral code (REF-xxxxxx)
 function generateShortCode(length = 6) {
@@ -50,23 +48,19 @@ export function useSignupWithReferral() {
         // Otherwise, use user.uid as referralCode
         const referralCode = generateShortCode(6); // or: user.uid;
 
-        await setDoc(
-          doc(db, "users", user.uid),
-          {
-            uid: user.uid,
-            email: user.email,
-            name: user.displayName || "",
-            photoURL: user.photoURL || "",
-            referralCode,
-            rewardPoints: 0,
-            referralCount: 0,
-            referredBy: referralFromURL || "",
-            membershipTier: "Silver",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          email: user.email,
+          name: user.displayName || "",
+          photoURL: user.photoURL || "",
+          referralCode,
+          rewardPoints: 0,
+          referralCount: 0,
+          referredBy: referralFromURL || "",
+          membershipTier: "Silver",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
       }
       setLoading(false);
       return result; // pass along to app context if needed
