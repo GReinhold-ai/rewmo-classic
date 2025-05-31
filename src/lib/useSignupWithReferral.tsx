@@ -1,7 +1,9 @@
+// src/lib/useSignupWithReferral.tsx
+
 import { useState, useEffect } from "react";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
-import { db } from "./firebase"; // Update this path if needed
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { db } from "./firebase"; // Path is correct for your structure
 
 // Utility: Generate short referral code (REF-xxxxxx)
 function generateShortCode(length = 6) {
@@ -39,7 +41,10 @@ export function useSignupWithReferral() {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      const { user, additionalUserInfo } = result;
+
+      // Fix for TypeScript: extract additionalUserInfo safely
+      const { user } = result;
+      const additionalUserInfo = (result as any).additionalUserInfo || {};
 
       // Only set user profile for new users
       if (additionalUserInfo?.isNewUser) {
