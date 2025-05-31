@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ShoppingBag, UserPlus, Home, Bot, Flag, Leaf, Copy } from "lucide-react";
-import { useAuth } from "../lib/useAuth";
+import { useAuth } from "../lib/AuthProvider";
 import { useUserRewards } from "@/lib/useUserRewards"; // Make sure this hook exists!
 
 export default function RewardsPage() {
