@@ -1,8 +1,7 @@
-// src/lib/useSignupWithReferral.tsx
 import { useState, useEffect } from "react";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { db } from "./firebase"; // <-- Correct import, no .ts extension
+import { db } from "./firebase"; // DO NOT include .ts extension unless you have to!
 
 // Utility: Generate short referral code (REF-xxxxxx)
 function generateShortCode(length = 6) {
@@ -40,13 +39,16 @@ export function useSignupWithReferral() {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      // Destructure user and additionalUserInfo from result
+
+      // Access user and new user info
       const user = result.user;
+      // @ts-ignore - additionalUserInfo exists on result
       const additionalUserInfo = result.additionalUserInfo;
 
       // Only set user profile for new users
       if (additionalUserInfo?.isNewUser) {
-        // Use a custom referral code, or use user.uid
+        // If you want a custom referral code, use generateShortCode()
+        // Otherwise, use user.uid as referralCode
         const referralCode = generateShortCode(6); // or: user.uid;
 
         await setDoc(
