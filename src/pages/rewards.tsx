@@ -1,64 +1,58 @@
 import React, { useState } from "react";
 import Link from "next/link";
-import { ShoppingBag, UserPlus, Home, Bot, Flag, Leaf, Copy as CopyIcon } from "lucide-react";
-import { useAuth } from "@/lib/AuthProvider"; // Adjust import path if needed
-
-// Optional: Replace this with your actual balance-fetching hook if different
-import { useUserRewards } from "@/lib/useUserRewards"; // Create/use this if needed
+import { ShoppingBag, UserPlus, Home, Bot, Flag, Leaf, Copy } from "lucide-react";
+import { useAuth } from "@/lib/AuthProvider";
+import { useUserRewards } from "@/lib/useUserRewards";
 
 export default function RewardsPage() {
   const { currentUser } = useAuth();
-  // Assume userId is currentUser?.uid
-  const { points, loading } = useUserRewards(currentUser?.uid); // Custom hook to fetch balance
-
-  // Referral code logic (if you have a referralCode on user, else fallback to uid)
-  const referralCode = currentUser?.referralCode || currentUser?.uid || "";
-  const referralUrl = referralCode ? `https://rewmo.ai/?ref=${referralCode}` : "";
-
+  const { rewardPoints } = useUserRewards();
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralUrl);
+  const referralCode =
+    currentUser?.referralCode ||
+    currentUser?.uid ||
+    "";
+
+  const referralUrl = referralCode
+    ? `https://rewmo.ai/?ref=${referralCode}`
+    : "";
+
+  const handleCopy = async () => {
+    if (!referralUrl) return;
+    await navigator.clipboard.writeText(referralUrl);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setTimeout(() => setCopied(false), 1800);
   };
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center pb-10">
-      {/* Top Section: Referral Code and Rewards Balance */}
+      {/* Referral/Rewards Header */}
       {currentUser && (
-        <div className="w-full max-w-2xl mt-10 mb-5 flex flex-col items-center gap-4">
-          {/* Referral Link */}
-          <div className="flex flex-col items-center w-full">
-            <div className="font-bold text-lg mb-1 text-orange-300">Your Referral Link</div>
-            <div className="flex w-full items-center gap-2">
-              <input
-                type="text"
-                value={referralUrl}
-                readOnly
-                className="w-full bg-gray-900 text-gray-100 rounded px-2 py-1 border border-gray-800 font-mono text-sm"
-                onFocus={e => e.target.select()}
-              />
+        <div className="w-full max-w-2xl mt-8 mb-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Referral Code Section */}
+          <div className="bg-orange-100 text-orange-900 rounded-xl shadow p-4 flex flex-col md:flex-row items-center gap-2 md:gap-4 border border-orange-200 flex-1">
+            <span className="font-semibold">Your Referral Link:</span>
+            <div className="flex items-center bg-white rounded-lg px-3 py-1 font-mono text-sm border border-orange-200">
+              <span className="truncate max-w-xs">{referralUrl}</span>
               <button
-                className={`px-3 py-1 rounded font-bold text-sm transition ${
-                  copied ? "bg-green-500 text-white" : "bg-orange-500 text-white hover:bg-orange-600"
-                }`}
+                aria-label="Copy referral link"
+                className="ml-2 p-1 rounded hover:bg-orange-200"
                 onClick={handleCopy}
               >
-                {copied ? "Copied!" : <span className="flex items-center gap-1"><CopyIcon size={16}/> Copy</span>}
+                <Copy className="w-4 h-4 text-orange-500" />
               </button>
-            </div>
-            <div className="text-xs text-orange-400 mt-1">
-              Invite friends—earn bonus points for every signup!
+              {copied && (
+                <span className="ml-2 text-xs text-green-600 font-semibold">Copied!</span>
+              )}
             </div>
           </div>
-          {/* Points/Balance */}
-          <div className="flex items-center gap-2 text-lg font-semibold text-white bg-orange-500 rounded-lg px-4 py-2 shadow mt-2">
-            <span>Your Rewards Balance:</span>
-            <span className="font-mono text-orange-100">
-              {loading ? "Loading..." : (typeof points === "number" ? points : "0")}
+          {/* Reward Points */}
+          <div className="flex flex-col items-center mt-4 md:mt-0 flex-shrink-0">
+            <span className="text-xs text-orange-200 font-semibold">Reward Balance</span>
+            <span className="text-2xl font-extrabold text-orange-400 tabular-nums">
+              {typeof rewardPoints === "number" ? rewardPoints.toLocaleString() : "—"} pts
             </span>
-            <span className="text-xs text-orange-100 font-normal ml-1">pts</span>
           </div>
         </div>
       )}
