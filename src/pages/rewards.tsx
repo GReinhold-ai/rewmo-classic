@@ -1,71 +1,66 @@
-// src/pages/rewards.tsx
-
 import React, { useState } from "react";
 import Link from "next/link";
 import { ShoppingBag, UserPlus, Home, Bot, Flag, Leaf, Copy } from "lucide-react";
+import { useUserRewards } from "../lib/useUserRewards";
 import { useAuth } from "../lib/AuthProvider";
-import { useUserRewards } from "@/lib/useUserRewards"; // Make sure this hook exists!
 
 export default function RewardsPage() {
   const { currentUser } = useAuth();
-  const { points, loading } = useUserRewards(currentUser?.uid); // Returns { points, loading }
+  const { rewardPoints } = useUserRewards(currentUser?.uid || "");
   const [copied, setCopied] = useState(false);
 
-  // Referral code logic (uses referralCode if present, else uid, else "")
-  const referralCode = currentUser?.referralCode || currentUser?.uid || "";
-
+  // Use `as any` to support optional referralCode for MVP
+  const referralCode =
+    (currentUser && (currentUser as any).referralCode)
+      ? (currentUser as any).referralCode
+      : currentUser?.uid || "";
   const referralUrl = referralCode
     ? `https://rewmo.ai/?ref=${referralCode}`
     : "";
 
   const handleCopy = () => {
-    if (!referralUrl) return;
-    navigator.clipboard.writeText(referralUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (referralUrl) {
+      navigator.clipboard.writeText(referralUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    }
   };
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center pb-10">
-      {/* Top Section: Points and Referral */}
-      <div className="w-full max-w-2xl mt-8 mb-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+      {/* Live Balance & Referral Code */}
+      <div className="w-full max-w-2xl mt-8 mb-4 flex flex-col gap-3">
         {currentUser && (
           <>
-            {/* Referral code block */}
-            <div className="flex flex-col items-center md:items-start w-full md:w-auto">
-              <span className="text-xs uppercase text-gray-400 tracking-wide mb-1">Your Referral Link</span>
-              <div className="flex items-center space-x-2 bg-orange-100/70 border border-orange-200 rounded-xl px-3 py-1">
-                <span className="font-mono text-orange-700 text-sm truncate max-w-[180px]">{referralUrl}</span>
-                <button
-                  onClick={handleCopy}
-                  className="ml-2 text-orange-500 hover:text-orange-700 focus:outline-none"
-                  aria-label="Copy referral link"
-                  tabIndex={0}
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-                {copied && (
-                  <span className="ml-2 text-xs text-green-600 font-semibold">Copied!</span>
-                )}
-              </div>
+            <div className="flex items-center justify-between bg-white/80 rounded-xl px-4 py-3 shadow font-semibold text-black">
+              <span>
+                <span className="text-orange-500 font-bold text-xl">
+                  {rewardPoints ?? 0}
+                </span>{" "}
+                <span className="text-sm font-medium text-gray-800">
+                  Reward Points
+                </span>
+              </span>
+              <span className="text-xs text-gray-500">Live Balance</span>
             </div>
-            {/* Points display */}
-            <div className="flex flex-col items-center md:items-end w-full md:w-auto">
-              <span className="text-xs uppercase text-gray-400 tracking-wide mb-1">Your Points</span>
-              <div className="text-2xl font-extrabold text-orange-400 bg-white/90 rounded-xl px-4 py-1 border border-orange-100 shadow">
-                {loading
-                  ? "Loading..."
-                  : typeof points === "number"
-                  ? points.toLocaleString()
-                  : "--"}
-              </div>
+            <div className="flex items-center bg-orange-50 rounded-xl px-4 py-2 shadow text-orange-900 justify-between">
+              <span>
+                <span className="font-semibold text-sm">Your Referral Link:</span>{" "}
+                <span className="font-mono text-xs">{referralUrl}</span>
+              </span>
+              <button
+                aria-label="Copy referral link"
+                className={`ml-2 p-2 rounded-full transition ${copied ? "bg-green-200" : "bg-orange-200 hover:bg-orange-300"}`}
+                onClick={handleCopy}
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              {copied && (
+                <span className="ml-2 text-green-600 text-xs font-bold">Copied!</span>
+              )}
             </div>
           </>
         )}
-      </div>
-
-      {/* Banner/Info Block */}
-      <div className="w-full max-w-2xl mb-6">
         <div className="bg-orange-100 text-orange-900 rounded-xl shadow p-4 text-center font-semibold text-sm border border-orange-200">
           Points you earn during testing and referrals are being tracked!
           <br />
