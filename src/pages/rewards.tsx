@@ -1,19 +1,19 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ShoppingBag, UserPlus, Home, Bot, Flag, Leaf, Copy } from "lucide-react";
-import { useUserRewards } from "../lib/useUserRewards";
 import { useAuth } from "../lib/AuthProvider";
+import { useUserRewards } from "../lib/useUserRewards"; // <- This must exist and return { points, loading }
 
 export default function RewardsPage() {
   const { currentUser } = useAuth();
-  const { rewardPoints } = useUserRewards(currentUser?.uid || "");
+  const { points, loading } = useUserRewards(currentUser?.uid || "");
   const [copied, setCopied] = useState(false);
 
-  // Use `as any` to support optional referralCode for MVP
+  // Referral code logic: fallback to uid if referralCode isn't present
   const referralCode =
-    (currentUser && (currentUser as any).referralCode)
-      ? (currentUser as any).referralCode
-      : currentUser?.uid || "";
+    (currentUser && (currentUser as any).referralCode) ||
+    (currentUser && currentUser.uid) ||
+    "";
   const referralUrl = referralCode
     ? `https://rewmo.ai/?ref=${referralCode}`
     : "";
@@ -22,45 +22,43 @@ export default function RewardsPage() {
     if (referralUrl) {
       navigator.clipboard.writeText(referralUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1400);
+      setTimeout(() => setCopied(false), 1500);
     }
   };
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center pb-10">
-      {/* Live Balance & Referral Code */}
-      <div className="w-full max-w-2xl mt-8 mb-4 flex flex-col gap-3">
-        {currentUser && (
-          <>
-            <div className="flex items-center justify-between bg-white/80 rounded-xl px-4 py-3 shadow font-semibold text-black">
-              <span>
-                <span className="text-orange-500 font-bold text-xl">
-                  {rewardPoints ?? 0}
-                </span>{" "}
-                <span className="text-sm font-medium text-gray-800">
-                  Reward Points
-                </span>
-              </span>
-              <span className="text-xs text-gray-500">Live Balance</span>
-            </div>
-            <div className="flex items-center bg-orange-50 rounded-xl px-4 py-2 shadow text-orange-900 justify-between">
-              <span>
-                <span className="font-semibold text-sm">Your Referral Link:</span>{" "}
-                <span className="font-mono text-xs">{referralUrl}</span>
-              </span>
-              <button
-                aria-label="Copy referral link"
-                className={`ml-2 p-2 rounded-full transition ${copied ? "bg-green-200" : "bg-orange-200 hover:bg-orange-300"}`}
-                onClick={handleCopy}
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-              {copied && (
-                <span className="ml-2 text-green-600 text-xs font-bold">Copied!</span>
-              )}
-            </div>
-          </>
-        )}
+      {/* Referral Code Block & Points */}
+      <div className="w-full max-w-2xl mt-8 mb-2 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2">
+          <span className="font-semibold text-orange-400 text-sm">Your Referral Link:</span>
+          <div className="flex items-center bg-white/90 rounded-lg px-2 py-1 text-black">
+            <span className="truncate max-w-[160px] md:max-w-xs text-xs font-mono">
+              {referralUrl}
+            </span>
+            <button
+              onClick={handleCopy}
+              className="ml-2 p-1 hover:bg-orange-100 rounded"
+              title="Copy referral link"
+            >
+              <Copy className="w-4 h-4 text-orange-500" />
+            </button>
+            <span className="ml-2 text-xs text-green-600">{copied && "Copied!"}</span>
+          </div>
+        </div>
+        {/* Points/Balances */}
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-gray-300">Reward Points:</span>
+          {loading ? (
+            <span className="font-semibold text-orange-400 animate-pulse">…</span>
+          ) : (
+            <span className="font-semibold text-orange-400">{points ?? 0}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Info Block */}
+      <div className="w-full max-w-2xl mb-6">
         <div className="bg-orange-100 text-orange-900 rounded-xl shadow p-4 text-center font-semibold text-sm border border-orange-200">
           Points you earn during testing and referrals are being tracked!
           <br />
