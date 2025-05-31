@@ -1,7 +1,8 @@
+// src/lib/useSignupWithReferral.tsx
 import { useState, useEffect } from "react";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { db } from "./firebase.ts"; // Explicit .ts extension for Vercel
+import { db } from "./firebase"; // <-- Correct import, no .ts extension
 
 // Utility: Generate short referral code (REF-xxxxxx)
 function generateShortCode(length = 6) {
@@ -39,28 +40,32 @@ export function useSignupWithReferral() {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
+      // Destructure user and additionalUserInfo from result
       const user = result.user;
       const additionalUserInfo = result.additionalUserInfo;
 
       // Only set user profile for new users
       if (additionalUserInfo?.isNewUser) {
-        // If you want a custom referral code, use generateShortCode()
-        // Otherwise, use user.uid as referralCode
+        // Use a custom referral code, or use user.uid
         const referralCode = generateShortCode(6); // or: user.uid;
 
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          email: user.email,
-          name: user.displayName || "",
-          photoURL: user.photoURL || "",
-          referralCode,
-          rewardPoints: 0,
-          referralCount: 0,
-          referredBy: referralFromURL || "",
-          membershipTier: "Silver",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            uid: user.uid,
+            email: user.email,
+            name: user.displayName || "",
+            photoURL: user.photoURL || "",
+            referralCode,
+            rewardPoints: 0,
+            referralCount: 0,
+            referredBy: referralFromURL || "",
+            membershipTier: "Silver",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
       }
       setLoading(false);
       return result; // pass along to app context if needed
