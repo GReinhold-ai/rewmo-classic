@@ -1,80 +1,51 @@
 // src/lib/AuthProvider.tsx
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut, User } from "firebase/auth";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import { app } from "./firebaseClient";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { User as FirebaseUser, onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from "./firebaseClient";
+import { User } from "./types";
 
-interface AuthContextType {
+type AuthContextType = {
   currentUser: User | null;
-  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-}
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  currentUser: null,
+  logout: async () => {}, // default empty async fn
+});
 
-function isIOS() {
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.userAgent.includes('Macintosh') && 'ontouchend' in document)
-  );
-}
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const auth = getAuth(app);
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-
-      // Firestore user doc creation logic
-      if (user) {
-        const db = getFirestore(app);
-        const userRef = doc(db, "users", user.uid);
-        const snap = await getDoc(userRef);
-        if (!snap.exists()) {
-          await setDoc(userRef, {
-            uid: user.uid,
-            email: user.email,
-            name: user.displayName,
-            createdAt: new Date().toISOString(),
-          });
-        }
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        setCurrentUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || undefined,
+          displayName: firebaseUser.displayName || undefined,
+          photoURL: firebaseUser.photoURL || undefined,
+        });
+      } else {
+        setCurrentUser(null);
       }
     });
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-    try {
-      if (isIOS()) {
-        await signInWithRedirect(auth, provider);
-      } else {
-        await signInWithPopup(auth, provider);
-      }
-    } catch (err: any) {
-      alert("signInWithGoogle error: " + err);
-    }
-  };
-
+  // Add a logout function for the context
   const logout = async () => {
-    const auth = getAuth(app);
     await signOut(auth);
+    setCurrentUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ currentUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export function useAuth() {
+  return useContext(AuthContext);
+}
