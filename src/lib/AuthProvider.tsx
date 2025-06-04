@@ -1,20 +1,17 @@
 // src/lib/AuthProvider.tsx
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User as FirebaseUser, onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebaseClient";
 import { User } from "./types";
 
 type AuthContextType = {
   currentUser: User | null;
-  logout: () => Promise<void>;
+  // Add signInWithGoogle, logout, etc., as needed
 };
 
-const AuthContext = createContext<AuthContextType>({
-  currentUser: null,
-  logout: async () => {}, // default empty async fn
-});
+const AuthContext = createContext<AuthContextType>({ currentUser: null });
 
-export function AuthProvider({ children }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -33,14 +30,8 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  // Add a logout function for the context
-  const logout = async () => {
-    await signOut(auth);
-    setCurrentUser(null);
-  };
-
   return (
-    <AuthContext.Provider value={{ currentUser, logout }}>
+    <AuthContext.Provider value={{ currentUser }}>
       {children}
     </AuthContext.Provider>
   );
