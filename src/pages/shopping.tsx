@@ -1,98 +1,136 @@
 // src/pages/shopping.tsx
 
-import { useState } from "react";
-import BottomTabBar from "@/components/BottomTabBar"; 
-
-const filters = ["All", "Made in America", "Made in Australia", "Sustainable"];
-
-const vendors = [
-  {
-    name: "Amazon",
-    logo: "/logos/amazon.png",
-    link: "https://www.amazon.com/",
-    tags: ["All", "Made in America", "Sustainable", "Made in Australia"], // Added Australia
-  },
-  {
-    name: "Walmart",
-    logo: "/logos/walmart.png",
-    link: "https://www.walmart.com/",
-    tags: ["All", "Made in America"],
-  },
-  {
-    name: "Target",
-    logo: "/logos/target.png",
-    link: "https://www.target.com/",
-    tags: ["All", "Sustainable"],
-  },
-  // Add more vendors as needed!
-];
+import React from "react";
+import Link from "next/link";
+import { ShoppingBag, Star, Leaf, Flag, BadgeCheck } from "lucide-react";
 
 export default function ShoppingPage() {
-  const [selectedFilter, setFilter] = useState("All");
-  const filteredVendors =
-    selectedFilter === "All"
-      ? vendors
-      : vendors.filter((v) => v.tags.includes(selectedFilter));
-
   return (
-    <>
-      <main className="min-h-screen bg-black text-white flex flex-col items-center px-3 pb-12 font-sans">
-        {/* Logo at the top */}
-        <img
-          src="/logos/logo.png"
-          alt="RewmoAI Logo"
-          className="h-12 w-auto mt-6 mb-2"
-          style={{ maxWidth: 120 }}
-        />
+    <main className="min-h-screen bg-[#003B49] px-4 pb-16 flex flex-col items-center">
+      {/* Header */}
+      <h1 className="text-3xl md:text-4xl font-extrabold mt-10 mb-2 text-[#FF9151] text-center drop-shadow">
+        Shop &amp; Earn with RewmoAI
+      </h1>
+      <p className="max-w-2xl text-center mb-8 text-[#C2E9FA] text-lg font-medium">
+        Discover <span className="text-[#15C5C1] font-bold">curated brands</span> and products that earn you more rewards. 
+        Support American-made and sustainable choices while building your wealth—automatically.
+      </p>
 
-        {/* Headline */}
-        <h1 className="text-xl md:text-2xl font-semibold mb-1 mt-2 text-white tracking-tight text-center">
-          Shopping Rewards
-        </h1>
-        <p className="text-sm md:text-base text-gray-300 mb-3 text-center max-w-md">
-          Rewmo helps you earn rewards on products that match your values and lifestyle.<br />
-          Use the filters to shop <b>Made in America</b>, <b>Made in Australia</b>, or <b>Sustainable</b> picks!
+      {/* Announcement / Demo */}
+      <div className="bg-[#ff8c4214] border border-dashed border-[#FF9151] rounded-xl px-6 py-3 mb-8 w-full max-w-xl text-center">
+        <span className="text-[#FF9151] font-bold flex items-center justify-center gap-2">
+          <ShoppingBag className="w-5 h-5" />
+          Shopping Demo LIVE!
+        </span>
+        <p className="text-[#C2E9FA] text-sm mt-1">
+          For the beta, shopping links are for demonstration only. All purchases made via RewmoAI during testing <span className="text-[#15C5C1] font-semibold">earn bonus rewards</span> and special streaks.
         </p>
+      </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2 justify-center mb-4">
-          {filters.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                selectedFilter === f ? "bg-orange-500 text-white" : "bg-gray-900 text-gray-200"
-              } transition`}
-              style={{ minWidth: 95 }}
-            >
-              {f}
-            </button>
-          ))}
+      {/* Shopping Categories */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-7 w-full max-w-3xl">
+        {/* Trending */}
+        <div className="bg-[#004F5B] rounded-xl shadow-lg p-6 flex flex-col gap-2 border border-[#FF9151]/25">
+          <Star className="w-7 h-7 text-[#FF9151]" />
+          <h2 className="font-bold text-lg text-[#FF9151]">Trending Offers</h2>
+          <ul className="mt-2 text-[#C2E9FA] text-sm space-y-1">
+            <li>
+              <Link href="https://amazon.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Amazon Best Sellers
+              </Link>{" "}
+              <span className="text-[#15C5C1] font-semibold">(2x Rewards)</span>
+            </li>
+            <li>
+              <Link href="https://walmart.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Walmart Weekly Deals
+              </Link>
+            </li>
+            <li>
+              <Link href="https://bestbuy.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Best Buy Top Tech
+              </Link>
+            </li>
+          </ul>
         </div>
+        {/* Made in America */}
+        <div className="bg-[#004F5B] rounded-xl shadow-lg p-6 flex flex-col gap-2 border border-[#15C5C1]/25">
+          <Flag className="w-7 h-7 text-[#15C5C1]" />
+          <h2 className="font-bold text-lg text-[#15C5C1]">Made in America</h2>
+          <ul className="mt-2 text-[#C2E9FA] text-sm space-y-1">
+            <li>
+              <Link href="https://madeinamericastore.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Made in America Store
+              </Link>
+            </li>
+            <li>
+              <Link href="https://llbean.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                L.L.Bean
+              </Link>
+            </li>
+            <li>
+              <Link href="https://newbalance.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                New Balance
+              </Link>
+            </li>
+          </ul>
+          <p className="text-xs mt-2 text-[#15C5C1] font-semibold">Extra points on every American-made purchase!</p>
+        </div>
+        {/* Sustainable Shopping */}
+        <div className="bg-[#004F5B] rounded-xl shadow-lg p-6 flex flex-col gap-2 border border-[#FF9151]/25">
+          <Leaf className="w-7 h-7 text-[#FF9151]" />
+          <h2 className="font-bold text-lg text-[#FF9151]">Sustainable Choices</h2>
+          <ul className="mt-2 text-[#C2E9FA] text-sm space-y-1">
+            <li>
+              <Link href="https://patagonia.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Patagonia
+              </Link>
+            </li>
+            <li>
+              <Link href="https://allbirds.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Allbirds
+              </Link>
+            </li>
+            <li>
+              <Link href="https://grovecollaborative.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Grove Collaborative
+              </Link>
+            </li>
+          </ul>
+          <p className="text-xs mt-2 text-[#15C5C1] font-semibold">Choose eco-friendly brands and earn!</p>
+        </div>
+        {/* VIP & Featured Brands */}
+        <div className="bg-[#004F5B] rounded-xl shadow-lg p-6 flex flex-col gap-2 border border-[#15C5C1]/25">
+          <BadgeCheck className="w-7 h-7 text-[#15C5C1]" />
+          <h2 className="font-bold text-lg text-[#15C5C1]">VIP &amp; Featured Brands</h2>
+          <ul className="mt-2 text-[#C2E9FA] text-sm space-y-1">
+            <li>
+              <Link href="https://apple.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Apple Store
+              </Link>
+            </li>
+            <li>
+              <Link href="https://nike.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Nike
+              </Link>
+            </li>
+            <li>
+              <Link href="https://costco.com" target="_blank" className="underline hover:text-[#FFA36C]">
+                Costco
+              </Link>
+            </li>
+          </ul>
+          <p className="text-xs mt-2 text-[#C2E9FA]">Top picks for value, rewards, and service.</p>
+        </div>
+      </div>
 
-        {/* Vendor Logos */}
-        <div className="flex flex-wrap gap-6 justify-center py-2 w-full max-w-md">
-          {filteredVendors.map((vendor) => (
-            <a
-              href={vendor.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              key={vendor.name}
-              className="flex flex-col items-center hover:scale-105 transition"
-              style={{ minWidth: 90, minHeight: 90 }}
-            >
-              <img
-                src={vendor.logo}
-                alt={vendor.name}
-                className="h-14 w-14 object-contain mb-1 rounded-lg shadow border border-gray-700 bg-white"
-                style={{ background: "#fff" }}
-              />
-              <span className="text-xs text-gray-300">{vendor.name}</span>
-            </a>
-          ))}
-        </div>
-      </main>
-      <BottomTabBar />
-    </>
+      {/* Call to Action */}
+      <div className="mt-12 text-center">
+        <Link href="/rewards">
+          <button className="px-8 py-3 bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold rounded-2xl shadow-lg text-lg transition">
+            See Your Rewards
+          </button>
+        </Link>
+      </div>
+    </main>
   );
 }
