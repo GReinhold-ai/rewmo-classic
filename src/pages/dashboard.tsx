@@ -1,183 +1,94 @@
-import React, { useEffect, useState } from "react";
-import { useAuth } from "@/lib/AuthProvider";
+// src/components/ShareReferralCard.tsx
+import React, { useState } from "react";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
-import { doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
-import BottomTabBar from "@/components/BottomTabBar";
-// import SuggestionForm from "@/components/SuggestionForm"; // Uncomment if you have this component
+import { UserPlus, Share2 } from "lucide-react";
 
-const REFERRAL_BONUS_MILESTONES = [5, 10, 25, 50, 100];
-const BONUS_POINTS = 1000;
+export default function ShareReferralCard({ referralLink, userId }: { referralLink: string; userId: string }) {
+  const [shareError, setShareError] = useState<string | null>(null);
+  const shareMsg = `Join RewmoAI and earn rewards for shopping, rent, and referrals! Use my link: ${referralLink}`;
 
-export default function DashboardPage() {
-  const { currentUser, logout } = useAuth();
-  const [referralCount, setReferralCount] = useState<number>(0);
-  const [bonusUnlocked, setBonusUnlocked] = useState(false);
-  const [points, setPoints] = useState<number>(0);
-  const [copied, setCopied] = useState(false);
-
-  const inviteLink = currentUser
-    ? `https://rewmo.ai/?ref=${currentUser.uid}`
-    : "";
-
-  // Fetch user data
-  useEffect(() => {
-    async function fetchUserData() {
-      if (currentUser) {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        const data = userDoc.data() || {};
-        setReferralCount(data.referralCount || 0);
-        setPoints(data.points || 0);
-      }
-    }
-    fetchUserData();
-  }, [currentUser]);
-
-  // Bonus milestone UI feedback
-  useEffect(() => {
-    if (REFERRAL_BONUS_MILESTONES.includes(referralCount)) {
-      setBonusUnlocked(true);
-      setTimeout(() => setBonusUnlocked(false), 3000);
-    }
-  }, [referralCount]);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(inviteLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  };
-
-  // Simulate referral for demo (REMOVE in prod)
-  const simulateReferral = async () => {
-    if (!currentUser) return;
-    const userRef = doc(db, "users", currentUser.uid);
-    await runTransaction(db, async (transaction) => {
-      const snap = await transaction.get(userRef);
-      if (!snap.exists()) return;
-      const prevCount = snap.data()?.referralCount || 0;
-      const newCount = prevCount + 1;
-      let bonus = 0;
-      if (REFERRAL_BONUS_MILESTONES.includes(newCount)) {
-        bonus = BONUS_POINTS;
-      }
-      transaction.update(userRef, {
-        referralCount: newCount,
-        ...(bonus ? { points: (snap.data()?.points || 0) + bonus } : {}),
-        lastReferral: serverTimestamp(),
-      });
+  async function logShare(channel: string) {
+    if (!userId) return;
+    await updateDoc(doc(db, "users", userId), {
+      shares: arrayUnion({ channel, timestamp: Date.now() }),
     });
-    const userDoc = await getDoc(userRef);
-    setReferralCount(userDoc.data()?.referralCount || 0);
-    setPoints(userDoc.data()?.points || 0);
-  };
+  }
+
+  async function handleWebShare() {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Join RewmoAI", text: shareMsg, url: referralLink });
+        await logShare("webshare");
+      } else {
+        setShareError("Sharing not supported in your browser.");
+      }
+    } catch (e) {
+      setShareError("Share canceled or failed.");
+    }
+  }
+
+  function handleSocialShare(channel: string) {
+    let url = "";
+    if (channel === "x") url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareMsg)}`;
+    if (channel === "whatsapp") url = `https://wa.me/?text=${encodeURIComponent(shareMsg)}`;
+    if (channel === "email") url = `mailto:?subject=Earn%20rewards%20with%20RewmoAI!&body=${encodeURIComponent(shareMsg)}`;
+    if (url) window.open(url, "_blank");
+    logShare(channel);
+  }
 
   return (
-    <>
-      <main className="min-h-screen bg-black text-white flex flex-col items-center px-4 pb-16 pt-8">
-        {/* Logo */}
-        <img src="/logos/logo.png" alt="RewmoAI Logo" className="h-12 mb-4" />
-
-        <h1 className="text-3xl font-bold text-orange-500 mb-2">RewmoAI Dashboard</h1>
-        <div className="mb-4 text-gray-300 text-center max-w-md">
-          Your hub for rewards, referrals, and account stats.
-        </div>
-
-        {currentUser ? (
-          <>
-            <div className="w-full max-w-md mb-4">
-              <div className="bg-gray-900/60 p-4 rounded-xl shadow text-center">
-                <span className="font-medium text-gray-200">Welcome, </span>
-                <span className="font-semibold text-orange-400">{currentUser.email}</span>
-                <button
-                  onClick={logout}
-                  className="ml-4 px-2 py-1 rounded bg-orange-500 text-white text-xs"
-                >
-                  Sign Out
-                </button>
-              </div>
-            </div>
-
-            {/* Referrals */}
-            <div className="w-full max-w-md mb-4 bg-orange-50/90 p-4 rounded-xl shadow text-center">
-              <h3 className="font-bold text-orange-700 mb-2">Invite Friends & Earn Rewards</h3>
-              <div className="flex flex-col md:flex-row items-center gap-2 justify-center">
-                <input
-                  value={inviteLink}
-                  readOnly
-                  className="w-full max-w-xs px-2 py-1 rounded border border-gray-300 text-sm bg-gray-100 text-gray-700"
-                />
-                <button
-                  onClick={handleCopy}
-                  className="ml-0 md:ml-2 mt-2 md:mt-0 px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
-                >
-                  {copied ? "Copied!" : "Copy"}
-                </button>
-              </div>
-              <p className="text-xs mt-2 text-gray-500">
-                Share your link. Earn bonus points for each friend who joins!
-              </p>
-            </div>
-
-            {/* Referral stats & bonus */}
-            <div className="mb-6 w-full max-w-md text-center">
-              <div className="flex flex-col gap-2 md:flex-row items-center justify-center">
-                <span className="text-base font-semibold text-orange-500">
-                  Referrals: {referralCount}
-                </span>
-                <span className="text-base font-semibold text-orange-300 md:ml-8">
-                  Reward Points: {points}
-                </span>
-              </div>
-              {bonusUnlocked && (
-                <div className="mt-3 px-4 py-2 rounded bg-green-200 text-green-800 font-semibold text-sm animate-bounce">
-                  🎉 Bonus Unlocked! +{BONUS_POINTS} Points!
-                </div>
-              )}
-            </div>
-
-            {/* Simulate referral for testing */}
-            <div className="w-full max-w-md text-center">
-              <button
-                className="px-4 py-1 rounded bg-blue-600 text-white text-sm mb-2"
-                onClick={simulateReferral}
-              >
-                Simulate Referral (for testing)
-              </button>
-              <p className="text-xs text-gray-400 mb-2">
-                <em>Remove this button in production!</em>
-              </p>
-            </div>
-
-            {/* Account Overview */}
-            <section className="mb-8 w-full flex flex-col items-center">
-              <div className="bg-white rounded-xl shadow p-6 mb-6 text-black w-full">
-                <h2 className="text-lg font-semibold text-gray-800 mb-2 text-center">
-                  Your Account Overview
-                </h2>
-                <div className="text-gray-600 text-center">
-                  Account stats and latest activities will show here.
-                </div>
-              </div>
-            </section>
-
-            {/* Uncomment if you have a SuggestionForm */}
-            {/* <section className="w-full flex flex-col items-center">
-              <h2 className="text-lg font-semibold mb-2 text-orange-700 text-center">
-                Have an idea or feedback?
-              </h2>
-              {currentUser?.uid ? (
-                <SuggestionForm userId={currentUser.uid} />
-              ) : (
-                <div className="text-gray-500 text-center">Sign in to submit suggestions.</div>
-              )}
-            </section> */}
-          </>
-        ) : (
-          <div className="bg-red-100 text-red-700 px-6 py-3 rounded-lg mt-10">
-            Please sign in to access your dashboard.
-          </div>
-        )}
-      </main>
-      <BottomTabBar />
-    </>
+    <div className="w-full max-w-md mx-auto bg-white/80 shadow-2xl rounded-2xl p-6 mb-6 border border-orange-200">
+      <div className="flex items-center gap-3 mb-2">
+        <Share2 className="w-7 h-7 text-orange-500" />
+        <h2 className="text-xl font-bold text-orange-700">Share Your Referral Link</h2>
+      </div>
+      <p className="text-gray-700 mb-4">
+        Invite friends to RewmoAI! Get <span className="font-semibold text-orange-600">bonus rewards</span> every time someone joins with your link.
+      </p>
+      <div className="flex flex-col md:flex-row items-center gap-2 mb-4">
+        <input
+          readOnly
+          className="w-full font-mono text-sm bg-orange-100 border border-orange-300 rounded-md px-3 py-2"
+          value={referralLink}
+        />
+        <button
+          onClick={() => { navigator.clipboard.writeText(referralLink); }}
+          className="ml-0 md:ml-2 mt-2 md:mt-0 px-4 py-2 bg-orange-400 hover:bg-orange-500 text-white font-semibold rounded-lg transition"
+        >
+          Copy
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-2">
+        <button
+          onClick={handleWebShare}
+          className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg font-semibold"
+        >
+          Share on Device
+        </button>
+        <button
+          onClick={() => handleSocialShare("x")}
+          className="flex-1 bg-blue-900 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold"
+        >
+          X
+        </button>
+        <button
+          onClick={() => handleSocialShare("whatsapp")}
+          className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold"
+        >
+          WhatsApp
+        </button>
+        <button
+          onClick={() => handleSocialShare("email")}
+          className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg font-semibold"
+        >
+          Email
+        </button>
+      </div>
+      {shareError && <p className="text-red-500 text-sm mt-2">{shareError}</p>}
+      <p className="mt-2 text-gray-500 text-xs text-center">
+        Track your shares and referrals in your dashboard. <UserPlus className="inline w-4 h-4" />
+      </p>
+    </div>
   );
 }
