@@ -1,20 +1,30 @@
-// src/lib/AuthProvider.tsx
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User as FirebaseUser, onAuthStateChanged, signOut } from "firebase/auth";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { User as FirebaseUser, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
 import { auth } from "./firebaseClient";
-import { User } from "./types"; // adjust if needed
+
+type User = {
+  uid: string;
+  email?: string;
+  displayName?: string;
+  photoURL?: string;
+  referralCode?: string;
+};
 
 type AuthContextType = {
   currentUser: User | null;
-  logout: () => Promise<void>;
+  logout: () => void;
+  signInWithGoogle: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
   logout: async () => {},
+  signInWithGoogle: async () => {},
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+type AuthProviderProps = { children: React.ReactNode };
+
+export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -33,14 +43,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // Add the logout function!
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+    // No need to set user here; onAuthStateChanged handles it
+  };
+
   const logout = async () => {
     await signOut(auth);
     setCurrentUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, logout }}>
+    <AuthContext.Provider value={{ currentUser, logout, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );

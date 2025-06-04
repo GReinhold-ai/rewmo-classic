@@ -38,7 +38,7 @@ export default function Support() {
         </button>
         {submitted && (
           <p className="text-green-600 text-sm mt-2">
-            Thank you for reaching out! We'll get back to you soon.
+            Thank you for reaching out! We&apos;ll get back to you soon.
           </p>
         )}
       </form>
