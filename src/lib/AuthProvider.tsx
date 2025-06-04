@@ -2,14 +2,17 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User as FirebaseUser, onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebaseClient";
-import { User } from "./types";
+import { User } from "./types"; // adjust if needed
 
 type AuthContextType = {
   currentUser: User | null;
-  // Add signInWithGoogle, logout, etc., as needed
+  logout: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType>({ currentUser: null });
+const AuthContext = createContext<AuthContextType>({
+  currentUser: null,
+  logout: async () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -30,8 +33,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  // Add the logout function!
+  const logout = async () => {
+    await signOut(auth);
+    setCurrentUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ currentUser }}>
+    <AuthContext.Provider value={{ currentUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
