@@ -1,55 +1,48 @@
 import React, { useState } from "react";
+import { useChatCompletion } from "@/lib/useChatCompletion";
 import { Hammer, Zap } from "lucide-react";
-import { useChatCompletion } from "@/lib/useChatCompletion"; // Replace with your OpenAI logic
 
 export default function FlowchartingModule() {
   const [input, setInput] = useState("");
   const [aiOutput, setAiOutput] = useState("");
   const [loading, setLoading] = useState(false);
+  const { response, sendPrompt } = useChatCompletion();
 
-  const handlePrompt = async () => {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setLoading(true);
-    // Replace with your own prompt/AI integration!
     const prompt = `Act as a process consultant. User described: "${input}". Generate a simple step-by-step flowchart with bullet points.`;
-    const aiResponse = await useChatCompletion(prompt); // This is your OpenAI call
-    setAiOutput(aiResponse || "AI couldn't generate a flowchart.");
+    await sendPrompt(prompt);
     setLoading(false);
-  };
+    setAiOutput(response || "AI couldn't generate a flowchart."); // For the demo version, response updates after render
+  }
 
   return (
-    <main className="min-h-screen bg-[#003B49] text-[#15C5C1] py-10 px-4">
-      <div className="max-w-2xl mx-auto bg-[#072b33] rounded-xl shadow-lg p-8">
-        <div className="flex items-center mb-2 gap-2">
-          <Hammer className="w-6 h-6 text-[#FF9151]" />
-          <h1 className="text-2xl font-bold text-[#FF9151]">Module: Flowcharting for Everyday Efficiency</h1>
-        </div>
-        <p className="mb-4 text-[#F7F6F2]">
-          Visualize your routines, find bottlenecks, and get everyone on the same page. Use this module to map any process—personal or business. 
-        </p>
-        <h2 className="text-lg font-semibold mb-2">Try it now:</h2>
-        <textarea
-          className="w-full border rounded p-2 mb-2 text-black"
-          placeholder="Describe a process to map (e.g. 'My morning routine', 'Customer onboarding', etc.)"
+    <main className="min-h-screen bg-[#003B49] text-[#15C5C1] flex flex-col items-center py-10">
+      <h1 className="text-2xl font-bold mb-3 flex items-center gap-2">
+        <Hammer /> Process Flowcharting <Zap className="text-[#FF9151]" />
+      </h1>
+      <form onSubmit={handleSubmit} className="w-full max-w-md bg-[#072b33] p-6 rounded-xl shadow mb-4 flex flex-col gap-3">
+        <label className="font-semibold text-[#FF9151]">Describe your process or goal:</label>
+        <input
+          className="rounded p-2 bg-[#003B49] text-[#15C5C1] border border-[#FF9151]/40 focus:ring-[#FF9151] focus:ring-2 outline-none"
           value={input}
           onChange={e => setInput(e.target.value)}
-          rows={2}
+          placeholder="E.g., Onboard new clients"
         />
         <button
-          onClick={handlePrompt}
-          className="bg-[#FF9151] text-[#003B49] font-bold px-4 py-2 rounded-xl shadow hover:bg-[#FFA36C] transition"
-          disabled={loading || !input.trim()}
+          type="submit"
+          disabled={loading || !input}
+          className="mt-2 py-2 px-4 rounded bg-[#FF9151] text-[#003B49] font-bold hover:bg-[#FFA36C] disabled:opacity-60"
         >
-          {loading ? "Thinking..." : "AI: Generate My Flowchart"}
+          {loading ? "Generating..." : "Generate Flowchart"}
         </button>
-        {aiOutput && (
-          <div className="mt-4 bg-[#003B49] border border-[#15C5C1] rounded-xl p-4 text-[#F7F6F2] whitespace-pre-line shadow">
-            <strong className="text-[#FF9151]">AI Suggestion:</strong>
-            <div>{aiOutput}</div>
-          </div>
-        )}
-        <div className="mt-6 text-xs text-[#F7F6F2]/80">
-          Practice: Create a flowchart for your own routine and save it to your profile!
-        </div>
+      </form>
+      <div className="w-full max-w-lg bg-[#072b33] rounded-lg shadow px-6 py-4 min-h-[120px]">
+        <h2 className="font-semibold mb-1 text-[#15C5C1]">AI Output:</h2>
+        <pre className="whitespace-pre-wrap text-[#B6E7EB] text-sm">
+          {aiOutput || "Enter a process and click Generate to see your AI-powered flowchart."}
+        </pre>
       </div>
     </main>
   );

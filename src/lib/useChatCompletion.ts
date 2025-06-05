@@ -6,7 +6,7 @@ export function useChatCompletion() {
 
   // This just returns a canned response for demo purposes.
   const sendPrompt = async (prompt: string) => {
-    setResponse("AI (demo): " + prompt);
+    setResponse("AI (demo):\n• Step 1: Define the goal\n• Step 2: ...etc\n\n(You entered: " + prompt + ")");
   };
 
   return { response, sendPrompt };
