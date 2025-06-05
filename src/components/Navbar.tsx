@@ -1,3 +1,5 @@
+// src/components/Navbar.tsx
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -14,6 +16,7 @@ const navLinks = [
   { href: "/features", label: "Features" },
   { href: "/shopping", label: "Shopping" },
   { href: "/rewards", label: "Rewards" },
+  { href: "/learning-lab/intro", label: "Learning Lab" }, // NEW
   { href: "/dashboard", label: "Dashboard" },
 ];
 
@@ -29,12 +32,12 @@ export default function Navbar() {
   const isActive = (href: string) => router.pathname === href;
 
   return (
-    <nav className="w-full bg-black text-white shadow px-4 py-2 flex items-center justify-between z-30 relative">
+    <nav className="w-full bg-[#003B49] text-[#15C5C1] shadow px-4 py-2 flex items-center justify-between z-30 relative">
       {/* Logo */}
       <div className="flex items-center gap-3">
         <Link href="/" className="flex items-center gap-2">
-          <img src="/logos/logo.png" alt="RewmoAI" className="h-9 w-9 rounded-full border border-orange-500" />
-          <span className="font-bold text-lg tracking-tight text-orange-400">RewmoAI</span>
+          <img src="/logos/logo.png" alt="RewmoAI" className="h-9 w-9 rounded-full border border-[#FF9151]" />
+          <span className="font-bold text-lg tracking-tight text-[#FF9151]">RewmoAI</span>
         </Link>
       </div>
 
@@ -44,23 +47,23 @@ export default function Navbar() {
           <Link
             key={link.href}
             href={link.href}
-            className={`font-medium hover:text-orange-400 transition ${
-              isActive(link.href) ? "text-orange-400 underline" : ""
+            className={`font-medium hover:text-[#FFA36C] transition ${
+              isActive(link.href) ? "text-[#FFA36C] underline" : ""
             }`}
           >
             {link.label}
           </Link>
         ))}
         {isAdmin && (
-          <Link href="/admin" className="font-medium hover:text-orange-500 transition">
+          <Link href="/admin" className="font-medium hover:text-[#15C5C1] transition">
             Admin
           </Link>
         )}
-        <span className="ml-4 text-sm text-gray-200">{currentUser?.email}</span>
+        <span className="ml-4 text-sm text-[#B6E7EB]">{currentUser?.email}</span>
         {currentUser && (
           <button
             onClick={logout}
-            className="ml-2 px-3 py-1 rounded bg-orange-500 hover:bg-orange-600 text-white text-sm"
+            className="ml-2 px-3 py-1 rounded bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] text-sm"
           >
             Sign Out
           </button>
@@ -80,14 +83,14 @@ export default function Navbar() {
 
       {/* Mobile Dropdown Menu */}
       {mobileOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-black border-t border-gray-800 shadow-lg z-40 animate-fade-in">
+        <div className="md:hidden absolute top-full left-0 w-full bg-[#003B49] border-t border-[#15C5C1]/40 shadow-lg z-40 animate-fade-in">
           <div className="flex flex-col items-start px-6 py-4 gap-3">
             {navLinks.map(link => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`font-medium w-full py-1 hover:text-orange-400 transition ${
-                  isActive(link.href) ? "text-orange-400 underline" : ""
+                className={`font-medium w-full py-1 hover:text-[#FFA36C] transition ${
+                  isActive(link.href) ? "text-[#FFA36C] underline" : ""
                 }`}
                 onClick={() => setMobileOpen(false)}
               >
@@ -97,21 +100,21 @@ export default function Navbar() {
             {isAdmin && (
               <Link
                 href="/admin"
-                className="font-medium w-full py-1 hover:text-orange-500 transition"
+                className="font-medium w-full py-1 hover:text-[#15C5C1] transition"
                 onClick={() => setMobileOpen(false)}
               >
                 Admin
               </Link>
             )}
             <div className="flex items-center w-full mt-3">
-              <span className="text-sm text-gray-200 flex-1">{currentUser?.email}</span>
+              <span className="text-sm text-[#B6E7EB] flex-1">{currentUser?.email}</span>
               {currentUser && (
                 <button
                   onClick={() => {
                     setMobileOpen(false);
                     logout();
                   }}
-                  className="ml-2 px-3 py-1 rounded bg-orange-500 hover:bg-orange-600 text-white text-sm"
+                  className="ml-2 px-3 py-1 rounded bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] text-sm"
                 >
                   Sign Out
                 </button>
