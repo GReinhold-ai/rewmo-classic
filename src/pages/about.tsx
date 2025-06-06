@@ -6,12 +6,22 @@ export default function AboutPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#003B49] font-sans">
       <main className="flex-1 flex flex-col items-center px-2 py-12">
-        <Image src="/logos/logo.png" alt="RewmoAI Logo" width={70} height={70} className="mb-3 mx-auto rounded-full border-2 border-[#FF9151]" />
-        <h1 className="text-3xl md:text-5xl font-black mb-6 text-[#FF9151] tracking-tight text-center">About RewmoAI</h1>
+        <Image
+          src="/logos/logo.png"
+          alt="RewmoAI Logo"
+          width={120} // Doubled the logo size
+          height={120}
+          className="mb-3 mx-auto rounded-full border-2 border-[#FF9151]"
+        />
+        <h1 className="text-3xl md:text-5xl font-black mb-6 text-[#FF9151] tracking-tight text-center">
+          About RewmoAI
+        </h1>
         <section className="max-w-2xl bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] p-8 mb-10">
           <h2 className="text-2xl font-bold mb-2 text-[#15C5C1]">Our Vision</h2>
           <p className="text-lg text-[#B6E7EB] mb-6">
-            <span className="font-bold text-[#FF9151]">To empower everyone—individuals, families, and small businesses—to unlock hidden value in everyday spending and daily routines, making smarter, more sustainable financial choices accessible to all.</span>
+            <span className="font-bold text-[#FF9151]">
+              To empower everyone—individuals, families, and small businesses—to unlock hidden value in everyday spending and daily routines, making smarter, more sustainable financial choices accessible to all.
+            </span>
           </p>
           <h2 className="text-2xl font-bold mb-2 text-[#15C5C1]">Our Mission</h2>
           <p className="text-lg text-[#B6E7EB] mb-6">
@@ -53,7 +63,10 @@ export default function AboutPage() {
           <p className="text-[#B6E7EB] mb-2">
             RewmoAI was built for you—by people who believe everyone should have a path to smarter money and better results.
           </p>
-          <Link href="/contact" className="text-[#15C5C1] font-semibold underline hover:text-[#FFA36C] text-lg">
+          <Link
+            href="/team"
+            className="text-[#15C5C1] font-semibold underline hover:text-[#FFA36C] text-lg"
+          >
             Meet the team &gt;
           </Link>
         </div>

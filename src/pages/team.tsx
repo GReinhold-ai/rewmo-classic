@@ -11,9 +11,9 @@ export default function MeetTheTeamPage() {
         <Image
           src="/team/gary.png"
           alt="Gary Reinhold, Founder & CEO of RewmoAI"
-          width={120}
-          height={120}
-          className="rounded-full mb-6 border-4 border-[#15C5C1] shadow-lg"
+          width={140}
+          height={140}
+          className="rounded-full mb-6 border-4 border-[#FF9151] shadow-xl"
         />
         <h1 className="text-2xl md:text-3xl font-extrabold text-[#FF9151] mb-2">
           Gary Reinhold
