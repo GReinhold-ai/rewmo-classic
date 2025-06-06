@@ -1,69 +1,7 @@
+// src/pages/features.tsx
+
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
-
-const features = [
-  {
-    title: "Affiliate Shopping Rewards",
-    status: "Live",
-    color: "#FF9151",
-    description:
-      "Earn instant rewards every time you shop, whether it's for yourself or your business. Get cash back on everything from groceries to office supplies, software, and more.",
-    icon: "/icons/shopping-cart.svg",
-    cta: "/shopping",
-    ctaLabel: "Shop & Earn",
-  },
-  {
-    title: "Business Rewards",
-    status: "Live",
-    color: "#15C5C1",
-    description:
-      "Small businesses and entrepreneurs: earn rewards on business purchases, SaaS subscriptions, supplies, and travel. Make every business dollar work harder.",
-    icon: "/icons/business.svg",
-    cta: "/shopping?tab=business",
-    ctaLabel: "See Business Offers",
-  },
-  {
-    title: "Lean Lab: Process Visualization",
-    status: "Live",
-    color: "#FFA36C",
-    description:
-      "Map out your daily routines and business processes visually. Instantly spot waste, improve quality, and save more with our guided flowchart tool.",
-    icon: "/icons/lean-lab.svg",
-    cta: "/lean-lab",
-    ctaLabel: "Try Lean Lab",
-  },
-  {
-    title: "Waste Tracker",
-    status: "Coming Soon",
-    color: "#FF9151",
-    description:
-      "Track recurring expenses, spot hidden waste, and get practical tips to save money at home and in your business.",
-    icon: "/icons/waste.svg",
-    cta: "",
-    ctaLabel: "",
-  },
-  {
-    title: "Improvement Sprints",
-    status: "Coming Soon",
-    color: "#15C5C1",
-    description:
-      "Set micro-goals and run quick savings challenges. Compete, learn, and watch your progress stack up.",
-    icon: "/icons/sprint.svg",
-    cta: "",
-    ctaLabel: "",
-  },
-  {
-    title: "AI-Powered Insights",
-    status: "Coming Soon",
-    color: "#FFA36C",
-    description:
-      "Let RewmoAI analyze your spending and routines to suggest smarter moves, personalized just for you.",
-    icon: "/icons/ai.svg",
-    cta: "",
-    ctaLabel: "",
-  },
-];
 
 export default function FeaturesPage() {
   return (
@@ -71,38 +9,91 @@ export default function FeaturesPage() {
       {/* Nav */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-[#072b33] bg-[#003B49]">
         <div className="flex items-center space-x-3">
-          <Image src="/logos/logo.png" alt="RewmoAI Logo" width={40} height={40} />
-          <span className="font-extrabold text-xl text-[#FF9151]">RewmoAI</span>
+          <img
+            src="/rewmo-logo.png"
+            alt="RewmoAI Logo"
+            className="h-10 w-auto"
+          />
+          <span className="text-[#FF9151] font-black text-2xl tracking-tight">
+            RewmoAI
+          </span>
         </div>
-        <nav className="space-x-5">
-          <Link href="/" className="text-[#15C5C1] hover:text-[#FFA36C] font-semibold hover:underline">Home</Link>
-          <Link href="/shopping" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Shopping</Link>
-          <Link href="/lean-lab" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Lean Lab</Link>
+        <nav className="space-x-6">
+          <Link href="/" className="text-[#15C5C1] font-semibold hover:underline">
+            Home
+          </Link>
+          <Link href="/features" className="text-[#FFA36C] font-bold underline">
+            Features
+          </Link>
+          <Link href="/lean-lab" className="text-[#15C5C1] font-semibold hover:underline">
+            LeanAI Lab
+          </Link>
+          <Link href="/about" className="text-[#15C5C1] font-semibold hover:underline">
+            About
+          </Link>
         </nav>
       </header>
 
-      <main className="flex-1 flex flex-col items-center px-4 py-12">
-        <h1 className="text-3xl md:text-5xl font-black mb-8 text-[#FF9151] tracking-tight text-center">
+      {/* Main */}
+      <main className="flex flex-col flex-1 items-center px-4 pt-8 pb-16">
+        <h1 className="text-4xl font-extrabold text-[#FF9151] mb-8 text-center">
           Features
         </h1>
-        <p className="max-w-2xl text-[#B6E7EB] text-lg mb-12 text-center">
-          Everything you need to earn more, save more, and work smarter—right from your phone.  
-          <span className="block text-[#15C5C1] text-base mt-2">
-            Live now, or launching soon.
-          </span>
-        </p>
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-          {features.map((f, i) => (
-            <div
-              key={i}
-              className="flex flex-col bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] p-6 relative overflow-hidden"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+          {/* Feature: Affiliate Shopping Rewards */}
+          <div className="bg-[#072b33] rounded-2xl shadow-md border border-[#15C5C1] p-6">
+            <h2 className="text-2xl font-bold text-[#FFA36C] mb-2">Affiliate Shopping Rewards</h2>
+            <p className="text-[#B6E7EB] mb-4">
+              Earn rewards for your personal and business shopping, both online and in-store. Get exclusive offers and maximize your savings with RewmoAI partner merchants.
+            </p>
+            <Link
+              href="/shopping"
+              className="inline-block bg-[#FF9151] text-[#003B49] px-5 py-2 rounded-xl font-bold hover:bg-[#FFA36C] transition"
             >
-              {/* Status badge */}
-              <div
-                className={`absolute right-6 top-6 text-xs px-3 py-1 rounded-full font-bold shadow ${
-                  f.status === "Live"
-                    ? "bg-[#FF9151] text-[#003B49]"
-                    : "bg-[#15C5C1] text-[#003B49] opacity-80"
-                }`}
-                style={f.status === "Coming Soon" ? { border: '1.5px solid #FFA36C' } : {}}
-              >
+              Shop & Earn
+            </Link>
+          </div>
+
+          {/* Feature: LeanAI Lab */}
+          <div className="bg-[#072b33] rounded-2xl shadow-md border border-[#15C5C1] p-6">
+            <h2 className="text-2xl font-bold text-[#FFA36C] mb-2">LeanAI Lab</h2>
+            <p className="text-[#B6E7EB] mb-4">
+              Your interactive toolkit for learning process management and quality improvement. Discover how to reduce waste, boost efficiency, and build great financial habits—powered by Total Quality Management.
+            </p>
+            <Link
+              href="/lean-lab"
+              className="inline-block bg-[#15C5C1] text-[#003B49] px-5 py-2 rounded-xl font-bold hover:bg-[#FFA36C] transition"
+            >
+              Try LeanAI Lab
+            </Link>
+          </div>
+
+          {/* Feature: Business Rewards */}
+          <div className="bg-[#072b33] rounded-2xl shadow-md border border-[#15C5C1] p-6">
+            <h2 className="text-2xl font-bold text-[#FFA36C] mb-2">Business Shopping Rewards</h2>
+            <p className="text-[#B6E7EB] mb-4">
+              Small businesses can now earn rewards on qualifying purchases and services. Boost your bottom line with cashback, bonuses, and tailored offers for your company.
+            </p>
+            <Link
+              href="/shopping?tab=business"
+              className="inline-block bg-[#FF9151] text-[#003B49] px-5 py-2 rounded-xl font-bold hover:bg-[#FFA36C] transition"
+            >
+              Business Rewards
+            </Link>
+          </div>
+
+          {/* Feature: More Coming Soon */}
+          <div className="bg-[#072b33] rounded-2xl shadow-md border border-[#15C5C1] p-6">
+            <h2 className="text-2xl font-bold text-[#FFA36C] mb-2">And More Coming Soon…</h2>
+            <p className="text-[#B6E7EB] mb-4">
+              We’re just getting started! Watch for new features like reward history, gamified goals, deeper AI automation, and financial education modules.
+            </p>
+            <span className="inline-block bg-[#FFA36C] text-[#003B49] px-5 py-2 rounded-xl font-bold cursor-default opacity-80">
+              Stay Tuned
+            </span>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
