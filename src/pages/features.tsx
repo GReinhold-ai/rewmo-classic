@@ -9,7 +9,7 @@ export default function FeaturesPage() {
           Features
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl w-full">
-          {/* Affiliate Shopping Rewards */}
+          {/* Shopping Rewards */}
           <div className="bg-[#072b33] rounded-2xl p-6 shadow-xl border border-[#15C5C1]">
             <h2 className="text-xl font-bold mb-3 text-[#FF9151]">Affiliate Shopping Rewards</h2>
             <p className="text-[#B6E7EB] mb-4">

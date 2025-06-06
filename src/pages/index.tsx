@@ -13,8 +13,8 @@ export default function LandingPage() {
         <Image
           src="/logos/logo.png" // Or "/rewmo-logo.png" if that's your correct file!
           alt="RewmoAI Logo"
-          width={90}
-          height={90}
+          width={160}
+          height={160}
           className="mb-4 rounded-2xl shadow-xl"
         />
         <h1 className="text-3xl md:text-4xl font-black text-[#FF9151] text-center mb-2">
