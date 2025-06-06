@@ -5,17 +5,13 @@ import Image from "next/image";
 export default function AboutPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#003B49] font-sans">
-      {/* NO custom header/nav here—let <Navbar /> from _app.tsx render! */}
-
-      {/* Main Content */}
       <main className="flex-1 flex flex-col items-center px-2 py-12">
+        <Image src="/logos/logo.png" alt="RewmoAI Logo" width={70} height={70} className="mb-3 mx-auto rounded-full border-2 border-[#FF9151]" />
         <h1 className="text-3xl md:text-5xl font-black mb-6 text-[#FF9151] tracking-tight text-center">About RewmoAI</h1>
         <section className="max-w-2xl bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] p-8 mb-10">
           <h2 className="text-2xl font-bold mb-2 text-[#15C5C1]">Our Vision</h2>
           <p className="text-lg text-[#B6E7EB] mb-6">
-            <span className="font-bold text-[#FF9151]">
-              To empower everyone—individuals, families, and small businesses—to unlock hidden value in everyday spending and daily routines, making smarter, more sustainable financial choices accessible to all.
-            </span>
+            <span className="font-bold text-[#FF9151]">To empower everyone—individuals, families, and small businesses—to unlock hidden value in everyday spending and daily routines, making smarter, more sustainable financial choices accessible to all.</span>
           </p>
           <h2 className="text-2xl font-bold mb-2 text-[#15C5C1]">Our Mission</h2>
           <p className="text-lg text-[#B6E7EB] mb-6">
@@ -45,8 +41,6 @@ export default function AboutPage() {
             </li>
           </ul>
         </section>
-
-        {/* Brand Promise/Closing */}
         <section className="max-w-xl text-center mb-8">
           <div className="inline-block bg-[#ff915114] rounded-2xl px-8 py-6 shadow">
             <h3 className="text-xl font-bold text-[#15C5C1] mb-2">The RewmoAI Promise</h3>
@@ -55,8 +49,6 @@ export default function AboutPage() {
             </p>
           </div>
         </section>
-
-        {/* Team/Founder CTA */}
         <div className="text-center mt-8">
           <p className="text-[#B6E7EB] mb-2">
             RewmoAI was built for you—by people who believe everyone should have a path to smarter money and better results.
@@ -66,8 +58,6 @@ export default function AboutPage() {
           </Link>
         </div>
       </main>
-
-      {/* Footer */}
       <footer className="text-[#F7F6F2] text-xs py-4 text-center border-t border-[#072b33] bg-[#003B49]">
         <span>
           © {new Date().getFullYear()} RewmoAI |{" "}
