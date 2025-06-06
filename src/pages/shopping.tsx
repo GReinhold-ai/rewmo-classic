@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-// ...same offer arrays as before...
 const personalOffers = [
   {
     logo: "/brands/amazon.png",
@@ -18,9 +17,30 @@ const personalOffers = [
     reward: "3% back",
     url: "https://www.walmart.com/",
   },
+  {
+    logo: "/brands/target.png",
+    title: "Target",
+    description: "Shop & earn instant cash back in-store and online.",
+    reward: "2% back",
+    url: "https://www.target.com/",
+  },
+  {
+    logo: "/brands/apple.png",
+    title: "Apple",
+    description: "Earn up to 4% back on Apple Store purchases.",
+    reward: "Up to 4% back",
+    url: "https://www.apple.com/",
+  },
 ];
 
 const businessOffers = [
+  {
+    logo: "/brands/amazon-business.png",
+    title: "Amazon Business",
+    description: "Up to 4% back on all business purchases.",
+    reward: "Up to 4% back",
+    url: "https://www.amazon.com/business",
+  },
   {
     logo: "/brands/office-depot.png",
     title: "Office Depot",
@@ -34,13 +54,6 @@ const businessOffers = [
     description: "Get $75 cash back on your first subscription.",
     reward: "$75 back",
     url: "https://quickbooks.intuit.com/",
-  },
-  {
-    logo: "/brands/amazon-business.png",
-    title: "Amazon Business",
-    description: "Up to 4% back on all business purchases.",
-    reward: "Up to 4% back",
-    url: "https://www.amazon.com/business",
   },
 ];
 
@@ -68,11 +81,11 @@ export default function ShoppingPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#003B49] font-sans">
-      {/* No custom header/nav here! */}
-
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center px-2 py-10">
-        <h1 className="text-2xl md:text-3xl font-black mb-7 text-[#FF9151] tracking-tight">Shopping Rewards</h1>
+      <main className="flex-1 flex flex-col items-center px-2 py-12">
+        <h1 className="text-3xl md:text-5xl font-black mb-6 text-[#FF9151] tracking-tight text-center">
+          Shopping Rewards
+        </h1>
 
         {/* Tabs */}
         <div className="flex space-x-2 mb-8 rounded-xl bg-[#072b33] p-2 border border-[#15C5C1] shadow">
@@ -102,7 +115,9 @@ export default function ShoppingPage() {
         <div className="w-full max-w-2xl">
           {tab === "personal" &&
             <>
-              <div className="mb-4 text-[#B6E7EB] text-base text-center">Shop for yourself and get instant rewards on popular brands.</div>
+              <div className="mb-4 text-[#B6E7EB] text-base text-center">
+                Shop for yourself and get instant rewards on popular brands.
+              </div>
               {personalOffers.map((offer, i) => (
                 <OfferCard key={i} offer={offer} />
               ))}
@@ -110,7 +125,9 @@ export default function ShoppingPage() {
           }
           {tab === "business" &&
             <>
-              <div className="mb-4 text-[#B6E7EB] text-base text-center">Earn rewards on business expenses—SaaS, supplies, travel & more.</div>
+              <div className="mb-4 text-[#B6E7EB] text-base text-center">
+                Earn rewards on business expenses—SaaS, supplies, travel & more.
+              </div>
               {businessOffers.map((offer, i) => (
                 <OfferCard key={i} offer={offer} />
               ))}
@@ -130,16 +147,6 @@ export default function ShoppingPage() {
           We may receive compensation when you shop through our affiliate partners. Rewards terms may vary by offer.
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="text-[#F7F6F2] text-xs py-4 text-center border-t border-[#072b33] bg-[#003B49]">
-        <span>
-          © {new Date().getFullYear()} RewmoAI |{" "}
-          <Link href="/affiliate-disclosure" className="underline hover:text-[#FFA36C] text-[#FF9151]">Affiliate Disclosure</Link> |{" "}
-          <Link href="/privacy" className="underline hover:text-[#FFA36C] text-[#FF9151]">Privacy</Link> |{" "}
-          <Link href="/terms" className="underline hover:text-[#FFA36C] text-[#FF9151]">Terms</Link>
-        </span>
-      </footer>
     </div>
   );
 }
