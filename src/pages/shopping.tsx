@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+// ...same offer arrays as before...
 const personalOffers = [
   {
     logo: "/brands/amazon.png",
@@ -67,18 +68,7 @@ export default function ShoppingPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#003B49] font-sans">
-      {/* Top Nav */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-[#072b33] bg-[#003B49]">
-        <div className="flex items-center space-x-3">
-          <Image src="/logos/logo.png" alt="RewmoAI Logo" width={40} height={40} />
-          <span className="font-extrabold text-xl text-[#FF9151]">RewmoAI</span>
-        </div>
-        <nav className="space-x-5">
-          <Link href="/" className="text-[#15C5C1] hover:text-[#FFA36C] font-semibold hover:underline">Home</Link>
-          <Link href="/lean-lab" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Lean Lab</Link>
-          <Link href="/profile" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Profile</Link>
-        </nav>
-      </header>
+      {/* No custom header/nav here! */}
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center px-2 py-10">
