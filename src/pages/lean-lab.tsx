@@ -5,19 +5,6 @@ import Image from "next/image";
 export default function LeanLabPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#003B49] font-sans">
-      {/* Nav */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-[#072b33] bg-[#003B49]">
-        <div className="flex items-center space-x-3">
-          <Image src="/logos/logo.png" alt="RewmoAI Logo" width={40} height={40} />
-          <span className="font-extrabold text-xl text-[#FF9151]">RewmoAI</span>
-        </div>
-        <nav className="space-x-5">
-          <Link href="/" className="text-[#15C5C1] hover:text-[#FFA36C] font-semibold hover:underline">Home</Link>
-          <Link href="/shopping" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Shopping</Link>
-          <Link href="/features" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Features</Link>
-        </nav>
-      </header>
-
       <main className="flex-1 flex flex-col items-center px-4 py-10">
         <h1 className="text-3xl md:text-5xl font-black mb-7 text-[#FF9151] tracking-tight text-center">
           LeanAI Lab
