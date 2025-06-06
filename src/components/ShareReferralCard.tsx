@@ -1,20 +1,16 @@
-// src/components/ShareReferralCard.tsx
 import React, { useState } from "react";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
-import { useAuth } from "@/lib/AuthProvider";
 import { UserPlus, Share2 } from "lucide-react";
+import { useAuth } from "@/lib/AuthProvider";
 
-export default function ShareReferralCard() {
-  const { currentUser, referralLink } = useAuth();
+export default function ShareReferralCard({ referralLink }: { referralLink: string }) {
+  const { currentUser } = useAuth();
   const [shareError, setShareError] = useState<string | null>(null);
-
-  if (!currentUser || !referralLink) return null; // Don't show if not signed in
-
   const shareMsg = `Join RewmoAI and earn rewards for shopping, rent, and referrals! Use my link: ${referralLink}`;
 
   async function logShare(channel: string) {
-    if (!currentUser.uid) return;
+    if (!currentUser || !currentUser.uid) return;
     await updateDoc(doc(db, "users", currentUser.uid), {
       shares: arrayUnion({ channel, timestamp: Date.now() }),
     });
