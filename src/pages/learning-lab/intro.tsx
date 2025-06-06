@@ -52,7 +52,7 @@ export default function LearningLabIntro() {
         </p>
         <div className="flex flex-col gap-2">
           <Link
-            href="/learning-lab/flowcharts"
+            href="/learlearning-laning-lab/flowcharts"
             className="block bg-[#15C5C1] hover:bg-[#13a7a3] text-[#003B49] font-bold py-3 rounded-xl text-center shadow-md transition"
           >
             Start: Module 1 – Flowcharts & Visualization

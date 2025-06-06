@@ -16,7 +16,7 @@ const navLinks = [
   { href: "/features", label: "Features" },
   { href: "/shopping", label: "Shopping" },
   { href: "/rewards", label: "Rewards" },
-  { href: "/learning-lab/intro", label: "Learning Lab" }, // NEW
+  { href: "/learningab-l/intro", label: "Learning Lab" }, // NEW
   { href: "/dashboard", label: "Dashboard" },
 ];
 
