@@ -1,5 +1,3 @@
-// src/components/Navbar.tsx
-
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -16,7 +14,7 @@ const navLinks = [
   { href: "/features", label: "Features" },
   { href: "/shopping", label: "Shopping" },
   { href: "/rewards", label: "Rewards" },
-  { href: "/learningab-l/intro", label: "Learning Lab" }, // NEW
+  { href: "/lean-lab", label: "LeanAI Lab" }, // THIS is correct
   { href: "/dashboard", label: "Dashboard" },
 ];
 
