@@ -5,18 +5,7 @@ import Image from "next/image";
 export default function AboutPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#003B49] font-sans">
-      {/* Top Nav */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-[#072b33] bg-[#003B49]">
-        <div className="flex items-center space-x-3">
-          <Image src="/logos/logo.png" alt="RewmoAI Logo" width={40} height={40} />
-          <span className="font-extrabold text-xl text-[#FF9151]">RewmoAI</span>
-        </div>
-        <nav className="space-x-5">
-          <Link href="/" className="text-[#15C5C1] hover:text-[#FFA36C] font-semibold hover:underline">Home</Link>
-          <Link href="/shopping" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Shopping</Link>
-          <Link href="/lean-lab" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Lean Lab</Link>
-        </nav>
-      </header>
+      {/* NO custom header/nav here—let <Navbar /> from _app.tsx render! */}
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center px-2 py-12">
@@ -24,7 +13,9 @@ export default function AboutPage() {
         <section className="max-w-2xl bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] p-8 mb-10">
           <h2 className="text-2xl font-bold mb-2 text-[#15C5C1]">Our Vision</h2>
           <p className="text-lg text-[#B6E7EB] mb-6">
-            <span className="font-bold text-[#FF9151]">To empower everyone—individuals, families, and small businesses—to unlock hidden value in everyday spending and daily routines, making smarter, more sustainable financial choices accessible to all.</span>
+            <span className="font-bold text-[#FF9151]">
+              To empower everyone—individuals, families, and small businesses—to unlock hidden value in everyday spending and daily routines, making smarter, more sustainable financial choices accessible to all.
+            </span>
           </p>
           <h2 className="text-2xl font-bold mb-2 text-[#15C5C1]">Our Mission</h2>
           <p className="text-lg text-[#B6E7EB] mb-6">
