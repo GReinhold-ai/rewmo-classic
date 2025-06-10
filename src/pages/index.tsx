@@ -1,10 +1,54 @@
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
+import { useAuth } from "@/lib/AuthProvider";
+
+function Navbar() {
+  const { currentUser, logout } = useAuth();
+
+  return (
+    <nav className="w-full bg-[#003B49] border-b border-[#072b33] px-4 py-3 flex items-center justify-between">
+      {/* Logo + Brand */}
+      <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/logos/logo.png" alt="Rewmo Logo" width={50} height={50} style={{ borderRadius: 0 }} />
+          <span className="text-[#FF9151] text-xl font-black ml-1">RewmoAI</span>
+        </Link>
+      </div>
+      {/* Nav Links */}
+      <div className="flex gap-5 items-center">
+        <Link href="/dashboard" className="text-white hover:text-[#15C5C1] font-semibold">Dashboard</Link>
+        <Link href="/features" className="text-white hover:text-[#15C5C1] font-semibold">Features</Link>
+        <Link href="/shopping" className="text-white hover:text-[#15C5C1] font-semibold">Shopping</Link>
+        <Link href="/rewards" className="text-white hover:text-[#15C5C1] font-semibold">Rewards</Link>
+        <Link href="/lean-lab" className="text-white hover:text-[#15C5C1] font-semibold">Lean Lab</Link>
+        {currentUser ? (
+          <>
+            <Link href="/profile" className="text-white hover:text-[#FF9151] font-semibold">Profile</Link>
+            <button
+              onClick={logout}
+              className="ml-2 bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold px-4 py-1 rounded transition"
+            >
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <Link
+            href="/signin"
+            className="ml-2 bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold px-4 py-1 rounded transition"
+          >
+            Sign In
+          </Link>
+        )}
+      </div>
+    </nav>
+  );
+}
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#003B49] flex flex-col items-center font-sans px-2">
+      <Navbar />
       {/* --- Centered Logo --- */}
       <div className="flex justify-center mt-8">
         <Image
@@ -82,7 +126,7 @@ export default function HomePage() {
         <p className="text-[#B6E7EB] mb-1">
           <span className="font-bold text-[#FF9151]">NEW:</span> AI-powered process improvement tools for individuals <b>and</b> small businesses. Map your routines, eliminate waste, and unlock continuous improvement.
         </p>
-        <Link href="/leanlab" className="underline text-[#15C5C1] font-semibold hover:text-[#FFA36C]">
+        <Link href="/lean-lab" className="underline text-[#15C5C1] font-semibold hover:text-[#FFA36C]">
           Learn about Lean Lab →
         </Link>
       </div>
