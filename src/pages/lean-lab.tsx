@@ -89,23 +89,33 @@ export default function LeanLabPage() {
 
         {/* --- Show/Hide Sections --- */}
         {showQuality && (
-          <section className="w-full max-w-3xl mb-8">
-            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
-              <h2 className="text-2xl font-bold mb-2 text-[#FF9151]">Module 1: RewmoAI Quality Approach</h2>
-              <p className="text-lg text-[#15C5C1] mb-4 font-semibold">
-                Total Quality Management for Individuals & Small Businesses
-              </p>
-              {/* ...all the module details here, as in your current module... */}
-              {/* [You can paste your existing quality approach section here.] */}
-              <ul className="list-disc pl-5 text-[#B6E7EB]">
-                <li>Quality isn’t just about the end result—it’s about improving how you do things.</li>
-                <li>Your customer (or you) decides what “quality” really means.</li>
-                <li>Focus first on your most critical processes.</li>
-                <li>Prevention is better (and cheaper) than fixing mistakes later.</li>
-                <li>RewmoAI is your partner in automating and improving quality in business and life.</li>
-              </ul>
-            </div>
-          </section>
+          <section className="w-full max-w-3xl mb-10">
+  <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
+    <h2 className="text-2xl font-bold mb-2 text-[#FF9151]">
+      Module 1: RewmoAI Quality Approach
+    </h2>
+    <p className="text-lg text-[#15C5C1] mb-4 font-semibold">
+      Total Quality Management for Individuals & Small Businesses
+    </p>
+    <ul className="list-disc pl-5 text-[#B6E7EB] mb-4">
+      <li>Quality isn’t just about the end result—it’s about improving how you do things.</li>
+      <li>Your customer (or you) decides what “quality” really means.</li>
+      <li>Focus first on your most critical processes.</li>
+      <li>Prevention is better (and cheaper) than fixing mistakes later.</li>
+      <li>RewmoAI is your partner in automating and improving quality in business and life.</li>
+    </ul>
+    <a
+      href="/rewmoai-module-1.pptx"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold px-5 py-2 rounded-lg mt-3 transition"
+      download
+    >
+      View Full Module &rarr;
+    </a>
+  </div>
+</section>
+
         )}
 
         {showIndividual && (
