@@ -2,28 +2,10 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-const individualProcesses = [
-  "Automated Bill Pay & Budgeting",
-  "Meal Planning & Grocery Shopping (with Amazon Fresh)",
-  "Subscription Review & Cancellation",
-  "Automated Savings & Investing",
-  "Energy Use & Utility Optimization",
-  "Travel/Commute Cost Reduction",
-];
-
-const businessProcesses = [
-  "Automated Expense Tracking",
-  "Vendor & Supply Management (Amazon Business, Office Depot)",
-  "Subscription & SaaS Audit",
-  "Payroll & Contractor Automation",
-  "Client Billing/Receivables Process",
-  "Inventory Replenishment/Stock Control",
-];
-
 export default function LeanLabPage() {
-  const [showQuality, setShowQuality] = useState(false);
-  const [showIndividual, setShowIndividual] = useState(false);
-  const [showBusiness, setShowBusiness] = useState(false);
+  // State to show/hide Module 1 content
+  const [showModule1, setShowModule1] = useState(false);
+  const [showModule2, setShowModule2] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#003B49] font-sans">
@@ -31,8 +13,7 @@ export default function LeanLabPage() {
         <h1 className="text-3xl md:text-5xl font-black mb-7 text-[#FF9151] tracking-tight text-center">
           LeanAI Lab
         </h1>
-
-        {/* Intro */}
+        {/* Intro Box */}
         <section className="max-w-3xl mx-auto mb-8">
           <div className="bg-[#02404d] rounded-2xl px-8 py-6 shadow text-center border border-[#15C5C1]">
             <h2 className="text-2xl md:text-3xl font-black mb-3 text-[#15C5C1] tracking-tight">
@@ -50,122 +31,76 @@ export default function LeanLabPage() {
           </div>
         </section>
 
-        {/* --- Interactive Button Grid --- */}
+        {/* --- Button Grid --- */}
         <section className="w-full max-w-3xl flex flex-wrap justify-center gap-4 mb-8">
-          {/* Quality Approach Module */}
-          <button
-            className="px-6 py-4 bg-[#072b33] border-2 border-[#15C5C1] rounded-2xl text-[#15C5C1] font-bold text-lg shadow hover:bg-[#02404d] hover:text-[#FF9151] transition"
-            onClick={() => setShowQuality((v) => !v)}
-          >
-            {showQuality ? "Hide" : "Show"} Quality Approach Module
-          </button>
-
           {/* Deep Financial Research (OpenAI) */}
+          <Link href="/deep-research" legacyBehavior>
+            <a className="px-6 py-4 bg-[#FF9151] border-2 border-[#15C5C1] rounded-2xl text-[#003B49] font-bold text-lg shadow hover:bg-[#FFA36C] hover:text-[#003B49] transition">
+              Deep Financial Research (OpenAI)
+            </a>
+          </Link>
+
+          {/* Download Module 1 PDF */}
           <a
-            className="px-6 py-4 bg-[#15C5C1] border-2 border-[#072b33] rounded-2xl text-[#003B49] font-bold text-lg shadow hover:bg-[#FF9151] hover:text-[#003B49] transition"
-            href="https://chat.openai.com/"
+            href="/rewmoai-module-1.pdf"
             target="_blank"
             rel="noopener noreferrer"
+            className="px-6 py-4 bg-[#15C5C1] border-2 border-[#15C5C1] rounded-2xl text-[#003B49] font-bold text-lg shadow hover:bg-[#072b33] hover:text-[#FF9151] transition text-center"
           >
-            Deep Financial Research (OpenAI)
+            Download Module 1 PDF
           </a>
 
-          {/* Individual/Family Process Improvement */}
+          {/* Module 1: Quality Approach */}
           <button
             className="px-6 py-4 bg-[#072b33] border-2 border-[#15C5C1] rounded-2xl text-[#15C5C1] font-bold text-lg shadow hover:bg-[#02404d] hover:text-[#FF9151] transition"
-            onClick={() => setShowIndividual((v) => !v)}
+            onClick={() => setShowModule1((v) => !v)}
           >
-            {showIndividual ? "Hide" : "Show"} Individual/Family Process Ideas
+            {showModule1 ? "Hide" : "Show"} Module 1: Quality Approach
           </button>
 
-          {/* Small Business Process Improvement */}
+          {/* Module 2: Coming Soon */}
           <button
-            className="px-6 py-4 bg-[#072b33] border-2 border-[#15C5C1] rounded-2xl text-[#15C5C1] font-bold text-lg shadow hover:bg-[#02404d] hover:text-[#FF9151] transition"
-            onClick={() => setShowBusiness((v) => !v)}
+            className="px-6 py-4 bg-[#072b33] border-2 border-[#FF9151] rounded-2xl text-[#FF9151] font-bold text-lg shadow hover:bg-[#02404d] hover:text-[#15C5C1] transition"
+            onClick={() => setShowModule2((v) => !v)}
           >
-            {showBusiness ? "Hide" : "Show"} Small Business Process Ideas
+            {showModule2 ? "Hide" : "Show"} Module 2 & More
           </button>
         </section>
 
-        {/* --- Show/Hide Sections --- */}
-        {showQuality && (
+        {/* --- Module 1 Info --- */}
+        {showModule1 && (
           <section className="w-full max-w-3xl mb-10">
-  <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
-    <h2 className="text-2xl font-bold mb-2 text-[#FF9151]">
-      Module 1: RewmoAI Quality Approach
-    </h2>
-    <p className="text-lg text-[#15C5C1] mb-4 font-semibold">
-      Total Quality Management for Individuals & Small Businesses
-    </p>
-    <ul className="list-disc pl-5 text-[#B6E7EB] mb-4">
-      <li>Quality isn’t just about the end result—it’s about improving how you do things.</li>
-      <li>Your customer (or you) decides what “quality” really means.</li>
-      <li>Focus first on your most critical processes.</li>
-      <li>Prevention is better (and cheaper) than fixing mistakes later.</li>
-      <li>RewmoAI is your partner in automating and improving quality in business and life.</li>
-    </ul>
-    <a
-      href="/rewmoai-module-1.pptx"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold px-5 py-2 rounded-lg mt-3 transition"
-      download
-    >
-      View Full Module &rarr;
-    </a>
-  </div>
-</section>
-
-        )}
-
-        {showIndividual && (
-          <section className="w-full max-w-3xl mb-8">
-            <div className="bg-[#02404d] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
-              <h2 className="text-2xl font-bold text-[#FF9151] mb-4">Individual & Family Process Improvements</h2>
-              <ul className="list-disc pl-6 text-[#B6E7EB] text-lg space-y-2">
-                {individualProcesses.map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ul>
-              <div className="mt-3 text-[#15C5C1] text-sm">
-                <b>Tip:</b> Select one area each month and let RewmoAI track your progress!
-              </div>
-            </div>
-          </section>
-        )}
-
-        {showBusiness && (
-          <section className="w-full max-w-3xl mb-8">
-            <div className="bg-[#02404d] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
-              <h2 className="text-2xl font-bold text-[#FF9151] mb-4">Small Business Process Improvements</h2>
-              <ul className="list-disc pl-6 text-[#B6E7EB] text-lg space-y-2">
-                {businessProcesses.map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ul>
-              <div className="mt-3 text-[#15C5C1] text-sm">
-                <b>Tip:</b> Start with recurring expenses—small wins add up fast!
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* MODULE 2: Placeholder */}
-        <section className="w-full max-w-3xl mb-10">
-          <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-[#FFA36C] mb-2">Module 2: Intro to Tool Flow Charting</h2>
-              <p className="text-lg text-[#B6E7EB]">
-                Coming Soon: Learn how to map and measure your most important processes, then optimize them with RewmoAI’s visual tools.
+            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
+              <h2 className="text-2xl font-bold mb-2 text-[#FF9151]">Module 1: RewmoAI Quality Approach</h2>
+              <p className="text-lg text-[#15C5C1] mb-4 font-semibold">
+                Total Quality Management for Individuals & Small Businesses
+              </p>
+              {/* ...Rest of Module 1 content, as before... */}
+              {/* You can paste your detailed module content here, or remove if only using PDF */}
+              <p className="text-[#B6E7EB] mb-2">
+                For the full learning experience, download the PDF above.
               </p>
             </div>
-            <div>
-              <Image src="/icons/flowchart.svg" alt="Flowcharting" width={50} height={50} />
+          </section>
+        )}
+
+        {/* --- Module 2 Coming Soon --- */}
+        {showModule2 && (
+          <section className="w-full max-w-3xl mb-10">
+            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#FF9151] px-8 py-8 text-center">
+              <h2 className="text-2xl font-bold mb-2 text-[#FFA36C]">Coming Soon</h2>
+              <ul className="text-[#B6E7EB] text-lg font-semibold mt-4 space-y-3">
+                <li>Module 2 – Quality Improvement Teams</li>
+                <li>Module 3 – System of Profound Knowledge</li>
+                <li>Module 4 – The Fourteen Points</li>
+                <li>Module 5 – Basic Process Improvement Tools</li>
+              </ul>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
+      {/* --- Footer --- */}
       <footer className="text-[#F7F6F2] text-xs py-4 text-center border-t border-[#072b33] bg-[#003B49]">
         <span>
           © {new Date().getFullYear()} RewmoAI |{" "}
