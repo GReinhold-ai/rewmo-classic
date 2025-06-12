@@ -1,19 +1,37 @@
 // src/pages/index.tsx
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/lib/AuthProvider"; // Adjust the path if needed
+import { useRouter } from "next/router";
 
 const NAV_LINKS = [
   { label: "Features", href: "/features" },
   { label: "Shopping", href: "/shopping" },
   { label: "Lean Lab", href: "/lean-lab" },
   { label: "Rewards", href: "/rewards" },
-  { label: "Sign In", href: "/signin", highlight: true },
 ];
 
 export default function HomePage() {
   const [navOpen, setNavOpen] = useState(false);
+  const { signInWithGoogle, currentUser } = useAuth();
+  const router = useRouter();
+
+  // Redirect if already signed in
+  useEffect(() => {
+    if (currentUser) {
+      router.push("/dashboard");
+    }
+  }, [currentUser, router]);
+
+  // Sign in handler
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      alert("Sign in failed: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#003B49] font-sans flex flex-col">
@@ -36,19 +54,31 @@ export default function HomePage() {
         </div>
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6">
-          {NAV_LINKS.map(({ label, href, highlight }) => (
+          {NAV_LINKS.map(({ label, href }) => (
             <Link
               key={href}
               href={href}
-              className={`text-base font-semibold ${
-                highlight
-                  ? "bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow hover:bg-[#FFA36C]"
-                  : "text-[#B6E7EB] hover:text-[#FF9151]"
-              }`}
+              className="text-base font-semibold text-[#B6E7EB] hover:text-[#FF9151]"
             >
               {label}
             </Link>
           ))}
+          {/* Show Dashboard/Sign Out if signed in */}
+          {currentUser ? (
+            <Link
+              href="/dashboard"
+              className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#FFA36C]"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <button
+              className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#FFA36C]"
+              onClick={handleSignIn}
+            >
+              Sign in with Google
+            </button>
+          )}
         </div>
         {/* Hamburger for mobile */}
         <button
@@ -65,20 +95,36 @@ export default function HomePage() {
         {/* Mobile Menu */}
         {navOpen && (
           <div className="absolute top-full left-0 w-full bg-[#003B49] border-t border-[#15C5C1] flex flex-col items-start md:hidden z-50">
-            {NAV_LINKS.map(({ label, href, highlight }) => (
+            {NAV_LINKS.map(({ label, href }) => (
               <Link
                 key={href}
                 href={href}
-                className={`w-full px-6 py-3 text-lg font-semibold border-b border-[#072b33] ${
-                  highlight
-                    ? "bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
-                    : "text-[#B6E7EB] hover:text-[#FF9151]"
-                }`}
+                className="w-full px-6 py-3 text-lg font-semibold border-b border-[#072b33] text-[#B6E7EB] hover:text-[#FF9151]"
                 onClick={() => setNavOpen(false)}
               >
                 {label}
               </Link>
             ))}
+            {/* Show Dashboard/Sign In if signed in */}
+            {currentUser ? (
+              <Link
+                href="/dashboard"
+                className="w-full px-6 py-3 text-lg font-bold bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
+                onClick={() => setNavOpen(false)}
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <button
+                className="w-full px-6 py-3 text-lg font-bold bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
+                onClick={() => {
+                  setNavOpen(false);
+                  handleSignIn();
+                }}
+              >
+                Sign in with Google
+              </button>
+            )}
           </div>
         )}
       </nav>
@@ -105,11 +151,12 @@ export default function HomePage() {
           <p className="text-lg text-orange-300 text-center font-semibold mb-4">
             Earn for shopping, referrals, and every dollar you manage smarter.
           </p>
-          <Link href="/signup">
-            <button className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] text-lg font-bold py-3 px-8 rounded-xl shadow-lg mb-5 transition">
-              Get Started & Earn Now
-            </button>
-          </Link>
+          <button
+            className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] text-lg font-bold py-3 px-8 rounded-xl shadow-lg mb-5 transition"
+            onClick={handleSignIn}
+          >
+            Get Started & Earn Now
+          </button>
         </div>
 
         {/* Beta Alert */}
