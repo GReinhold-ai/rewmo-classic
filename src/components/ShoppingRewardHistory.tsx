@@ -1,30 +1,36 @@
-// src/components/ShoppingRewardHistory.tsx
 import React from "react";
 
-export default function ShoppingRewardHistory({ rewardHistory }) {
+type RewardEntry = {
+  id: string;
+  date: string;
+  merchant: string;
+  amount: number;
+  points: number;
+  description?: string;
+};
+
+type Props = {
+  rewardHistory: RewardEntry[];
+};
+
+export default function ShoppingRewardHistory({ rewardHistory }: Props) {
   return (
     <div className="bg-[#072b33] border border-[#15C5C1] rounded-2xl p-6 mb-8 shadow text-center">
       <h2 className="text-xl font-bold text-[#15C5C1] mb-3">Shopping Reward History</h2>
-      <ul className="space-y-3 max-h-48 overflow-y-auto">
-        {rewardHistory && rewardHistory.length ? (
-          rewardHistory.map((r, i) => (
-            <li
-              key={i}
-              className="flex flex-col md:flex-row md:items-center justify-between bg-[#003B49] px-4 py-3 rounded-xl"
-            >
-              <span className="font-semibold text-[#FF9151]">{r.store || "Amazon"}</span>
-              <span className="text-[#B6E7EB] text-sm">
-                {r.description || r.product || "Shopping reward"}
-              </span>
-              <span className="font-bold text-[#15C5C1]">{r.points || 0} pts</span>
-              <span className="ml-2 text-xs text-[#B6E7EB]">
-                {new Date(r.timestamp?.seconds ? r.timestamp.seconds * 1000 : r.timestamp).toLocaleDateString()}
-              </span>
-            </li>
-          ))
-        ) : (
-          <li className="text-[#B6E7EB]">No shopping rewards yet. Shop with RewmoAI and start earning!</li>
-        )}
+      {rewardHistory.length === 0 && (
+        <p className="text-[#B6E7EB] text-sm">No rewards yet.</p>
+      )}
+      <ul className="space-y-2">
+        {rewardHistory.map((reward) => (
+          <li key={reward.id} className="flex justify-between text-[#B6E7EB] text-sm">
+            <span>
+              {reward.merchant} <span className="text-[#FFA36C]">({new Date(reward.date).toLocaleDateString()})</span>
+            </span>
+            <span>
+              +{reward.points} pts <span className="text-[#15C5C1]">${reward.amount.toFixed(2)}</span>
+            </span>
+          </li>
+        ))}
       </ul>
     </div>
   );
