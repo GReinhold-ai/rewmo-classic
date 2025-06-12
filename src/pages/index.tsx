@@ -1,164 +1,157 @@
-// src/pages/index.tsx
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
+import { db } from "@/lib/firebaseClient";
+import { useAuth } from "@/lib/AuthProvider";
 import Image from "next/image";
+import Link from "next/link";
 
-const NAV_LINKS = [
-  { label: "Features", href: "/features" },
-  { label: "Shopping", href: "/shopping" },
-  { label: "Lean Lab", href: "/lean-lab" },
-  { label: "Rewards", href: "/rewards" },
-  { label: "Sign In", href: "/signin", highlight: true },
-];
+// ----- Referral History Hook -----
+function useReferralHistory(userId: string | undefined) {
+  const [referralHistory, setReferralHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!userId) return;
+    setLoading(true);
+    const fetchReferrals = async () => {
+      const q = query(
+        collection(db, "users", userId, "referrals"),
+        orderBy("date", "desc")
+      );
+      const snap = await getDocs(q);
+      setReferralHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    };
+    fetchReferrals();
+  }, [userId]);
+  return { referralHistory, loading };
+}
 
-export default function HomePage() {
-  const [navOpen, setNavOpen] = useState(false);
+// ----- Shopping Rewards Hook -----
+function useShoppingRewards(userId: string | undefined) {
+  const [shoppingRewards, setShoppingRewards] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!userId) return;
+    setLoading(true);
+    const fetchRewards = async () => {
+      const q = query(
+        collection(db, "users", userId, "rewards"),
+        where("type", "==", "shopping"),
+        orderBy("date", "desc")
+      );
+      const snap = await getDocs(q);
+      setShoppingRewards(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    };
+    fetchRewards();
+  }, [userId]);
+  return { shoppingRewards, loading };
+}
+
+// ----- UI Components -----
+function ReferralTracker({ data }: { data: any[] }) {
+  if (!data.length)
+    return <div className="text-[#B6E7EB]">No referrals yet. Share your link to start earning bonus points!</div>;
+  return (
+    <div>
+      <h3 className="text-lg font-bold text-[#15C5C1] mb-2">Referral History</h3>
+      <ul className="space-y-2">
+        {data.map((r) => (
+          <li key={r.id} className="bg-[#003B49] rounded p-3 flex flex-col md:flex-row md:items-center gap-2">
+            <span className="font-semibold text-[#FF9151]">+{r.points || 1000} pts</span>
+            <span className="flex-1 text-[#B6E7EB]">
+              <b>{r.email || r.referredEmail}</b> {r.status || "Joined"}
+            </span>
+            <span className="text-xs text-[#15C5C1]">{r.date ? new Date(r.date.seconds * 1000).toLocaleDateString() : ""}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ShoppingRewardHistory({ data }: { data: any[] }) {
+  if (!data.length)
+    return <div className="text-[#B6E7EB]">No Amazon shopping rewards yet. Shop using RewmoAI to earn!</div>;
+  return (
+    <div>
+      <h3 className="text-lg font-bold text-[#FF9151] mb-2">Amazon Reward History</h3>
+      <ul className="space-y-2">
+        {data.map((reward) => (
+          <li key={reward.id} className="bg-[#072b33] rounded p-3 flex flex-col md:flex-row md:items-center gap-2">
+            <span className="font-semibold text-[#15C5C1]">+{reward.points} pts</span>
+            <span className="flex-1 text-[#B6E7EB]">
+              {reward.description || "Amazon Purchase"}
+            </span>
+            <span className="text-xs text-[#FF9151]">{reward.date ? new Date(reward.date.seconds * 1000).toLocaleDateString() : ""}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ----- MAIN DASHBOARD PAGE -----
+export default function DashboardPage() {
+  const { currentUser } = useAuth();
+  const userId = currentUser?.uid;
+
+  // Firestore hooks
+  const { referralHistory, loading: loadingReferrals } = useReferralHistory(userId);
+  const { shoppingRewards, loading: loadingRewards } = useShoppingRewards(userId);
 
   return (
-    <div className="min-h-screen bg-[#003B49] font-sans flex flex-col">
+    <div className="min-h-screen bg-[#003B49] font-sans flex flex-col items-center px-2">
       {/* Navbar */}
-      <nav className="w-full flex items-center justify-between px-4 md:px-12 py-2 bg-[#003B49] shadow z-20 relative">
-        <div className="flex items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/logos/logo.png"
-              alt="Rewmo Logo"
-              width={48}
-              height={48}
-              className="rounded-none"
-              priority
-            />
-            <span className="text-[#FF9151] font-extrabold text-xl tracking-tight hidden sm:inline">
-              RewmoAI
-            </span>
-          </Link>
-        </div>
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-6">
-          {NAV_LINKS.map(({ label, href, highlight }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`text-base font-semibold ${
-                highlight
-                  ? "bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow hover:bg-[#FFA36C]"
-                  : "text-[#B6E7EB] hover:text-[#FF9151]"
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-        {/* Hamburger for mobile */}
-        <button
-          className="md:hidden flex items-center p-2"
-          aria-label="Toggle navigation"
-          onClick={() => setNavOpen((v) => !v)}
-        >
-          <svg width={32} height={32} fill="none">
-            <rect y={7} width={28} height={3} rx={1.5} fill="#FF9151" />
-            <rect y={14} width={28} height={3} rx={1.5} fill="#FF9151" />
-            <rect y={21} width={28} height={3} rx={1.5} fill="#FF9151" />
-          </svg>
-        </button>
-        {/* Mobile Menu */}
-        {navOpen && (
-          <div className="absolute top-full left-0 w-full bg-[#003B49] border-t border-[#15C5C1] flex flex-col items-start md:hidden z-50">
-            {NAV_LINKS.map(({ label, href, highlight }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`w-full px-6 py-3 text-lg font-semibold border-b border-[#072b33] ${
-                  highlight
-                    ? "bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
-                    : "text-[#B6E7EB] hover:text-[#FF9151]"
-                }`}
-                onClick={() => setNavOpen(false)}
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-        )}
-      </nav>
-
-      {/* Main Content */}
-      <main className="flex-1 w-full flex flex-col items-center px-2">
-        {/* Logo & Headline */}
-        <div className="flex flex-col items-center mt-10">
+      <nav className="w-full flex items-center justify-between px-4 md:px-12 py-2 bg-[#003B49] shadow">
+        <Link href="/" className="flex items-center gap-2">
           <Image
             src="/logos/logo.png"
             alt="Rewmo Logo"
-            width={160}
-            height={72}
-            className="mb-3"
+            width={48}
+            height={48}
+            className="rounded-none"
             priority
-            style={{ borderRadius: 0 }}
           />
-          <h1 className="text-3xl md:text-5xl font-black text-[#FF9151] text-center mb-2">
-            Welcome to Rewards Mobile AI
+          <span className="text-[#FF9151] font-extrabold text-xl tracking-tight hidden sm:inline">
+            RewmoAI
+          </span>
+        </Link>
+        <div className="flex gap-6">
+          <Link href="/rewards" className="text-[#B6E7EB] font-semibold hover:text-[#FF9151]">Rewards</Link>
+          <Link href="/shopping" className="text-[#B6E7EB] font-semibold hover:text-[#FF9151]">Shopping</Link>
+          <Link href="/lean-lab" className="text-[#B6E7EB] font-semibold hover:text-[#15C5C1]">Lean Lab</Link>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="w-full max-w-2xl mx-auto py-8 flex flex-col gap-8">
+        <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] p-8 mb-4 text-center">
+          <h1 className="text-2xl md:text-3xl font-black text-[#FF9151] mb-2">
+            Dashboard
           </h1>
-          <p className="text-lg md:text-xl text-white text-center max-w-2xl mb-2">
-            The AI-powered hub for rewards, savings, and smarter financial growth.
+          <p className="text-[#B6E7EB] mb-2">
+            Welcome, <span className="text-[#15C5C1] font-semibold">{currentUser?.displayName || currentUser?.email || "Member"}</span>!
           </p>
-          <p className="text-lg text-orange-300 text-center font-semibold mb-4">
-            Earn for shopping, referrals, and every dollar you manage smarter.
-          </p>
-          <Link href="/signup">
-            <button className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] text-lg font-bold py-3 px-8 rounded-xl shadow-lg mb-5 transition">
-              Get Started & Earn Now
-            </button>
-          </Link>
+          <p className="text-[#FFA36C] mb-2">Your rewards, referrals, and savings all in one place.</p>
         </div>
 
-        {/* Beta Alert */}
-        <div className="w-full max-w-md mx-auto border-2 border-dashed border-[#FF9151] bg-[#072b33] rounded-2xl p-4 mb-6 text-center">
-          <p className="text-[#FF9151] font-bold text-lg mb-1">
-            &#128308; Beta is LIVE!
-          </p>
-          <p className="text-white font-semibold mb-0">
-            Your rewards and referrals are being tracked.<br />
-            Withdrawals open after launch.<br />
-            All points follow the{" "}
-            <Link href="/reward-rules" className="underline text-[#15C5C1] hover:text-[#FFA36C]">Reward Rules</Link>.
-          </p>
+        {/* Referral Tracker */}
+        <div className="bg-[#072b33] rounded-xl border border-[#15C5C1] p-6 mb-2">
+          {loadingReferrals ? (
+            <div className="text-[#B6E7EB]">Loading referrals…</div>
+          ) : (
+            <ReferralTracker data={referralHistory} />
+          )}
         </div>
 
-        {/* Features Section */}
-        <div className="flex flex-col md:flex-row gap-6 w-full max-w-3xl mb-8 justify-center">
-          {/* Personal Shopping Rewards */}
-          <div className="bg-white/90 rounded-2xl p-6 flex-1 text-center border border-[#FF9151] shadow-lg">
-            <h2 className="text-xl font-bold text-[#FF9151] mb-2">Personal Shopping Rewards</h2>
-            <p className="text-[#003B49] text-base mb-2">
-              Earn instant cash back & bonus points when you shop your favorite brands.<br />
-              Simple, secure, automatic savings—groceries, Amazon, and more!
-            </p>
-            <Link href="/shopping?type=personal" className="underline text-[#15C5C1] font-semibold hover:text-[#FFA36C]">
-              See eligible stores →
-            </Link>
-          </div>
-          {/* Business Shopping Rewards */}
-          <div className="bg-white/90 rounded-2xl p-6 flex-1 text-center border border-[#15C5C1] shadow-lg">
-            <h2 className="text-xl font-bold text-[#15C5C1] mb-2">Business Shopping Rewards</h2>
-            <p className="text-[#003B49] text-base mb-2">
-              Unlock rewards on business essentials, supplies, bulk orders.<br />
-              Streamline expense tracking, earn more for your business!
-            </p>
-            <Link href="/shopping?type=business" className="underline text-[#FF9151] font-semibold hover:text-[#15C5C1]">
-              Shop for your business →
-            </Link>
-          </div>
-        </div>
-
-        {/* Lean Lab Feature */}
-        <div className="w-full max-w-2xl bg-[#072b33] rounded-2xl border border-[#15C5C1] p-6 mb-10 text-center shadow">
-          <h3 className="text-xl font-bold text-[#15C5C1] mb-2">Lean Lab – RewmoAI Process Management</h3>
-          <p className="text-[#B6E7EB] mb-1">
-            <span className="font-bold text-[#FF9151]">NEW:</span> AI-powered process improvement tools for individuals <b>and</b> small businesses. Map your routines, eliminate waste, and unlock continuous improvement.
-          </p>
-          <Link href="/lean-lab" className="underline text-[#15C5C1] font-semibold hover:text-[#FFA36C]">
-            Learn about Lean Lab →
-          </Link>
+        {/* Amazon Reward History */}
+        <div className="bg-[#072b33] rounded-xl border border-[#FF9151] p-6">
+          {loadingRewards ? (
+            <div className="text-[#B6E7EB]">Loading shopping rewards…</div>
+          ) : (
+            <ShoppingRewardHistory data={shoppingRewards} />
+          )}
         </div>
       </main>
 
