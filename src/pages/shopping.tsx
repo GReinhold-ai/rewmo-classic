@@ -1,172 +1,172 @@
+// src/pages/shopping.tsx
+
 import React, { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 
-// Personal Offers
-const personalOffers = [
+const PERSONAL_BRANDS = [
   {
-    logo: "/logos/amazon.png",
-    title: "Amazon",
+    name: "Amazon",
     description: "Earn up to 5% back on your everyday shopping.",
+    logo: "/brands/amazon.png",
+    active: true,
     reward: "Up to 5% back",
-    url: "https://www.amazon.com/",
+    url: "https://www.amazon.com/?tag=YOUR_AMAZON_AFFILIATE_ID", // <- insert your affiliate code
   },
   {
-    logo: "/logos/walmart.png",
-    title: "Walmart",
+    name: "Walmart",
     description: "Get 3% back on electronics, groceries, and more.",
+    logo: "/brands/walmart.png",
+    active: false,
     reward: "3% back",
-    url: "https://www.walmart.com/",
   },
   {
-    logo: "/logos/target.png",
-    title: "Target",
+    name: "Target",
     description: "Shop & earn instant cash back in-store and online.",
+    logo: "/brands/target.png",
+    active: false,
     reward: "2% back",
-    url: "https://www.target.com/",
   },
   {
-    logo: "/logos/apple.png",
-    title: "Apple",
+    name: "Apple",
     description: "Earn up to 4% back on Apple Store purchases.",
+    logo: "/brands/apple.png",
+    active: false,
     reward: "Up to 4% back",
-    url: "https://www.apple.com/",
   },
 ];
 
-// Business Offers
-const businessOffers = [
+const BUSINESS_BRANDS = [
   {
-    logo: "/logos/office-depot.png",
-    title: "Office Depot",
-    description: "Earn 5% back on office supplies and equipment.",
-    reward: "5% back",
-    url: "https://www.officedepot.com/",
+    name: "Amazon Business",
+    description: "Earn up to 5% back on office and business supplies.",
+    logo: "/brands/amazon.png",
+    active: true,
+    reward: "Up to 5% back",
+    url: "https://www.amazon.com/?tag=YOUR_AMAZON_AFFILIATE_ID", // same or use business affiliate if you have one
   },
   {
-    logo: "/logos/quickbooks.png",
-    title: "QuickBooks",
-    description: "Get $75 cash back on your first subscription.",
-    reward: "$75 back",
-    url: "https://quickbooks.intuit.com/",
+    name: "Staples",
+    description: "Get exclusive business supply deals (Coming Soon).",
+    logo: "/brands/staples.png",
+    active: false,
+    reward: "Coming Soon",
   },
   {
-    logo: "/logos/amazon-business.png",
-    title: "Amazon Business",
-    description: "Up to 4% back on all business purchases.",
-    reward: "Up to 4% back",
-    url: "https://www.amazon.com/business",
+    name: "Office Depot",
+    description: "Earn cash back on business essentials (Coming Soon).",
+    logo: "/brands/officedepot.png",
+    active: false,
+    reward: "Coming Soon",
+  },
+  {
+    name: "Best Buy Business",
+    description: "Get rewards for electronics and more (Coming Soon).",
+    logo: "/brands/bestbuy.png",
+    active: false,
+    reward: "Coming Soon",
   },
 ];
 
-// Card component for both personal and business offers
-const OfferCard = ({ offer }: { offer: typeof personalOffers[0] }) => (
-  <a
-    href={offer.url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="flex items-center space-x-4 bg-[#072b33] hover:bg-[#003B49] rounded-2xl p-4 mb-4 shadow border border-[#15C5C1] transition"
-  >
-    <Image src={offer.logo} alt={offer.title} width={48} height={48} className="rounded-xl bg-white p-1" />
-    <div className="flex-1">
-      <div className="font-bold text-[#FF9151] text-lg">{offer.title}</div>
-      <div className="text-[#B6E7EB] text-sm">{offer.description}</div>
-    </div>
-    <div className="bg-[#FF9151] text-[#003B49] font-bold px-3 py-1 rounded-xl text-base shadow-md">
-      {offer.reward}
-    </div>
-    <span className="ml-3 text-[#15C5C1] font-black text-xl">→</span>
-  </a>
-);
-
-export default function ShoppingPage() {
+export default function ShoppingRewardsPage() {
   const [tab, setTab] = useState<"personal" | "business">("personal");
 
+  const brands = tab === "personal" ? PERSONAL_BRANDS : BUSINESS_BRANDS;
+
   return (
-    <div className="flex flex-col min-h-screen bg-[#003B49] font-sans">
-      {/* Top Nav */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-[#072b33] bg-[#003B49]">
-        <div className="flex items-center space-x-3">
-          <Image src="/logos/logo.png" alt="RewmoAI Logo" width={40} height={40} />
-          <span className="font-extrabold text-xl text-[#FF9151]">RewmoAI</span>
-        </div>
-        <nav className="space-x-5">
-          <Link href="/" className="text-[#15C5C1] hover:text-[#FFA36C] font-semibold hover:underline">Home</Link>
-          <Link href="/lean-lab" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Lean Lab</Link>
-          <Link href="/profile" className="text-[#FF9151] hover:text-[#FFA36C] font-semibold hover:underline">Profile</Link>
-        </nav>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center px-2 py-10">
-        <h1 className="text-2xl md:text-3xl font-black mb-7 text-[#FF9151] tracking-tight">Shopping Rewards</h1>
-
-        {/* Tabs */}
-        <div className="flex space-x-2 mb-8 rounded-xl bg-[#072b33] p-2 border border-[#15C5C1] shadow">
+    <div className="min-h-screen bg-[#003B49] font-sans flex flex-col items-center px-2">
+      <main className="w-full flex flex-col items-center py-8">
+        <h1 className="text-3xl md:text-4xl font-black text-[#FF9151] mb-3 text-center tracking-tight">
+          Shopping Rewards
+        </h1>
+        {/* Tab Switcher */}
+        <div className="flex gap-2 mb-6">
           <button
-            className={`px-7 py-2 rounded-xl font-bold text-lg transition-all ${
-              tab === "personal"
-                ? "bg-[#FF9151] text-[#003B49] shadow"
-                : "bg-transparent text-[#FF9151] hover:bg-[#FFA36C] hover:text-[#003B49]"
-            }`}
             onClick={() => setTab("personal")}
+            className={`px-6 py-2 rounded-xl font-bold text-lg border ${
+              tab === "personal"
+                ? "bg-[#FF9151] text-[#003B49] border-[#FF9151]"
+                : "bg-[#072b33] text-[#15C5C1] border-[#15C5C1] hover:bg-[#02404d]"
+            } transition`}
           >
             Personal
           </button>
           <button
-            className={`px-7 py-2 rounded-xl font-bold text-lg transition-all ${
-              tab === "business"
-                ? "bg-[#FF9151] text-[#003B49] shadow"
-                : "bg-transparent text-[#FF9151] hover:bg-[#FFA36C] hover:text-[#003B49]"
-            }`}
             onClick={() => setTab("business")}
+            className={`px-6 py-2 rounded-xl font-bold text-lg border ${
+              tab === "business"
+                ? "bg-[#FF9151] text-[#003B49] border-[#FF9151]"
+                : "bg-[#072b33] text-[#15C5C1] border-[#15C5C1] hover:bg-[#02404d]"
+            } transition`}
           >
             Business
           </button>
         </div>
 
-        {/* Offers */}
-        <div className="w-full max-w-2xl">
-          {tab === "personal" &&
-            <>
-              <div className="mb-4 text-[#B6E7EB] text-base text-center">Shop for yourself and get instant rewards on popular brands.</div>
-              {personalOffers.map((offer, i) => (
-                <OfferCard key={i} offer={offer} />
-              ))}
-            </>
-          }
-          {tab === "business" &&
-            <>
-              <div className="mb-4 text-[#B6E7EB] text-base text-center">Earn rewards on business expenses—SaaS, supplies, travel & more.</div>
-              {businessOffers.map((offer, i) => (
-                <OfferCard key={i} offer={offer} />
-              ))}
-            </>
-          }
+        <p className="text-[#B6E7EB] text-center mb-8 max-w-xl">
+          Shop for yourself or your business and get instant rewards on popular brands.<br/>
+          <span className="text-[#FFA36C] font-semibold">Amazon is live. Other brands are coming soon!</span>
+        </p>
+
+        {/* Brand List */}
+        <div className="flex flex-col gap-5 w-full max-w-2xl mb-8">
+          {brands.map((b, i) => (
+            <div
+              key={b.name}
+              className={`flex items-center justify-between bg-[#072b33] rounded-2xl border ${
+                b.active ? "border-[#15C5C1]" : "border-[#B6E7EB] opacity-60"
+              } px-6 py-5 shadow`}
+            >
+              <div className="flex items-center gap-3">
+                <Image
+                  src={b.logo}
+                  alt={b.name}
+                  width={46}
+                  height={46}
+                  className={b.active ? "" : "opacity-60"}
+                />
+                <div>
+                  <span
+                    className={`font-bold text-lg ${
+                      b.active ? "text-[#FF9151]" : "text-[#B6E7EB]"
+                    }`}
+                  >
+                    {b.name}
+                  </span>
+                  <p className="text-[#B6E7EB] text-sm mt-1">{b.description}</p>
+                </div>
+              </div>
+              {b.active ? (
+                <a
+                  href={b.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold px-5 py-2 rounded-lg shadow transition"
+                >
+                  {b.reward} →
+                </a>
+              ) : (
+                <span className="bg-gray-400 text-white font-bold px-5 py-2 rounded-lg cursor-not-allowed">
+                  Coming Soon
+                </span>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* How it works */}
-        <div className="mt-8 mb-4">
-          <Link href="/how-rewards-work" className="text-[#15C5C1] font-semibold underline text-base hover:text-[#FFA36C]">
+        {/* Info/How Rewards Work */}
+        <div className="mb-4 text-center w-full">
+          <Link
+            href="/how-rewards-work"
+            className="text-[#15C5C1] font-semibold underline hover:text-[#FFA36C]"
+          >
             How shopping rewards work →
           </Link>
         </div>
-
-        {/* Affiliate Disclosure */}
-        <div className="text-[#F7F6F2] text-xs text-center mt-2">
+        <div className="text-xs text-[#B6E7EB] text-center max-w-2xl mb-2">
           We may receive compensation when you shop through our affiliate partners. Rewards terms may vary by offer.
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="text-[#F7F6F2] text-xs py-4 text-center border-t border-[#072b33] bg-[#003B49]">
-        <span>
-          © {new Date().getFullYear()} RewmoAI |{" "}
-          <Link href="/affiliate-disclosure" className="underline hover:text-[#FFA36C] text-[#FF9151]">Affiliate Disclosure</Link> |{" "}
-          <Link href="/privacy" className="underline hover:text-[#FFA36C] text-[#FF9151]">Privacy</Link> |{" "}
-          <Link href="/terms" className="underline hover:text-[#FFA36C] text-[#FF9151]">Terms</Link>
-        </span>
-      </footer>
     </div>
   );
 }
