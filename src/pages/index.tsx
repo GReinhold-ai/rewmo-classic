@@ -7,9 +7,9 @@ export default function HomePage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [submitted, setSubmitted] = useState(false);
 
-  function handleInput(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
+  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
+  setForm({ ...form, [e.target.name]: e.target.value });
+}
 
   function handleSubmit(e) {
     e.preventDefault();
