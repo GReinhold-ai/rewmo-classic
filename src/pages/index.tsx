@@ -11,11 +11,10 @@ export default function HomePage() {
   setForm({ ...form, [e.target.name]: e.target.value });
 }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    // In real app: send to backend/Firestore
-    setSubmitted(true);
-  }
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  // ...
+}
 
   return (
     <div className="min-h-screen bg-[#003B49] font-sans flex flex-col">
