@@ -1,22 +1,21 @@
 // src/lib/AuthProvider.tsx
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { auth } from "./firebase";
+
+import React, { useContext, useState, useEffect, createContext } from "react";
+import { auth } from "./firebase"; // adjust if your firebase export path is different
 import {
-  signInWithPopup,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  User
+  User,
 } from "firebase/auth";
 
 type AuthContextType = {
   currentUser: User | null;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
-  signOutUser: () => Promise<void>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,46 +24,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, setCurrentUser);
+    // Listen to user state changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
     return () => unsubscribe();
   }, []);
 
+  // Sign in with Google
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
+    // onAuthStateChanged will update currentUser
   };
 
+  // Sign in with Email/Password
   const signInWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged will update currentUser
   };
 
-  const signUpWithEmail = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
-  };
-
-  const signOutUser = async () => {
+  // Logout
+  const logout = async () => {
     await signOut(auth);
+    setCurrentUser(null);
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        currentUser,
-        signInWithGoogle,
-        signInWithEmail,
-        signUpWithEmail,
-        signOutUser
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  // Context value
+  const value: AuthContextType = {
+    currentUser,
+    signInWithGoogle,
+    signInWithEmail,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Custom hook for easy use
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 }
