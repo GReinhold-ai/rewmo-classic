@@ -1,69 +1,45 @@
-// src/lib/AuthProvider.tsx
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-import React, { useContext, useState, useEffect, createContext } from "react";
-import { auth } from "./firebase"; // adjust if your firebase export path is different
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  User,
-} from "firebase/auth";
-
-type AuthContextType = {
-  currentUser: User | null;
-  signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<any>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authFns, setAuthFns] = useState<any>(null);
 
   useEffect(() => {
-    // Listen to user state changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    // Only runs on client!
+    import("./firebaseClientAuth").then(mod => {
+      const { auth } = mod;
+      setAuthFns(mod);
+
+      // Subscribe to auth state changes
+      const unsub = auth.onAuthStateChanged((user: any) => {
+        setCurrentUser(user);
+      });
+      return () => unsub();
     });
-    return () => unsubscribe();
   }, []);
 
-  // Sign in with Google
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
-    // onAuthStateChanged will update currentUser
-  };
+  // These wrappers ensure your UI works even before the module loads
+  const signInWithGoogle = async () => authFns?.signInWithGoogle?.();
+  const signInWithEmail = async (email: string, pw: string) => authFns?.signInWithEmail?.(email, pw);
+  const signUpWithEmail = async (email: string, pw: string) => authFns?.signUpWithEmail?.(email, pw);
+  const logout = async () => authFns?.logout?.();
 
-  // Sign in with Email/Password
-  const signInWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-    // onAuthStateChanged will update currentUser
-  };
-
-  // Logout
-  const logout = async () => {
-    await signOut(auth);
-    setCurrentUser(null);
-  };
-
-  // Context value
-  const value: AuthContextType = {
-    currentUser,
-    signInWithGoogle,
-    signInWithEmail,
-    logout,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        signInWithGoogle,
+        signInWithEmail,
+        signUpWithEmail,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-// Custom hook for easy use
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
-}
+// Usage in components:
+export const useAuth = () => useContext(AuthContext);

@@ -1,17 +1,19 @@
-// src/lib/firebaseAuth.ts
+// src/lib/firebaseClientAuth.ts
+import app from "./firebase";
 
-import { auth } from "./firebaseClient";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 
-// Use popup for web, you may need to adjust for SSR/Node
-export async function signInWithGoogle() {
-  const provider = new GoogleAuthProvider();
-  try {
-    await signInWithPopup(auth, provider);
-    // User is now signed in (onAuthStateChanged will fire)
-  } catch (error) {
-    // Optionally handle errors here
-    console.error("Google sign-in error:", error);
-    throw error;
-  }
-}
+export const auth = getAuth(app);
+
+// Auth methods for use in your provider or components:
+export const googleProvider = new GoogleAuthProvider();
+
+export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
+
+export const signInWithEmail = (email: string, password: string) => signInWithEmailAndPassword(auth, email, password);
+
+export const signUpWithEmail = (email: string, password: string) => createUserWithEmailAndPassword(auth, email, password);
+
+export const logout = () => signOut(auth);
+
+// For Apple (web), you’ll need a custom OAuth flow; let me know if you want this now.
