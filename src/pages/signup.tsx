@@ -1,114 +1,85 @@
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "@/lib/firebaseClient";
-import { collection, addDoc, setDoc, doc, serverTimestamp, query, where, getDocs, updateDoc, increment } from "firebase/firestore";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebaseClient";
 import Link from "next/link";
 
 export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [referralCode, setReferralCode] = useState<string | undefined>();
-  const router = useRouter();
+  const [phone, setPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (router.isReady && router.query.ref) {
-      setReferralCode(router.query.ref as string);
-    }
-  }, [router.isReady, router.query.ref]);
-
-  const handleSignup = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
+    setError("");
     try {
-      const userCred = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCred.user;
-
-      // Record referral in collection (for analytics)
-      if (referralCode) {
-        await addDoc(collection(db, "referrals"), {
-          referrer: referralCode,
-          referredEmail: email,
-          referredUid: user.uid,
-          joinedAt: serverTimestamp(),
-          source: "referral",
-        });
-
-        // ---- FIND the referrer's user doc by referralCode ----
-        // If referralCode is uid, use doc(db, "users", referralCode)
-        // If it's a custom code, search for .referralCode field match:
-        const q = query(collection(db, "users"), where("referralCode", "==", referralCode));
-        const snapshot = await getDocs(q);
-
-        if (!snapshot.empty) {
-          // Update the first user that matches the referral code
-          const referrerDocRef = doc(db, "users", snapshot.docs[0].id);
-          await updateDoc(referrerDocRef, {
-            rewardPoints: increment(1000), // auto-bonus
-            referralCount: increment(1),   // track referrals
-            lastReferralAt: serverTimestamp(),
-          });
-        }
-      }
-
-      // Write the new user's own doc
-      await setDoc(doc(db, "users", user.uid), {
+      await addDoc(collection(db, "users"), {
+        name,
         email,
-        createdAt: serverTimestamp(),
-        referrer: referralCode || null,
-        rewardPoints: 0, // start at zero
-      }, { merge: true });
-
-      router.push("/profile");
-    } catch (err: any) {
-      alert(err.message);
+        phone,
+        createdAt: new Date(),
+      });
+      setSuccess(true);
+    } catch (e) {
+      setError("There was a problem—please try again.");
+    } finally {
+      setSubmitting(false);
     }
-  };
+  }
 
-return (
-  <div className="min-h-screen bg-[#003B49] flex flex-col items-center justify-center font-sans">
-    <div className="w-full max-w-md bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] p-8">
-      <div className="flex flex-col items-center mb-6">
-        <h1 className="text-3xl font-black text-[#FF9151] mb-1 tracking-tight">Sign Up</h1>
-        <p className="text-[#B6E7EB] text-base text-center">Create your RewmoAI account</p>
+  return (
+    <div className="min-h-screen bg-[#003B49] flex flex-col items-center justify-center px-4 py-12 font-sans">
+      <div className="max-w-md w-full bg-[#072b33] border border-[#15C5C1] rounded-2xl p-8 shadow-lg text-center">
+        <h1 className="text-2xl font-bold text-[#FF9151] mb-4">Create Your RewmoAI Account</h1>
+        {success ? (
+          <div className="text-[#15C5C1] font-bold text-lg">
+            ✅ Welcome! Check your email for next steps.
+            <br />
+            <Link href="/dashboard" className="underline text-[#FF9151] font-semibold">Go to Dashboard →</Link>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <input
+              className="rounded-md p-3 bg-[#003B49] text-[#B6E7EB] border border-[#15C5C1] focus:outline-none"
+              placeholder="First Name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+            />
+            <input
+              className="rounded-md p-3 bg-[#003B49] text-[#B6E7EB] border border-[#15C5C1] focus:outline-none"
+              placeholder="Email Address"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+            />
+            <input
+              className="rounded-md p-3 bg-[#003B49] text-[#B6E7EB] border border-[#15C5C1] focus:outline-none"
+              placeholder="Phone Number (optional)"
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+            />
+            <button
+              type="submit"
+              className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold py-3 rounded-xl transition"
+              disabled={submitting}
+            >
+              {submitting ? "Creating..." : "Sign Up"}
+            </button>
+            {error && <div className="text-[#FF9151]">{error}</div>}
+          </form>
+        )}
+        <div className="mt-4">
+          <Link href="/preview" className="text-[#15C5C1] underline font-semibold hover:text-[#FFA36C]">
+            Try a Peek Preview →
+          </Link>
+        </div>
       </div>
-      <form onSubmit={handleSignup} className="flex flex-col gap-4">
-        <input
-          className="bg-[#003B49] text-white border border-[#15C5C1] rounded-lg px-4 py-3 focus:outline-none focus:border-[#FF9151] placeholder-[#B6E7EB]"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-          required
-        />
-        <input
-          className="bg-[#003B49] text-white border border-[#15C5C1] rounded-lg px-4 py-3 focus:outline-none focus:border-[#FF9151] placeholder-[#B6E7EB]"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password"
-          required
-        />
-        <Button
-          type="submit"
-          className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold py-3 rounded-lg transition"
-        >
-          Create Account
-        </Button>
-      </form>
-      <div className="mt-5 text-center">
-        <span className="text-[#B6E7EB]">Already have an account? </span>
-        <Link href="/signin" className="text-[#FF9151] hover:underline font-semibold">Sign In</Link>
-      </div>
-      {referralCode && (
-        <p className="mt-4 text-xs text-[#FF9151] text-center">
-          You’re signing up with a referral! Code: {referralCode}
-        </p>
-      )}
     </div>
-  </div>
-);
-
+  );
 }
