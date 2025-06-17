@@ -1,26 +1,37 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+// src/lib/AuthProvider.tsx
 
-const AuthContext = createContext<any>(null);
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+type AuthContextType = {
+  currentUser: any;
+  signInWithGoogle: () => Promise<any>;
+  signInWithEmail: (email: string, pw: string) => Promise<any>;
+  signUpWithEmail: (email: string, pw: string) => Promise<any>;
+  logout: () => Promise<any>;
+};
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authFns, setAuthFns] = useState<any>(null);
 
   useEffect(() => {
-    // Only runs on client!
+    let unsub: (() => void) | undefined;
     import("./firebaseClientAuth").then(mod => {
       const { auth } = mod;
       setAuthFns(mod);
 
-      // Subscribe to auth state changes
-      const unsub = auth.onAuthStateChanged((user: any) => {
+      unsub = auth.onAuthStateChanged((user: any) => {
         setCurrentUser(user);
       });
-      return () => unsub();
     });
+    return () => {
+      if (unsub) unsub();
+    };
   }, []);
 
-  // These wrappers ensure your UI works even before the module loads
+  // Defensive wrappers prevent errors if not loaded yet
   const signInWithGoogle = async () => authFns?.signInWithGoogle?.();
   const signInWithEmail = async (email: string, pw: string) => authFns?.signInWithEmail?.(email, pw);
   const signUpWithEmail = async (email: string, pw: string) => authFns?.signUpWithEmail?.(email, pw);
@@ -42,4 +53,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 // Usage in components:
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext)!;
