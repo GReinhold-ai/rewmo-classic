@@ -1,5 +1,6 @@
 // src/lib/firebaseClientAuth.ts
-import app from "./firebase"; // or "@/lib/firebase" if absolute imports work
+
+import { app } from "./firebaseClient"; // Correct import!
 
 import {
   getAuth,
