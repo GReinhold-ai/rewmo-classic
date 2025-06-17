@@ -1,7 +1,11 @@
-import React, { useState } from "react";
+// src/pages/index.tsx
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import AuthModal from "@/components/AuthModal";
+import { useAuth } from "@/lib/AuthProvider";
+import { useRouter } from "next/router";
 
 const NAV_LINKS = [
   { label: "Features", href: "/features" },
@@ -13,6 +17,15 @@ const NAV_LINKS = [
 export default function HomePage() {
   const [navOpen, setNavOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const { currentUser } = useAuth();
+  const router = useRouter();
+
+  // Redirect to dashboard if already signed in
+  useEffect(() => {
+    if (currentUser) {
+      router.push("/dashboard");
+    }
+  }, [currentUser, router]);
 
   return (
     <div className="min-h-screen bg-[#003B49] font-sans flex flex-col">
@@ -44,12 +57,22 @@ export default function HomePage() {
               {label}
             </Link>
           ))}
-          <button
-            className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#FFA36C] ml-3"
-            onClick={() => setAuthOpen(true)}
-          >
-            Join Now
-          </button>
+          {/* Dashboard or Auth */}
+          {currentUser ? (
+            <Link
+              href="/dashboard"
+              className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#FFA36C]"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <button
+              className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#FFA36C]"
+              onClick={() => setAuthOpen(true)}
+            >
+              Sign In / Sign Up
+            </button>
+          )}
         </div>
         {/* Hamburger for mobile */}
         <button
@@ -76,21 +99,29 @@ export default function HomePage() {
                 {label}
               </Link>
             ))}
-            <button
-              className="w-full px-6 py-3 text-lg font-bold bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
-              onClick={() => {
-                setNavOpen(false);
-                setAuthOpen(true);
-              }}
-            >
-              Join Now
-            </button>
+            {/* Dashboard/Auth button */}
+            {currentUser ? (
+              <Link
+                href="/dashboard"
+                className="w-full px-6 py-3 text-lg font-bold bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
+                onClick={() => setNavOpen(false)}
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <button
+                className="w-full px-6 py-3 text-lg font-bold bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
+                onClick={() => {
+                  setNavOpen(false);
+                  setAuthOpen(true);
+                }}
+              >
+                Sign In / Sign Up
+              </button>
+            )}
           </div>
         )}
       </nav>
-
-      {/* Auth Modal */}
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
 
       {/* Main Content */}
       <main className="flex-1 w-full flex flex-col items-center px-2">
@@ -106,28 +137,39 @@ export default function HomePage() {
             style={{ borderRadius: 0 }}
           />
           <h1 className="text-3xl md:text-5xl font-black text-[#FF9151] text-center mb-2">
-            Get Paid to Shop, Save, and Level Up Your Finances
+            Welcome to Rewards Mobile AI
           </h1>
           <p className="text-lg md:text-xl text-white text-center max-w-2xl mb-2">
-            Instant rewards for shopping, smarter process management, and an AI agent that puts your savings on autopilot.
+            The AI-powered hub for rewards, savings, and smarter financial growth.
           </p>
-          <div className="flex gap-4 mb-5 flex-wrap justify-center">
-            <button
-              className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] text-lg font-bold py-3 px-8 rounded-xl shadow-lg transition"
-              onClick={() => setAuthOpen(true)}
-            >
-              Join Beta (Full Access)
-            </button>
-            <Link href="/join">
-              <button className="bg-[#003B49] border border-[#FF9151] text-[#FF9151] text-lg font-bold py-3 px-8 rounded-xl shadow-lg transition hover:bg-[#072b33]">
-                Direct Signup Page
-              </button>
-            </Link>
-          </div>
+          <p className="text-lg text-orange-300 text-center font-semibold mb-4">
+            Earn for shopping, referrals, and every dollar you manage smarter.
+          </p>
+          <button
+            className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] text-lg font-bold py-3 px-8 rounded-xl shadow-lg mb-5 transition"
+            onClick={() => setAuthOpen(true)}
+          >
+            Get Started & Earn Now
+          </button>
         </div>
 
-        {/* Feature Blocks */}
-        <div className="flex flex-col md:flex-row gap-6 w-full max-w-4xl mb-8 justify-center mt-4">
+        {/* Beta Alert */}
+        <div className="w-full max-w-md mx-auto border-2 border-dashed border-[#FF9151] bg-[#072b33] rounded-2xl p-4 mb-6 text-center">
+          <p className="text-[#FF9151] font-bold text-lg mb-1">
+            &#128308; Beta is LIVE!
+          </p>
+          <p className="text-white font-semibold mb-0">
+            Your rewards and referrals are being tracked.<br />
+            Withdrawals open after launch.<br />
+            All points follow the{" "}
+            <Link href="/reward-rules" className="underline text-[#15C5C1] hover:text-[#FFA36C]">
+              Reward Rules
+            </Link>.
+          </p>
+        </div>
+
+        {/* Features Section */}
+        <div className="flex flex-col md:flex-row gap-6 w-full max-w-3xl mb-8 justify-center">
           {/* Personal Shopping Rewards */}
           <div className="bg-white/90 rounded-2xl p-6 flex-1 text-center border border-[#FF9151] shadow-lg">
             <h2 className="text-xl font-bold text-[#FF9151] mb-2">Personal Shopping Rewards</h2>
@@ -164,13 +206,24 @@ export default function HomePage() {
         </div>
       </main>
 
+      {/* Auth Modal */}
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+
       {/* Footer */}
       <footer className="text-[#F7F6F2] text-xs py-4 text-center border-t border-[#072b33] w-full">
         <span>
           © {new Date().getFullYear()} RewmoAI |{" "}
-          <Link href="/affiliate-disclosure" className="underline hover:text-[#FFA36C] text-[#FF9151]">Affiliate Disclosure</Link> |{" "}
-          <Link href="/privacy" className="underline hover:text-[#FFA36C] text-[#FF9151]">Privacy</Link> |{" "}
-          <Link href="/terms" className="underline hover:text-[#FFA36C] text-[#FF9151]">Terms</Link>
+          <Link href="/affiliate-disclosure" className="underline hover:text-[#FFA36C] text-[#FF9151]">
+            Affiliate Disclosure
+          </Link>{" "}
+          |{" "}
+          <Link href="/privacy" className="underline hover:text-[#FFA36C] text-[#FF9151]">
+            Privacy
+          </Link>{" "}
+          |{" "}
+          <Link href="/terms" className="underline hover:text-[#FFA36C] text-[#FF9151]">
+            Terms
+          </Link>
         </span>
       </footer>
     </div>
