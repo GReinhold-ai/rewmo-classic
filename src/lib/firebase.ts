@@ -9,10 +9,10 @@ const firebaseConfig = {
   apiKey: "AIzaSyC3G_b8h3mcjrBD9oU1veDX03Mp3Jn4uYo",
   authDomain: "rewmoai.firebaseapp.com",
   projectId: "rewmoai",
-  storageBucket: "rewmoai.firebasestorage.app",
+  storageBucket: "rewmoai.appspot.com",        // <-- typo fixed here!
   messagingSenderId: "1006457256424",
   appId: "1:1006457256424:web:d674a57e19969845c60c5d",
-  measurementId: "G-RWYF3HYL79"
+  // measurementId is not needed unless using Analytics
 };
 
 // Initialize Firebase App (singleton pattern)
