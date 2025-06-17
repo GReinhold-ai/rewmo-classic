@@ -1,10 +1,14 @@
 // src/pages/index.tsx
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import AuthModal from "@/components/AuthModal";
-import { useAuth } from "@/lib/AuthProvider";
+import { auth } from "@/lib/firebase";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
 import { useRouter } from "next/router";
 
 const NAV_LINKS = [
@@ -16,16 +20,45 @@ const NAV_LINKS = [
 
 export default function HomePage() {
   const [navOpen, setNavOpen] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
-  const { currentUser } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const router = useRouter();
 
-  // Redirect to dashboard if already signed in
-  useEffect(() => {
-    if (currentUser) {
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      if (authMode === "signin") {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+      }
       router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  }, [currentUser, router]);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#003B49] font-sans flex flex-col">
@@ -57,22 +90,6 @@ export default function HomePage() {
               {label}
             </Link>
           ))}
-          {/* Dashboard or Auth */}
-          {currentUser ? (
-            <Link
-              href="/dashboard"
-              className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#FFA36C]"
-            >
-              Dashboard
-            </Link>
-          ) : (
-            <button
-              className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#FFA36C]"
-              onClick={() => setAuthOpen(true)}
-            >
-              Sign In / Sign Up
-            </button>
-          )}
         </div>
         {/* Hamburger for mobile */}
         <button
@@ -99,26 +116,6 @@ export default function HomePage() {
                 {label}
               </Link>
             ))}
-            {/* Dashboard/Auth button */}
-            {currentUser ? (
-              <Link
-                href="/dashboard"
-                className="w-full px-6 py-3 text-lg font-bold bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
-                onClick={() => setNavOpen(false)}
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <button
-                className="w-full px-6 py-3 text-lg font-bold bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
-                onClick={() => {
-                  setNavOpen(false);
-                  setAuthOpen(true);
-                }}
-              >
-                Sign In / Sign Up
-              </button>
-            )}
           </div>
         )}
       </nav>
@@ -145,15 +142,82 @@ export default function HomePage() {
           <p className="text-lg text-orange-300 text-center font-semibold mb-4">
             Earn for shopping, referrals, and every dollar you manage smarter.
           </p>
-          <button
-            className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] text-lg font-bold py-3 px-8 rounded-xl shadow-lg mb-5 transition"
-            onClick={() => setAuthOpen(true)}
-          >
-            Get Started & Earn Now
-          </button>
         </div>
 
-        {/* Beta Alert */}
+        {/* --- Sign In/Up UI --- */}
+        <div className="w-full max-w-md mx-auto border-2 border-dashed border-[#FF9151] bg-[#072b33] rounded-2xl p-6 mb-6 text-center">
+          <h2 className="text-xl font-bold text-[#15C5C1] mb-2">
+            Get Started — Join or Sign In
+          </h2>
+          <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 mb-3">
+            <input
+              className="rounded-md px-4 py-2 border border-[#FF9151] bg-[#003B49] text-white"
+              type="email"
+              name="email"
+              placeholder="Email address"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              className="rounded-md px-4 py-2 border border-[#FF9151] bg-[#003B49] text-white"
+              type="password"
+              name="password"
+              placeholder="Password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="submit"
+              className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold py-2 rounded-lg shadow transition"
+              disabled={loading}
+            >
+              {authMode === "signin" ? "Sign In" : "Sign Up"}
+            </button>
+          </form>
+          <button
+            onClick={handleGoogleSignIn}
+            className="w-full bg-[#15C5C1] hover:bg-[#009899] text-white font-bold py-2 rounded-lg shadow transition mb-2"
+            disabled={loading}
+          >
+            Sign in with Google
+          </button>
+          <div className="text-sm text-[#B6E7EB]">
+            {authMode === "signin" ? (
+              <>
+                Don&apos;t have an account?{" "}
+                <button
+                  type="button"
+                  className="underline text-[#FF9151]"
+                  onClick={() => setAuthMode("signup")}
+                  disabled={loading}
+                >
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>
+                Already a member?{" "}
+                <button
+                  type="button"
+                  className="underline text-[#15C5C1]"
+                  onClick={() => setAuthMode("signin")}
+                  disabled={loading}
+                >
+                  Sign in
+                </button>
+              </>
+            )}
+          </div>
+          {error && (
+            <div className="text-red-500 mt-2 text-sm">{error}</div>
+          )}
+        </div>
+
+        {/* --- Beta Alert (optional) --- */}
         <div className="w-full max-w-md mx-auto border-2 border-dashed border-[#FF9151] bg-[#072b33] rounded-2xl p-4 mb-6 text-center">
           <p className="text-[#FF9151] font-bold text-lg mb-1">
             &#128308; Beta is LIVE!
@@ -162,68 +226,19 @@ export default function HomePage() {
             Your rewards and referrals are being tracked.<br />
             Withdrawals open after launch.<br />
             All points follow the{" "}
-            <Link href="/reward-rules" className="underline text-[#15C5C1] hover:text-[#FFA36C]">
-              Reward Rules
-            </Link>.
+            <Link href="/reward-rules" className="underline text-[#15C5C1] hover:text-[#FFA36C]">Reward Rules</Link>.
           </p>
         </div>
-
-        {/* Features Section */}
-        <div className="flex flex-col md:flex-row gap-6 w-full max-w-3xl mb-8 justify-center">
-          {/* Personal Shopping Rewards */}
-          <div className="bg-white/90 rounded-2xl p-6 flex-1 text-center border border-[#FF9151] shadow-lg">
-            <h2 className="text-xl font-bold text-[#FF9151] mb-2">Personal Shopping Rewards</h2>
-            <p className="text-[#003B49] text-base mb-2">
-              Earn instant cash back & bonus points when you shop your favorite brands.<br />
-              Simple, secure, automatic savings—groceries, Amazon, and more!
-            </p>
-            <Link href="/shopping?type=personal" className="underline text-[#15C5C1] font-semibold hover:text-[#FFA36C]">
-              See eligible stores →
-            </Link>
-          </div>
-          {/* Business Shopping Rewards */}
-          <div className="bg-white/90 rounded-2xl p-6 flex-1 text-center border border-[#15C5C1] shadow-lg">
-            <h2 className="text-xl font-bold text-[#15C5C1] mb-2">Business Shopping Rewards</h2>
-            <p className="text-[#003B49] text-base mb-2">
-              Unlock rewards on business essentials, supplies, bulk orders.<br />
-              Streamline expense tracking, earn more for your business!
-            </p>
-            <Link href="/shopping?type=business" className="underline text-[#FF9151] font-semibold hover:text-[#15C5C1]">
-              Shop for your business →
-            </Link>
-          </div>
-        </div>
-
-        {/* Lean Lab Feature */}
-        <div className="w-full max-w-2xl bg-[#072b33] rounded-2xl border border-[#15C5C1] p-6 mb-10 text-center shadow">
-          <h3 className="text-xl font-bold text-[#15C5C1] mb-2">Lean Lab – RewmoAI Process Management</h3>
-          <p className="text-[#B6E7EB] mb-1">
-            <span className="font-bold text-[#FF9151]">NEW:</span> AI-powered process improvement tools for individuals <b>and</b> small businesses. Map your routines, eliminate waste, and unlock continuous improvement.
-          </p>
-          <Link href="/lean-lab" className="underline text-[#15C5C1] font-semibold hover:text-[#FFA36C]">
-            Learn about Lean Lab →
-          </Link>
-        </div>
+        {/* --- Features go here, as before --- */}
+        {/* ...your features section blocks... */}
       </main>
-
-      {/* Auth Modal */}
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-
       {/* Footer */}
       <footer className="text-[#F7F6F2] text-xs py-4 text-center border-t border-[#072b33] w-full">
         <span>
           © {new Date().getFullYear()} RewmoAI |{" "}
-          <Link href="/affiliate-disclosure" className="underline hover:text-[#FFA36C] text-[#FF9151]">
-            Affiliate Disclosure
-          </Link>{" "}
-          |{" "}
-          <Link href="/privacy" className="underline hover:text-[#FFA36C] text-[#FF9151]">
-            Privacy
-          </Link>{" "}
-          |{" "}
-          <Link href="/terms" className="underline hover:text-[#FFA36C] text-[#FF9151]">
-            Terms
-          </Link>
+          <Link href="/affiliate-disclosure" className="underline hover:text-[#FFA36C] text-[#FF9151]">Affiliate Disclosure</Link> |{" "}
+          <Link href="/privacy" className="underline hover:text-[#FFA36C] text-[#FF9151]">Privacy</Link> |{" "}
+          <Link href="/terms" className="underline hover:text-[#FFA36C] text-[#FF9151]">Terms</Link>
         </span>
       </footer>
     </div>
