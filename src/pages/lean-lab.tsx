@@ -3,9 +3,10 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function LeanLabPage() {
-  // State to show/hide Module 1 content
+  // State hooks for showing/hiding sections and modal
   const [showModule1, setShowModule1] = useState(false);
   const [showModule2, setShowModule2] = useState(false);
+  const [showTraining, setShowTraining] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#003B49] font-sans">
@@ -65,6 +66,14 @@ export default function LeanLabPage() {
           >
             {showModule2 ? "Hide" : "Show"} Module 2 & More
           </button>
+
+          {/* --- NEW: AI Training Module Button --- */}
+          <button
+            className="px-6 py-4 bg-gradient-to-r from-[#15C5C1] to-[#FF9151] border-2 border-[#FF9151] rounded-2xl text-[#003B49] font-bold text-lg shadow hover:bg-[#FFA36C] hover:text-[#003B49] transition"
+            onClick={() => setShowTraining(true)}
+          >
+            🚀 AI Training Module
+          </button>
         </section>
 
         {/* --- Module 1 Info --- */}
@@ -76,7 +85,6 @@ export default function LeanLabPage() {
                 Total Quality Management for Individuals & Small Businesses
               </p>
               {/* ...Rest of Module 1 content, as before... */}
-              {/* You can paste your detailed module content here, or remove if only using PDF */}
               <p className="text-[#B6E7EB] mb-2">
                 For the full learning experience, download the PDF above.
               </p>
@@ -98,6 +106,43 @@ export default function LeanLabPage() {
             </div>
           </section>
         )}
+
+        {/* --- AI Training Module Modal --- */}
+        {showTraining && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="bg-[#003B49] border-4 border-[#FF9151] rounded-2xl p-8 max-w-xl w-full text-center shadow-2xl relative">
+              <button
+                className="absolute top-4 right-4 text-[#FF9151] text-2xl font-bold"
+                onClick={() => setShowTraining(false)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+              <h2 className="text-2xl font-black mb-3 text-[#FF9151] tracking-tight">
+                🚀 AI Training Lab (Beta)
+              </h2>
+              <p className="text-[#B6E7EB] mb-3">
+                Welcome to the RewmoAI Training Lab! Here, you’ll interact with a smart AI coach that will help you build AI literacy, guide you through practical AI tasks, and track your progress as you level up.
+              </p>
+              <div className="mb-4">
+                <span className="inline-block px-4 py-2 bg-[#15C5C1] rounded-full text-[#003B49] font-bold text-lg mb-2">
+                  Progress: <span className="font-mono">0%</span>
+                </span>
+                {/* Replace with dynamic progress */}
+              </div>
+              <p className="text-[#F7F6F2] text-sm mb-6">
+                Features coming soon: real-time chat, knowledge quizzes, badges, and personalized AI learning journeys.
+              </p>
+              <button
+                className="px-6 py-2 rounded-lg bg-[#FF9151] font-bold text-[#003B49] hover:bg-[#FFA36C] transition"
+                onClick={() => setShowTraining(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* --- Footer --- */}
