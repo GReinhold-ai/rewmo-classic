@@ -1,5 +1,4 @@
 // src/components/MobileTabBar.tsx
-
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Home, LayoutDashboard, Gift, User, Shield } from "lucide-react";
@@ -9,10 +8,14 @@ import { useAuth } from "@/lib/AuthProvider";
 const ADMIN_EMAILS = ["gary.reinhold@leafpays.com"];
 
 export default function MobileTabBar() {
-  const { currentUser } = useAuth();
+  const auth = useAuth();
+  const currentUser = auth?.currentUser;
+
   const router = useRouter();
   const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email || "");
 
+  // ...rest of the component
+}
   const tabs = [
     {
       href: "/",
