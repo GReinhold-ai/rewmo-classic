@@ -22,14 +22,14 @@ export default function MeetTheTeamPage() {
           Founder & CEO, RewmoAI
         </h2>
         <p className="text-[#B6E7EB] mb-6 leading-relaxed">
-          As the Founder and CEO of Rewmo, and a master of Revolutionary Systems Design, I am dedicated to revolutionizing how Americans manage their finances by developing Financial AI Agents.
-          <br /><br />
-          With over 30 years of trust and experience in the military, aviation, commercial construction, and sustainable energy industries, I have a proven track record of leading successful startups.
-          <br /><br />
-          At Rewmo, we're pioneering the use of Generative AI to turn everyday payments—like rent and loans—into valuable rewards. Our mission is to provide financial freedom for every American by transforming essential expenses into opportunities for growth.
-          <br /><br />
-          Based in Scottsdale, AZ, I lead a dynamic team committed to making financial management more rewarding for everyone.
-        </p>
+  {`As the Founder and CEO of Rewmo, and a master of Revolutionary Systems Design, I am dedicated to revolutionizing how Americans manage their finances by developing Financial AI Agents.`}
+  <br /><br />
+  {`With over 30 years of trust and experience in the military, aviation, commercial construction, and sustainable energy industries, I have a proven track record of leading successful startups.`}
+  <br /><br />
+  {`At Rewmo, we're pioneering the use of Generative AI to turn everyday payments—like rent and loans—into valuable rewards. Our mission is to provide financial freedom for every American by transforming essential expenses into opportunities for growth.`}
+  <br /><br />
+  {`Based in Scottsdale, AZ, I lead a dynamic team committed to making financial management more rewarding for everyone.`}
+</p>
         <div className="flex flex-col items-center gap-3 mb-4">
           <a
             href="mailto:support@rewmo.ai"

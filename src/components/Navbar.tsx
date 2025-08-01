@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/AuthProvider";
-import { Menu, X } from "lucide-react"; // Use lucide-react for icons
+import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const { currentUser, logout } = useAuth();
@@ -43,8 +43,12 @@ export default function Navbar() {
         <Image src="/logos/logo.png" alt="Rewmo Logo" width={50} height={50} style={{ borderRadius: 0 }} />
         <span className="text-[#FF9151] text-xl font-black ml-1">RewmoAI</span>
       </Link>
+
       {/* Desktop Nav */}
-      <div className="hidden md:flex gap-5 items-center">{navLinks}</div>
+      <div className="hidden md:flex gap-5 items-center text-white hover:text-[#15C5C1] transition-colors">
+        {navLinks}
+      </div>
+
       {/* Mobile Menu Button */}
       <button
         className="md:hidden text-[#FF9151] focus:outline-none"
@@ -53,6 +57,7 @@ export default function Navbar() {
       >
         {menuOpen ? <X size={32} /> : <Menu size={32} />}
       </button>
+
       {/* Mobile Nav Drawer */}
       {menuOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-40 flex flex-col md:hidden">
@@ -65,10 +70,10 @@ export default function Navbar() {
             >
               <X size={32} />
             </button>
-            <div className="flex flex-col gap-6 text-lg font-semibold">
+            <div className="flex flex-col gap-6 text-lg font-semibold text-white">
               {React.Children.map(navLinks.props.children, (child) =>
                 React.cloneElement(child, {
-                  onClick: () => setMenuOpen(false), // close menu on click
+                  onClick: () => setMenuOpen(false),
                   className: (child.props?.className || "") + " py-2",
                 })
               )}
@@ -82,15 +87,6 @@ export default function Navbar() {
           />
         </div>
       )}
-      <style jsx>{`
-        .nav-link {
-          color: #fff;
-          transition: color 0.2s;
-        }
-        .nav-link:hover {
-          color: #15C5C1;
-        }
-      `}</style>
     </nav>
   );
 }

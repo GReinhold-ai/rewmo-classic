@@ -13,10 +13,10 @@ export default function LearningLabIntro() {
           </h1>
         </div>
         <p className="mb-3 text-[#F7F6F2] text-lg">
-          <span className="font-bold text-[#FF9151]">Supercharge your financial journey</span>—and your business—by learning the art of process management, simplified for everyone.  
+          <span className="font-bold text-[#FF9151]">Supercharge your financial journey</span>&mdash;and your business&mdash;by learning the art of process management, simplified for everyone.  
         </p>
         <p className="mb-4 text-[#F7F6F2]">
-          <span className="font-semibold text-[#15C5C1]">RewmoAI</span> is more than rewards. It's your digital coach for mastering everyday decisions, business workflows, and even family finances—using proven methods like Total Quality Management (TQM), now powered by AI.
+          <span className="font-semibold text-[#15C5C1]">RewmoAI</span> is more than rewards. It&apos;s your digital coach for mastering everyday decisions, business workflows, and even family finances&mdash;using proven methods like Total Quality Management (TQM), now powered by AI.
         </p>
         <div className="flex flex-col md:flex-row gap-4 mt-6 mb-6">
           <div className="flex items-start gap-3">
@@ -24,7 +24,7 @@ export default function LearningLabIntro() {
             <div>
               <span className="font-bold text-[#15C5C1]">What is Process Management?</span>
               <p className="text-[#F7F6F2] text-sm">
-                It's the art and science of making life, work, and money flow better—one smart improvement at a time.
+                It&apos;s the art and science of making life, work, and money flow better&mdash;one smart improvement at a time.
               </p>
             </div>
           </div>
@@ -33,7 +33,7 @@ export default function LearningLabIntro() {
             <div>
               <span className="font-bold text-[#FF9151]">Why use TQM?</span>
               <p className="text-[#F7F6F2] text-sm">
-                TQM (Total Quality Management) is a set of tools used by the world's best companies—and now by RewmoAI—to make every process more efficient, more reliable, and less stressful.
+                TQM (Total Quality Management) is a set of tools used by the world&apos;s best companies&mdash;and now by RewmoAI&mdash;to make every process more efficient, more reliable, and less stressful.
               </p>
             </div>
           </div>
@@ -44,11 +44,11 @@ export default function LearningLabIntro() {
             How does AI help?
           </span>
           <p className="text-[#F7F6F2] text-sm mt-1">
-            Our AI agents can analyze, suggest, and automate improvements—saving you hours, dollars, and headaches.
+            Our AI agents can analyze, suggest, and automate improvements&mdash;saving you hours, dollars, and headaches.
           </p>
         </div>
         <p className="mb-4 text-[#F7F6F2] text-sm">
-          In this Learning Lab, you’ll discover quick, practical lessons from process management and TQM—plus AI-driven tips you can use instantly.  
+          In this Learning Lab, you&apos;ll discover quick, practical lessons from process management and TQM&mdash;plus AI-driven tips you can use instantly.  
         </p>
         <div className="flex flex-col gap-2">
           <Link

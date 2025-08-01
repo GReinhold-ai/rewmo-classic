@@ -19,7 +19,7 @@ export default function SimpleOnboarding({ onComplete }: { onComplete: () => voi
 
   return (
     <div className="max-w-md mx-auto py-8">
-      <h2 className="text-xl font-semibold mb-4 text-orange-500">Let's set your first goal!</h2>
+      <h2 className="text-xl font-semibold mb-4 text-orange-500">Let&apos;s set your first goal!</h2>
       <input
         type="text"
         value={goal || ""}
@@ -34,7 +34,6 @@ export default function SimpleOnboarding({ onComplete }: { onComplete: () => voi
       >
         {loading ? "Saving..." : "Next"}
       </button>
-      {/* Example of fixing an apostrophe (if used in JSX) */}
       <div className="text-xs text-gray-500 mt-2">
         You can&apos;t change your goal after setup.
       </div>
