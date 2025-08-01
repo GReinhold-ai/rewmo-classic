@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
-import { useAuth } from "@/lib/AuthContext";
+import { useAuth } from "@/lib/AuthProvider";
 import { FcGoogle } from "react-icons/fc";
 
 export default function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {

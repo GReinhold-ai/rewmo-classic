@@ -2,5 +2,4 @@ functions-core/
 firebase.json
 firestore.rules
 firestore.indexes.json
-firebase.ts
 .eslintrc.js
