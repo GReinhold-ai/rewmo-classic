@@ -1,130 +1,134 @@
-// src/components/AuthModal.tsx
-
 import React, { useState } from "react";
-import { useAuth } from "@/lib/AuthProvider";
-import { X } from "lucide-react";
+import { Dialog, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import { FcGoogle } from "react-icons/fc";
 
 export default function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const auth = useAuth();
+
   const [form, setForm] = useState({ email: "", password: "" });
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
-  if (!open) return null;
-
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setError(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEmailAuth = async () => {
+    if (!auth) return;
     setLoading(true);
-    setError(null);
+    setError("");
     try {
       if (isSignUp) {
-        await signUpWithEmail(form.email, form.password);
+        await auth.signUpWithEmail(form.email, form.password);
       } else {
-        await signInWithEmail(form.email, form.password);
+        await auth.signInWithEmail(form.email, form.password);
       }
       onClose();
     } catch (err: any) {
-      setError(err?.message || "Sign in failed");
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    if (!auth) return;
+    setLoading(true);
+    setError("");
+    try {
+      await auth.signInWithGoogle();
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-3xl rounded-xl shadow-2xl flex flex-col sm:flex-row overflow-hidden">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-black z-10"
+    <Transition appear show={open} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
         >
-          <X size={22} />
-        </button>
+          <div className="fixed inset-0 bg-black bg-opacity-50" />
+        </Transition.Child>
 
-        {/* Google Sign-In Side */}
-        <div className="sm:w-1/2 bg-[#003B49] text-white flex flex-col justify-center items-center p-6">
-          <h2 className="text-xl font-bold mb-3 text-center">Sign in with Google</h2>
-          <button
-            onClick={async () => {
-              setLoading(true);
-              setError(null);
-              try {
-                await signInWithGoogle();
-                onClose();
-              } catch (err: any) {
-                setError(err?.message || "Google sign in failed");
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-            className="bg-[#FF9151] hover:bg-[#ffa76d] text-[#003B49] font-bold px-4 py-2 rounded-lg shadow-lg transition flex items-center gap-2"
-          >
-            <svg width={20} height={20} viewBox="0 0 48 48" fill="currentColor">
-              <path fill="#4285F4" d="M43.6 20.5H42V20H24v8h11.3A10.9 10.9 0 0 1 13 25c0-6.1 4.9-11 11-11 2.6 0 5 .9 6.9 2.4l6.4-6.4C37.2 6.5 30.9 4 24 4 12.3 4 3 13.3 3 25s9.3 21 21 21c10.8 0 20-8 20-21 0-1.4-.1-2.8-.4-4.1z"/>
-            </svg>
-            {loading ? "Loading..." : "Continue with Google"}
-          </button>
-        </div>
-
-        {/* Email Side */}
-        <div className="sm:w-1/2 p-6 bg-white">
-          <h2 className="text-xl font-bold text-[#003B49] text-center">
-            {isSignUp ? "Create an Account" : "Sign in with Email"}
-          </h2>
-          <p className="text-sm text-center text-[#FF9151] mb-4">
-            {isSignUp ? "Start earning rewards today!" : "Welcome back to RewmoAI"}
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <input
-              type="email"
-              name="email"
-              required
-              placeholder="Email"
-              className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-[#15C5C1] outline-none"
-              value={form.email}
-              onChange={handleInput}
-              disabled={loading}
-            />
-            <input
-              type="password"
-              name="password"
-              required
-              placeholder="Password"
-              className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-[#15C5C1] outline-none"
-              value={form.password}
-              onChange={handleInput}
-              disabled={loading}
-            />
-            {error && <div className="text-red-600 text-sm">{error}</div>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#003B49] text-white py-2 rounded-lg hover:bg-[#15C5C1] transition font-bold"
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
             >
-              {loading ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
-            </button>
-          </form>
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white dark:bg-gray-900 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title className="text-xl font-bold text-center text-orange-600 mb-4">
+                  {isSignUp ? "Create Your RewMo Account" : "Welcome Back"}
+                </Dialog.Title>
 
-          <div className="text-center mt-4 text-sm">
-            {isSignUp ? "Already have an account?" : "New to RewmoAI?"}{" "}
-            <button
-              onClick={() => setIsSignUp((prev) => !prev)}
-              className="text-[#15C5C1] font-semibold hover:text-[#FF9151]"
-              disabled={loading}
-            >
-              {isSignUp ? "Sign In" : "Sign Up"}
-            </button>
+                <div className="space-y-4">
+                  <button
+                    onClick={handleGoogleAuth}
+                    className="w-full flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-600 text-black dark:text-white bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium py-2 rounded-md transition"
+                  >
+                    <FcGoogle size={20} />
+                    Continue with Google
+                  </button>
+
+                  <div className="relative my-2 text-center text-sm text-gray-500 dark:text-gray-400">
+                    — or use email —
+                  </div>
+
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
+
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  />
+
+                  {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+                  <button
+                    onClick={handleEmailAuth}
+                    disabled={loading}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded-md transition"
+                  >
+                    {loading ? "Processing..." : isSignUp ? "Sign Up with Email" : "Sign In with Email"}
+                  </button>
+
+                  <p className="text-sm text-center text-gray-600 dark:text-gray-300">
+                    {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+                    <button
+                      className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                      onClick={() => setIsSignUp(!isSignUp)}
+                    >
+                      {isSignUp ? "Sign In" : "Sign Up"}
+                    </button>
+                  </p>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
           </div>
         </div>
-      </div>
-    </div>
+      </Dialog>
+    </Transition>
   );
 }
