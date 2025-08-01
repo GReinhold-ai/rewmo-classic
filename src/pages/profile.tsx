@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 
 export default function Profile() {
-  const { currentUser } = useAuth();
+  const auth = useAuth();
+  const currentUser = auth?.currentUser;
   const [rewards, setRewards] = useState<any[]>([]);
 
   useEffect(() => {
