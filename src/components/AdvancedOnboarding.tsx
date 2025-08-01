@@ -10,7 +10,8 @@ const questions = [
 ];
 
 export default function AdvancedOnboarding({ onComplete }: { onComplete?: () => void }) {
-  const { currentUser } = useAuth();
+  const auth = useAuth();
+const currentUser = auth?.currentUser;
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
