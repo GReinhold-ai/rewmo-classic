@@ -1,12 +1,11 @@
-// next.config.js or next.config.ts
+// next.config.ts
 import path from 'path';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'export',
   reactStrictMode: true,
   images: {
-    unoptimized: true, // ✅ Required for static export
+    unoptimized: true, // Still OK to keep this if you want unoptimized static images
   },
   webpack: (config) => {
     config.resolve.alias['@'] = path.resolve(__dirname, 'src');

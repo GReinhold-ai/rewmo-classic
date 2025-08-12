@@ -1,6 +1,6 @@
 // src/lib/firebaseClient.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -17,4 +17,9 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export { app, db, auth };
+// ✅ Add this helper function
+const signInWithEmail = async (email: string, password: string) => {
+  return signInWithEmailAndPassword(auth, email, password);
+};
+
+export { app, db, auth, signInWithEmail };
