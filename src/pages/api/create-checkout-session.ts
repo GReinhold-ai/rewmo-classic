@@ -3,11 +3,15 @@ import Stripe from "stripe";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, 
+// ✅ Initialize Stripe (no apiVersion param needed)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
-// CORS helper (comma-separated origins supported)
+/** CORS helper (supports comma-separated origins in UNICORN_ORIGIN) */
 function cors(req: NextApiRequest, res: NextApiResponse) {
-  const origins = (process.env.UNICORN_ORIGIN || "").split(",").map(o => o.trim()).filter(Boolean);
+  const origins = (process.env.UNICORN_ORIGIN || "")
+    .split(",")
+    .map(o => o.trim())
+    .filter(Boolean);
   const reqOrigin = req.headers.origin || "";
   const allow = origins.includes(reqOrigin) ? reqOrigin : origins[0] || "*";
   res.setHeader("Access-Control-Allow-Origin", allow);
@@ -18,7 +22,7 @@ function cors(req: NextApiRequest, res: NextApiResponse) {
   return false;
 }
 
-// Firebase Admin
+// ✅ Firebase Admin init (service account envs)
 if (!getApps().length) {
   initializeApp({
     credential: cert({
@@ -60,16 +64,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metadata: { product, source },
     });
 
-    await db.collection("preorders").doc(email).set({
-      email, product, source,
-      stripeSessionId: session.id,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    }, { merge: true });
+    await db.collection("preorders").doc(email).set(
+      {
+        email,
+        product,
+        source,
+        stripeSessionId: session.id,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
 
-    res.status(200).json({ url: session.url });
+    return res.status(200).json({ url: session.url });
   } catch (err: any) {
     console.error("checkout error:", err);
-    res.status(500).json({ error: err.message || "Server error" });
+    return res.status(500).json({ error: err.message || "Server error" });
   }
 }
