@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-// --- CORS helper (handles preflight cleanly) ---
+// --- CORS helper (handles preflight and echoes allowed origin) ---
 function applyCors(req: NextApiRequest, res: NextApiResponse) {
   const origins = (process.env.UNICORN_ORIGIN || "")
     .split(",")
@@ -16,13 +16,13 @@ function applyCors(req: NextApiRequest, res: NextApiResponse) {
 
   res.setHeader("Access-Control-Allow-Origin", allow);
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Max-Age", "86400"); // cache preflight for a day
+  res.setHeader("Access-Control-Max-Age", "86400");
 
   if (req.method === "OPTIONS") {
     res.status(200).end();
-    return true; // handled
+    return true; // handled preflight
   }
   return false;
 }
@@ -40,26 +40,32 @@ if (!getApps().length) {
 const db = getFirestore();
 
 // --- Stripe init ---
-// Omit apiVersion to use your account's default & avoid TS literal mismatch.
+// (no apiVersion so we use account default to avoid TS literal mismatch)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (applyCors(req, res)) return; // OPTIONS handled here
+  // Always set CORS / handle preflight early
+  if (applyCors(req, res)) return;
+
+  // Helpful GET for verifying deployment/routes
+  if (req.method === "GET") {
+    return res.status(200).json({
+      ok: true,
+      info: "Use POST to create a checkout session.",
+      method: req.method,
+    });
+  }
 
   if (req.method !== "POST") {
-    res.status(405).json({ error: "Method Not Allowed" });
-    return;
+    return res.status(405).json({ error: "Method Not Allowed", method: req.method });
   }
 
   try {
     const { email, product = "RewmoAI + EnterpriseAI", source = "unicorn" } = (req.body || {});
-    if (!email) {
-      res.status(400).json({ error: "Email is required" });
-      return;
-    }
+    if (!email) return res.status(400).json({ error: "Email is required" });
 
-    // Build success/cancel base
-    const successBase =
+    // Base URL for redirects (falls back to request host)
+    const base =
       process.env.SITE_URL ||
       (req.headers.origin as string) ||
       `https://${req.headers.host}`;
@@ -83,29 +89,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       customer_email: email,
       line_items: [lineItem],
       allow_promotion_codes: true,
-      success_url: `${successBase}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${successBase}/cancel`,
+      success_url: `${base}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${base}/cancel`,
       metadata: { product, source },
     });
 
-    await db
-      .collection("preorders")
-      .doc(email)
-      .set(
-        {
-          email,
-          product,
-          source,
-          stripeSessionId: session.id,
-          status: "pending",
-          createdAt: new Date().toISOString(),
-        },
-        { merge: true }
-      );
+    await db.collection("preorders").doc(email).set(
+      {
+        email,
+        product,
+        source,
+        stripeSessionId: session.id,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
 
-    res.status(200).json({ url: session.url });
+    return res.status(200).json({ url: session.url });
   } catch (err: any) {
     console.error("create-checkout-session error:", err);
-    res.status(500).json({ error: err.message || "Server error" });
+    return res.status(500).json({ error: err.message || "Server error" });
   }
 }
