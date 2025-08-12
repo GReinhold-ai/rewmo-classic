@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, 
 
 // CORS helper (comma-separated origins supported)
 function cors(req: NextApiRequest, res: NextApiResponse) {
