@@ -9,7 +9,7 @@ import {
   User,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "@/firebase/firebaseClient";
+import { auth, db } from "@/lib/firebaseClient";
 import { logRewardHistory } from "@/utils/logRewardHistory";
 
 export type AuthContextType = {

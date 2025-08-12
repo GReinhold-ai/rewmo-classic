@@ -1,291 +1,137 @@
-// src/pages/index.tsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "@/lib/AuthProvider"; // Adjust path if needed
 import { useRouter } from "next/router";
+import { auth, signInWithEmail } from "@/lib/firebaseClient";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import type { User } from "firebase/auth";
 
-const NAV_LINKS = [
-  { label: "Features", href: "/features" },
-  { label: "Shopping", href: "/shopping" },
-  { label: "Lean Lab", href: "/lean-lab" },
-  { label: "Rewards", href: "/rewards" },
-];
 
 export default function HomePage() {
-  const [navOpen, setNavOpen] = useState(false);
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const { signInWithGoogle, signInWithEmail, currentUser } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Redirect if already signed in
   useEffect(() => {
-    if (currentUser) {
-      router.push("/dashboard");
-    }
-  }, [currentUser, router]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  // Handlers
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (err) {
-      alert("Google sign-in failed: " + (err instanceof Error ? err.message : String(err)));
-    }
-  };
-  const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await signInWithEmail(email, password);
-    } catch (err) {
-      alert("Email sign-in failed: " + (err instanceof Error ? err.message : String(err)));
-    }
+  const handleSignOut = async () => {
+    await signOut(auth);
+    router.push("/");
   };
 
   return (
-    <div className="min-h-screen bg-[#003B49] font-sans flex flex-col">
-      {/* Navbar */}
-      <nav className="w-full flex items-center justify-between px-4 md:px-12 py-2 bg-[#003B49] shadow z-20 relative">
-        <div className="flex items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/logos/logo.png"
-              alt="Rewmo Logo"
-              width={48}
-              height={48}
-              className="rounded-none"
-              priority
-            />
-            <span className="text-[#FF9151] font-extrabold text-xl tracking-tight hidden sm:inline">
-              RewmoAI
-            </span>
-          </Link>
-        </div>
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-6">
-          {NAV_LINKS.map(({ label, href }) => (
-            <Link
-              key={href}
-              href={href}
-              className="text-base font-semibold text-[#B6E7EB] hover:text-[#FF9151]"
-            >
-              {label}
-            </Link>
-          ))}
-          {currentUser ? (
-            <Link
-              href="/dashboard"
-              className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#FFA36C]"
-            >
-              Dashboard
-            </Link>
-          ) : (
-            <>
-              <button
-                className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#FFA36C] mr-2"
-                onClick={handleGoogleSignIn}
-              >
-                Sign in with Google
-              </button>
-              <button
-                className="bg-[#15C5C1] text-[#003B49] px-4 py-2 rounded-lg shadow font-bold hover:bg-[#13b2af]"
-                onClick={() => setShowEmailModal(true)}
-              >
-                Email Sign-In
-              </button>
-            </>
-          )}
-        </div>
-        {/* Hamburger for mobile */}
-        <button
-          className="md:hidden flex items-center p-2"
-          aria-label="Toggle navigation"
-          onClick={() => setNavOpen((v) => !v)}
-        >
-          <svg width={32} height={32} fill="none">
-            <rect y={7} width={28} height={3} rx={1.5} fill="#FF9151" />
-            <rect y={14} width={28} height={3} rx={1.5} fill="#FF9151" />
-            <rect y={21} width={28} height={3} rx={1.5} fill="#FF9151" />
-          </svg>
-        </button>
-        {/* Mobile Menu */}
-        {navOpen && (
-          <div className="absolute top-full left-0 w-full bg-[#003B49] border-t border-[#15C5C1] flex flex-col items-start md:hidden z-50">
-            {NAV_LINKS.map(({ label, href }) => (
-              <Link
-                key={href}
-                href={href}
-                className="w-full px-6 py-3 text-lg font-semibold border-b border-[#072b33] text-[#B6E7EB] hover:text-[#FF9151]"
-                onClick={() => setNavOpen(false)}
-              >
-                {label}
-              </Link>
-            ))}
-            {currentUser ? (
-              <Link
-                href="/dashboard"
-                className="w-full px-6 py-3 text-lg font-bold bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
-                onClick={() => setNavOpen(false)}
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <button
-                  className="w-full px-6 py-3 text-lg font-bold bg-[#FF9151] text-[#003B49] rounded-lg my-1 mx-2"
-                  onClick={() => {
-                    setNavOpen(false);
-                    handleGoogleSignIn();
-                  }}
-                >
-                  Sign in with Google
-                </button>
-                <button
-                  className="w-full px-6 py-3 text-lg font-bold bg-[#15C5C1] text-[#003B49] rounded-lg my-1 mx-2"
-                  onClick={() => {
-                    setNavOpen(false);
-                    setShowEmailModal(true);
-                  }}
-                >
-                  Email Sign-In
-                </button>
-              </>
-            )}
-          </div>
-        )}
-      </nav>
-
-      {/* Main Content */}
-      <main className="flex-1 w-full flex flex-col items-center px-2">
-        {/* Logo & Headline */}
-        <div className="flex flex-col items-center mt-10">
+    <div className="min-h-screen bg-[#003B49] text-white font-sans flex flex-col">
+      {/* NAVBAR */}
+      <nav className="w-full flex items-center justify-between px-6 py-4 shadow bg-[#003B49] relative z-20 h-auto">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <Image
             src="/logos/logo.png"
             alt="Rewmo Logo"
-            width={160}
-            height={72}
-            className="mb-3"
+            width={80}
+            height={80}
+            className="w-[80px] h-[80px] object-contain"
             priority
-            style={{ borderRadius: 0 }}
           />
-          <h1 className="text-3xl md:text-5xl font-black text-[#FF9151] text-center mb-2">
-            Welcome to Rewards Mobile AI
-          </h1>
-          <p className="text-lg md:text-xl text-white text-center max-w-2xl mb-2">
-            The AI-powered hub for rewards, savings, and smarter financial growth.
+          <span className="text-[#FF9151] font-extrabold text-xl">RewmoAI</span>
+        </Link>
+
+        <div className="flex items-center gap-4">
+          <Link href="/features" className="hover:underline">Features</Link>
+          <Link href="/shopping" className="hover:underline">Shopping</Link>
+          <Link href="/lean-lab" className="hover:underline">Lean Lab</Link>
+          <Link href="/rewards" className="hover:underline">Rewards</Link>
+
+          {currentUser ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="bg-[#FF9151] text-[#003B49] px-4 py-2 rounded-lg font-bold hover:bg-[#FFA36C]"
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600"
+            >
+              Sign In
+            </Link>
+          )}
+        </div>
+      </nav>
+
+      {/* BODY */}
+      <main className="flex-1 flex flex-col items-center justify-center text-center px-4 py-12">
+        <Image src="/logos/logo.png" alt="Rewmo Logo" width={100} height={100} />
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#FF9151] mt-6">
+          Welcome to Rewards Mobile AI
+        </h1>
+        <p className="text-white mt-4 max-w-xl">
+          The AI-powered hub for rewards, savings, and smarter financial growth.
+          Earn for shopping, referrals, and every dollar you manage smarter.
+        </p>
+
+        <Link
+          href="/join"
+          className="mt-6 inline-block bg-[#FF9151] text-[#003B49] px-6 py-3 rounded-lg font-bold hover:bg-[#FFA36C]"
+        >
+          Get Started & Earn Now
+        </Link>
+
+        <div className="mt-8 border border-white rounded p-4 max-w-lg w-full text-sm">
+          <p className="text-red-400 font-bold">🔴 Beta is LIVE!</p>
+          <p>Your rewards and referrals are being tracked. Withdrawals open after launch.</p>
+          <p>
+            All points follow the <Link href="/reward-rules" className="underline">Reward Rules</Link>.
           </p>
-          <p className="text-lg text-orange-300 text-center font-semibold mb-4">
-            Earn for shopping, referrals, and every dollar you manage smarter.
-          </p>
-          <button
-            className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] text-lg font-bold py-3 px-8 rounded-xl shadow-lg mb-5 transition"
-            onClick={handleGoogleSignIn}
-          >
-            Get Started & Earn Now
-          </button>
         </div>
 
-        {/* Beta Alert */}
-        <div className="w-full max-w-md mx-auto border-2 border-dashed border-[#FF9151] bg-[#072b33] rounded-2xl p-4 mb-6 text-center">
-          <p className="text-[#FF9151] font-bold text-lg mb-1">
-            &#128308; Beta is LIVE!
-          </p>
-          <p className="text-white font-semibold mb-0">
-            Your rewards and referrals are being tracked.<br />
-            Withdrawals open after launch.<br />
-            All points follow the{" "}
-            <Link href="/reward-rules" className="underline text-[#15C5C1] hover:text-[#FFA36C]">Reward Rules</Link>.
-          </p>
-        </div>
-
-        {/* Features Section */}
-        <div className="flex flex-col md:flex-row gap-6 w-full max-w-3xl mb-8 justify-center">
-          {/* Personal Shopping Rewards */}
-          <div className="bg-white/90 rounded-2xl p-6 flex-1 text-center border border-[#FF9151] shadow-lg">
-            <h2 className="text-xl font-bold text-[#FF9151] mb-2">Personal Shopping Rewards</h2>
-            <p className="text-[#003B49] text-base mb-2">
-              Earn instant cash back & bonus points when you shop your favorite brands.<br />
+        <div className="grid md:grid-cols-2 gap-6 mt-12 max-w-4xl w-full">
+          <div className="border border-orange-400 p-4 rounded">
+            <h2 className="text-[#FF9151] font-bold">Personal Shopping Rewards</h2>
+            <p className="text-sm mt-2">
+              Earn instant cash back & bonus points when you shop your favorite brands.
               Simple, secure, automatic savings—groceries, Amazon, and more!
             </p>
-            <Link href="/shopping?type=personal" className="underline text-[#15C5C1] font-semibold hover:text-[#FFA36C]">
-              See eligible stores →
-            </Link>
+            <Link href="/shopping" className="mt-2 inline-block text-orange-300 underline">See eligible stores →</Link>
           </div>
-          {/* Business Shopping Rewards */}
-          <div className="bg-white/90 rounded-2xl p-6 flex-1 text-center border border-[#15C5C1] shadow-lg">
-            <h2 className="text-xl font-bold text-[#15C5C1] mb-2">Business Shopping Rewards</h2>
-            <p className="text-[#003B49] text-base mb-2">
-              Unlock rewards on business essentials, supplies, bulk orders.<br />
-              Streamline expense tracking, earn more for your business!
+
+          <div className="border border-teal-400 p-4 rounded">
+            <h2 className="text-teal-300 font-bold">Business Shopping Rewards</h2>
+            <p className="text-sm mt-2">
+              Unlock rewards on business essentials, bulk orders, and expense tracking.
+              Earn more for your business!
             </p>
-            <Link href="/shopping?type=business" className="underline text-[#FF9151] font-semibold hover:text-[#15C5C1]">
-              Shop for your business →
-            </Link>
+            <Link href="/enterpriseai" className="mt-2 inline-block text-teal-300 underline">Shop for your business →</Link>
           </div>
         </div>
 
-        {/* Lean Lab Feature */}
-        <div className="w-full max-w-2xl bg-[#072b33] rounded-2xl border border-[#15C5C1] p-6 mb-10 text-center shadow">
-          <h3 className="text-xl font-bold text-[#15C5C1] mb-2">Lean Lab – RewmoAI Process Management</h3>
-          <p className="text-[#B6E7EB] mb-1">
-            <span className="font-bold text-[#FF9151]">NEW:</span> AI-powered process improvement tools for individuals <b>and</b> small businesses. Map your routines, eliminate waste, and unlock continuous improvement.
+        <div className="mt-12 p-4 border border-teal-400 rounded max-w-xl w-full">
+          <h2 className="text-teal-300 font-bold">Lean Lab – RewmoAI Process Management</h2>
+          <p className="text-sm mt-2">
+            <strong>NEW:</strong> AI-powered process improvement tools for individuals and businesses.
+            Map your routines, eliminate waste, and unlock continuous improvement.
           </p>
-          <Link href="/lean-lab" className="underline text-[#15C5C1] font-semibold hover:text-[#FFA36C]">
-            Learn about Lean Lab →
-          </Link>
+          <Link href="/lean-lab" className="mt-2 inline-block text-teal-300 underline">Learn about Lean Lab →</Link>
         </div>
       </main>
 
-      {/* Email Sign-In Modal */}
-      {showEmailModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-[#003B49] border-2 border-[#FF9151] rounded-2xl p-8 w-full max-w-md shadow-xl flex flex-col items-center">
-            <h2 className="text-2xl font-bold text-[#FF9151] mb-4">Email Sign-In</h2>
-            <form className="w-full flex flex-col gap-3" onSubmit={handleEmailSignIn}>
-              <input
-                type="email"
-                required
-                placeholder="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-[#15C5C1] bg-[#072b33] text-white focus:outline-none focus:border-[#FF9151] transition"
-              />
-              <input
-                type="password"
-                required
-                placeholder="Password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-[#15C5C1] bg-[#072b33] text-white focus:outline-none focus:border-[#FF9151] transition"
-              />
-              <button
-                type="submit"
-                className="bg-[#FF9151] text-[#003B49] py-2 rounded-lg font-bold hover:bg-[#FFA36C] transition"
-              >
-                Sign In with Email
-              </button>
-              <button
-                type="button"
-                className="mt-1 text-[#15C5C1] underline hover:text-[#FFA36C]"
-                onClick={() => setShowEmailModal(false)}
-              >
-                Cancel
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
-      <footer className="text-[#F7F6F2] text-xs py-4 text-center border-t border-[#072b33] w-full">
-        <span>
-          © {new Date().getFullYear()} RewmoAI |{" "}
-          <Link href="/affiliate-disclosure" className="underline hover:text-[#FFA36C] text-[#FF9151]">Affiliate Disclosure</Link> |{" "}
-          <Link href="/privacy" className="underline hover:text-[#FFA36C] text-[#FF9151]">Privacy</Link> |{" "}
-          <Link href="/terms" className="underline hover:text-[#FFA36C] text-[#FF9151]">Terms</Link>
-        </span>
+      {/* FOOTER */}
+      <footer className="text-center text-sm text-white/70 py-4">
+        © 2025 RewmoAI | <Link href="/affiliate-disclosure" className="underline">Affiliate Disclosure</Link> |{" "}
+        <Link href="/privacy" className="underline">Privacy</Link> |{" "}
+        <Link href="/terms" className="underline">Terms</Link>
       </footer>
     </div>
   );

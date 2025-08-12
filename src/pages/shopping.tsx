@@ -8,7 +8,7 @@ const PERSONAL_BRANDS = [
   {
     name: "Amazon",
     description: "Earn up to 5% back on your everyday shopping.",
-    logo: "/brands/amazon.png",
+    logo: "/logos/amazon.png",
     active: true,
     reward: "Up to 5% back",
     url: "https://www.amazon.com/?tag=YOUR_AMAZON_AFFILIATE_ID", // <- insert your affiliate code
@@ -16,21 +16,21 @@ const PERSONAL_BRANDS = [
   {
     name: "Walmart",
     description: "Get 3% back on electronics, groceries, and more.",
-    logo: "/brands/walmart.png",
+    logo: "/logos/walmart.png",
     active: false,
     reward: "3% back",
   },
   {
     name: "Target",
     description: "Shop & earn instant cash back in-store and online.",
-    logo: "/brands/target.png",
+    logo: "/logos/target.png",
     active: false,
     reward: "2% back",
   },
   {
     name: "Apple",
     description: "Earn up to 4% back on Apple Store purchases.",
-    logo: "/brands/apple.png",
+    logo: "/logos/apple.png", // Make sure this image exists or remove the object
     active: false,
     reward: "Up to 4% back",
   },
@@ -40,29 +40,29 @@ const BUSINESS_BRANDS = [
   {
     name: "Amazon Business",
     description: "Earn up to 5% back on office and business supplies.",
-    logo: "/brands/amazon.png",
+    logo: "/logos/amazon.png",
     active: true,
     reward: "Up to 5% back",
-    url: "https://www.amazon.com/?tag=YOUR_AMAZON_AFFILIATE_ID", // same or use business affiliate if you have one
+    url: "https://www.amazon.com/?tag=YOUR_AMAZON_AFFILIATE_ID",
   },
   {
     name: "Staples",
     description: "Get exclusive business supply deals (Coming Soon).",
-    logo: "/brands/staples.png",
+    logo: "/logos/staples.png", // Add this image or remove the brand
     active: false,
     reward: "Coming Soon",
   },
   {
     name: "Office Depot",
     description: "Earn cash back on business essentials (Coming Soon).",
-    logo: "/brands/officedepot.png",
+    logo: "/logos/officedepot.png", // Add this image or remove the brand
     active: false,
     reward: "Coming Soon",
   },
   {
     name: "Best Buy Business",
     description: "Get rewards for electronics and more (Coming Soon).",
-    logo: "/brands/bestbuy.png",
+    logo: "/logos/bestbuy.png", // Add this image or remove the brand
     active: false,
     reward: "Coming Soon",
   },
@@ -79,6 +79,7 @@ export default function ShoppingRewardsPage() {
         <h1 className="text-3xl md:text-4xl font-black text-[#FF9151] mb-3 text-center tracking-tight">
           Shopping Rewards
         </h1>
+
         {/* Tab Switcher */}
         <div className="flex gap-2 mb-6">
           <button
@@ -104,13 +105,14 @@ export default function ShoppingRewardsPage() {
         </div>
 
         <p className="text-[#B6E7EB] text-center mb-8 max-w-xl">
-          Shop for yourself or your business and get instant rewards on popular brands.<br/>
+          Shop for yourself or your business and get instant rewards on popular brands.
+          <br />
           <span className="text-[#FFA36C] font-semibold">Amazon is live. Other brands are coming soon!</span>
         </p>
 
         {/* Brand List */}
         <div className="flex flex-col gap-5 w-full max-w-2xl mb-8">
-          {brands.map((b, i) => (
+          {brands.map((b) => (
             <div
               key={b.name}
               className={`flex items-center justify-between bg-[#072b33] rounded-2xl border ${
