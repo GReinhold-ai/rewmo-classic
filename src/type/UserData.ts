@@ -1,7 +1,7 @@
-import { User } from "firebase/auth";
+mport type { User } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient"; // or '../lib/firebaseClient' if alias fails
-import { UserData } from "@/types/UserData";
+import { db } from "@/lib/firebaseClient";
+import type { UserData } from "@/type/UserData";
 
 export const createUserInFirestore = async (user: User) => {
   const userRef = doc(db, "users", user.uid);
