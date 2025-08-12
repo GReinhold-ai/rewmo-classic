@@ -3,7 +3,6 @@ import Stripe from "stripe";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-// ✅ Initialize Stripe (no apiVersion param needed)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 /** CORS helper (supports comma-separated origins in UNICORN_ORIGIN) */
@@ -22,7 +21,7 @@ function cors(req: NextApiRequest, res: NextApiResponse) {
   return false;
 }
 
-// ✅ Firebase Admin init (service account envs)
+// Firebase Admin
 if (!getApps().length) {
   initializeApp({
     credential: cert({
@@ -39,22 +38,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
 
   try {
-    const { email, product = "RewmoAI + EnterpriseAI", source = "unicorn" } = req.body || {};
+    const { email, product = "RewmoAI + EnterpriseAI", source = "unicorn" } =
+      (req.body ?? {}) as { email?: string; product?: string; source?: string };
+
     if (!email) return res.status(400).json({ error: "Email is required" });
 
-    const lineItem = process.env.STRIPE_PRICE_ID
-      ? { price: process.env.STRIPE_PRICE_ID, quantity: 1 }
-      : {
-          price_data: {
-            currency: "usd",
-            recurring: { interval: "month" },
-            product_data: { name: `${product} Subscription` },
-            unit_amount: 1000, // $10
-          },
-          quantity: 1,
-        };
+    // Build a strongly-typed line item to satisfy Stripe v18 types
+    let lineItem: Stripe.Checkout.SessionCreateParams.LineItem;
 
-    const session = await stripe.checkout.sessions.create({
+    if (process.env.STRIPE_PRICE_ID) {
+      lineItem = { price: process.env.STRIPE_PRICE_ID as string, quantity: 1 };
+    } else {
+      lineItem = {
+        price_data: {
+          currency: "usd",
+          recurring: { interval: "month" as Stripe.Price.Recurring.Interval },
+          product_data: { name: `${product} Subscription` },
+          unit_amount: 1000, // $10
+        },
+        quantity: 1,
+      };
+    }
+
+    const params: Stripe.Checkout.SessionCreateParams = {
       mode: "subscription",
       customer_email: email,
       line_items: [lineItem],
@@ -62,19 +68,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success_url: `${process.env.SITE_URL}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.SITE_URL}/cancel`,
       metadata: { product, source },
-    });
+    };
 
-    await db.collection("preorders").doc(email).set(
-      {
-        email,
-        product,
-        source,
-        stripeSessionId: session.id,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
+    const session = await stripe.checkout.sessions.create(params);
+
+    await db
+      .collection("preorders")
+      .doc(email)
+      .set(
+        {
+          email,
+          product,
+          source,
+          stripeSessionId: session.id,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
 
     return res.status(200).json({ url: session.url });
   } catch (err: any) {
