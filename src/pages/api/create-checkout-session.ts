@@ -1,10 +1,9 @@
-// src/pages/api/create-checkout-session.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-// --- CORS helper (handles preflight and echoes allowed origin) ---
+// --- CORS helper (handles preflight cleanly) ---
 function applyCors(req: NextApiRequest, res: NextApiResponse) {
   const origins = (process.env.UNICORN_ORIGIN || "")
     .split(",")
@@ -27,32 +26,40 @@ function applyCors(req: NextApiRequest, res: NextApiResponse) {
   return false;
 }
 
-// --- Firebase Admin init ---
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FB_ADMIN_PROJECT_ID,
-      clientEmail: process.env.FB_ADMIN_CLIENT_EMAIL,
-      privateKey: process.env.FB_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-const db = getFirestore();
+// --- Lazy Firestore (don’t crash if envs are missing) ---
+function getDbOrNull() {
+  try {
+    if (!getApps().length) {
+      const projectId   = process.env.FB_ADMIN_PROJECT_ID;
+      const clientEmail = process.env.FB_ADMIN_CLIENT_EMAIL;
+      const privateKey  = process.env.FB_ADMIN_PRIVATE_KEY;
+      if (!projectId || !clientEmail || !privateKey) return null;
 
-// --- Stripe init ---
-// (no apiVersion so we use account default to avoid TS literal mismatch)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+      initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey: privateKey.replace(/\\n/g, "\n"),
+        }),
+      });
+    }
+    return getFirestore();
+  } catch (e) {
+    console.error("firebase admin init failed:", e);
+    return null;
+  }
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Always set CORS / handle preflight early
+  // Always set/handle CORS first
   if (applyCors(req, res)) return;
 
-  // Helpful GET for verifying deployment/routes
+  // Lightweight GET so we can verify the route without initializing Stripe/Admin
   if (req.method === "GET") {
     return res.status(200).json({
       ok: true,
-      info: "Use POST to create a checkout session.",
-      method: req.method,
+      route: "create-checkout-session",
+      hint: "POST to create a Stripe Checkout session",
     });
   }
 
@@ -64,13 +71,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { email, product = "RewmoAI + EnterpriseAI", source = "unicorn" } = (req.body || {});
     if (!email) return res.status(400).json({ error: "Email is required" });
 
-    // Base URL for redirects (falls back to request host)
+    const secret = process.env.STRIPE_SECRET_KEY;
+    if (!secret) return res.status(500).json({ error: "Missing STRIPE_SECRET_KEY" });
+
+    const stripe = new Stripe(secret); // lazy
+
     const base =
       process.env.SITE_URL ||
       (req.headers.origin as string) ||
       `https://${req.headers.host}`;
 
-    // Use a Price if provided, else inline price_data
     const lineItem: Stripe.Checkout.SessionCreateParams.LineItem =
       process.env.STRIPE_PRICE_ID
         ? { price: process.env.STRIPE_PRICE_ID, quantity: 1 }
@@ -94,17 +104,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metadata: { product, source },
     });
 
-    await db.collection("preorders").doc(email).set(
-      {
-        email,
-        product,
-        source,
-        stripeSessionId: session.id,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
+    // best-effort Firestore write (skip if admin creds not set)
+    const db = getDbOrNull();
+    if (db) {
+      await db.collection("preorders").doc(email).set(
+        {
+          email,
+          product,
+          source,
+          stripeSessionId: session.id,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    } else {
+      console.warn("Firestore not configured; skipping preorder write");
+    }
 
     return res.status(200).json({ url: session.url });
   } catch (err: any) {
