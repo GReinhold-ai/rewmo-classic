@@ -1,130 +1,136 @@
+// src/pages/api/create-checkout-session.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-// --- CORS helper (handles preflight cleanly) ---
-function applyCors(req: NextApiRequest, res: NextApiResponse) {
-  const origins = (process.env.UNICORN_ORIGIN || "")
-    .split(",")
-    .map(o => o.trim())
-    .filter(Boolean);
-
-  const reqOrigin = (req.headers.origin as string) || "";
-  const allow = reqOrigin && origins.includes(reqOrigin) ? reqOrigin : origins[0] || "*";
-
-  res.setHeader("Access-Control-Allow-Origin", allow);
-  res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Max-Age", "86400");
-
-  if (req.method === "OPTIONS") {
-    res.status(200).end();
-    return true; // handled preflight
-  }
-  return false;
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FB_ADMIN_PROJECT_ID,
+      clientEmail: process.env.FB_ADMIN_CLIENT_EMAIL,
+      privateKey: process.env.FB_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
 }
+const db = getFirestore();
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
-// --- Lazy Firestore (don’t crash if envs are missing) ---
-function getDbOrNull() {
-  try {
-    if (!getApps().length) {
-      const projectId   = process.env.FB_ADMIN_PROJECT_ID;
-      const clientEmail = process.env.FB_ADMIN_CLIENT_EMAIL;
-      const privateKey  = process.env.FB_ADMIN_PRIVATE_KEY;
-      if (!projectId || !clientEmail || !privateKey) return null;
-
-      initializeApp({
-        credential: cert({
-          projectId,
-          clientEmail,
-          privateKey: privateKey.replace(/\\n/g, "\n"),
-        }),
-      });
+// allow only the UTM keys we care about (prevents junk/injection)
+const pickUtm = (input: any = {}) => {
+  const out: Record<string, string> = {};
+  const allow = [
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_term",
+    "utm_content",
+    "ref",
+  ];
+  for (const k of allow) {
+    const v = input?.[k];
+    if (typeof v === "string" && v.trim()) {
+      // Stripe metadata values must be <= 500 chars and strings only
+      out[k] = v.trim().slice(0, 480);
     }
-    return getFirestore();
-  } catch (e) {
-    console.error("firebase admin init failed:", e);
-    return null;
   }
-}
+  return out;
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Always set/handle CORS first
-  if (applyCors(req, res)) return;
-
-  // Lightweight GET so we can verify the route without initializing Stripe/Admin
   if (req.method === "GET") {
-    return res.status(200).json({
+    return res.json({
       ok: true,
       route: "create-checkout-session",
-      hint: "POST to create a Stripe Checkout session",
+      hint: "POST email/product/source/utm to create a Stripe Checkout session",
     });
   }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed", method: req.method });
-  }
+  if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
   try {
-    const { email, product = "RewmoAI + EnterpriseAI", source = "unicorn" } = (req.body || {});
-    if (!email) return res.status(400).json({ error: "Email is required" });
+    const {
+      email,
+      product = "RewmoAI + EnterpriseAI",
+      source = "unicorn",
+      utm = {},
+    } = req.body as {
+      email?: string;
+      product?: string;
+      source?: string;
+      utm?: Record<string, string>;
+    };
 
-    const secret = process.env.STRIPE_SECRET_KEY;
-    if (!secret) return res.status(500).json({ error: "Missing STRIPE_SECRET_KEY" });
+    if (!email) return res.status(400).json({ error: "Missing email" });
+    const utmClean = pickUtm(utm);
 
-    const stripe = new Stripe(secret); // lazy
+    // 1) Upsert a pending preorder with UTM/ref data
+    const nowIso = new Date().toISOString();
+    await db.collection("preorders").doc(email).set(
+      {
+        email,
+        product,
+        source,
+        utm: utmClean,
+        status: "pending",
+        updatedAt: nowIso,
+        createdAt: nowIso,
+      },
+      { merge: true }
+    );
 
-    const base =
-      process.env.SITE_URL ||
-      (req.headers.origin as string) ||
-      `https://${req.headers.host}`;
+    // 2) Get or create a Stripe customer by email so metadata can live on it too
+    const list = await stripe.customers.list({ email, limit: 1 });
+    const existing = list.data[0];
+    const customer =
+      existing ??
+      (await stripe.customers.create({
+        email,
+        metadata: {
+          product,
+          source,
+          ...utmClean,
+        },
+      }));
 
-    const lineItem: Stripe.Checkout.SessionCreateParams.LineItem =
-      process.env.STRIPE_PRICE_ID
-        ? { price: process.env.STRIPE_PRICE_ID, quantity: 1 }
-        : {
-            price_data: {
-              currency: "usd",
-              recurring: { interval: "month" as const },
-              product_data: { name: `${product} Subscription` },
-              unit_amount: 1000, // $10
-            },
-            quantity: 1,
-          };
+    // 3) Create Checkout Session (subscription)
+    const bundlePrice = process.env.STRIPE_PRICE_BUNDLE_ID!; // set in env
+    const successUrl = `${process.env.SITE_URL}/thank-you?email=${encodeURIComponent(
+      email
+    )}`;
+    const cancelUrl = `${process.env.SITE_URL}/?canceled=1`;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      customer_email: email,
-      line_items: [lineItem],
+      customer: customer.id,
+      // If you prefer customer_email instead of customer, you can use:
+      // customer_email: email,
+      line_items: [{ price: bundlePrice, quantity: 1 }],
       allow_promotion_codes: true,
-      success_url: `${base}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${base}/cancel`,
-      metadata: { product, source },
-    });
+      success_url: successUrl,
+      cancel_url: cancelUrl,
 
-    // best-effort Firestore write (skip if admin creds not set)
-    const db = getDbOrNull();
-    if (db) {
-      await db.collection("preorders").doc(email).set(
-        {
-          email,
+      // Store attribution on the session
+      metadata: {
+        product,
+        source,
+        email,
+        ...utmClean,
+      },
+
+      // Also store attribution at the subscription level
+      subscription_data: {
+        metadata: {
           product,
           source,
-          stripeSessionId: session.id,
-          status: "pending",
-          createdAt: new Date().toISOString(),
+          email,
+          ...utmClean,
         },
-        { merge: true }
-      );
-    } else {
-      console.warn("Firestore not configured; skipping preorder write");
-    }
+      },
+    });
 
-    return res.status(200).json({ url: session.url });
+    return res.json({ url: session.url });
   } catch (err: any) {
     console.error("create-checkout-session error:", err);
-    return res.status(500).json({ error: err.message || "Server error" });
+    return res.status(500).json({ error: err?.message ?? "Server error" });
   }
 }

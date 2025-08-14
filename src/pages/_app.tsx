@@ -6,13 +6,14 @@ import { useRouter } from "next/router";
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
-  // Only show Navbar if NOT on the landing page
-  const hideNavbar = router.pathname === "/";
+  const hideNavbar = router.pathname === "/"; // still hide on pure landing page
 
   return (
     <AuthProvider>
       {!hideNavbar && <Navbar />}
-      <Component {...pageProps} />
+      <main className={!hideNavbar ? "pt-16 md:pt-20" : ""}>
+        <Component {...pageProps} />
+      </main>
     </AuthProvider>
   );
 }
