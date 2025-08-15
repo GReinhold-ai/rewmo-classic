@@ -130,41 +130,63 @@ export default async function handler(
       /**
        * Keep subscription state in sync, and persist metadata if present
        */
-      case "customer.subscription.created":
-      case "customer.subscription.updated":
-      case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription;
+      // ===== Improved subscription branch =====
+case "customer.subscription.created":
+case "customer.subscription.updated":
+case "customer.subscription.deleted": {
+  // Extend with optional timestamp fields to satisfy TS across API versions
+  const sub = event.data.object as Stripe.Subscription & {
+    current_period_end?: number;
+    cancel_at_period_end?: boolean;
+  };
 
-        const customerId =
-          typeof sub.customer === "string"
-            ? sub.customer
-            : (sub.customer as any)?.id ?? null;
+  const customerId =
+    typeof sub.customer === "string"
+      ? sub.customer
+      : (sub.customer as any)?.id ?? null;
 
-        // First item/price/product (typical single-plan subs)
-        const price = sub.items?.data?.[0]?.price;
-        const productId =
-          typeof price?.product === "string"
-            ? price.product
-            : (price?.product as any)?.id ?? null;
-        const priceId = price?.id ?? null;
+  // First item/price/product (typical single-plan subs)
+  const price = sub.items?.data?.[0]?.price;
+  const productId =
+    typeof price?.product === "string"
+      ? price.product
+      : (price?.product as any)?.id ?? null;
+  const priceId = price?.id ?? null;
 
-        const subMeta = (sub.metadata || {}) as Record<string, string>;
+  const currentPeriodEndIso = sub.current_period_end
+    ? new Date(sub.current_period_end * 1000).toISOString()
+    : null;
 
-        const payload: any = {
-          subscriptionStatus: sub.status, // active | trialing | past_due | canceled | unpaid | paused | ...
-          stripeCustomerId: customerId,
-          productId,
-          priceId,
-          cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
-          currentPeriodEnd: sub.current_period_end
-            ? new Date(sub.current_period_end * 1000).toISOString()
-            : null,
-          updatedAt: new Date().toISOString(),
-        };
+  const payload = {
+    subscriptionStatus: sub.status, // active | trialing | past_due | canceled | unpaid | paused | ...
+    stripeCustomerId: customerId,
+    productId,
+    priceId,
+    cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+    currentPeriodEnd: currentPeriodEndIso,
+    updatedAt: new Date().toISOString(),
+  };
 
-        if (Object.keys(subMeta).length) {
-          payload.meta = subMeta; // refresh attribution if it changed
-        }
+  // Prefer match by customer id
+  const byCustomer = await db
+    .collection("preorders")
+    .where("stripeCustomerId", "==", customerId)
+    .limit(1)
+    .get();
+
+  if (!byCustomer.empty) {
+    await byCustomer.docs[0].ref.set(payload, { merge: true });
+  } else {
+    // Fallback: upsert by email if present
+    const maybeEmail = (sub as any).customer_email as string | undefined;
+    if (maybeEmail) {
+      await db.collection("preorders").doc(maybeEmail).set(payload, { merge: true });
+    } else {
+      console.warn("[webhook] subscription event with no matching preorder", { customerId });
+    }
+  }
+  break;
+}
 
         // Find by customer id (preferred path — we stored it on checkout)
         const byCustomer = await db
