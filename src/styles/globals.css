@@ -4,6 +4,9 @@
 
 /* custom styles go below */
 
+/* src/styles/globals.css */
+html, body, #__next { height: 100%; }
+body { background-color: #003B49; } /* Your brand background */
 
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');

@@ -1,195 +1,109 @@
+// src/pages/api/create-checkout-session.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-import { initializeApp, cert, getApps } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
 
-// ---------- Env & Stripe ----------
-const {
-  STRIPE_SECRET_KEY,
-  SITE_URL,
-  UNICORN_ORIGIN, // comma-separated allowlist, e.g. "https://rewmo.ai,https://app.rewmo.ai"
-  // Live/test price IDs (set these in Vercel)
-  STRIPE_PRICE_BUNDLE,
-  STRIPE_PRICE_REWMO,
-  STRIPE_PRICE_ENTERPRISE,
-} = process.env;
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY as string | undefined;
+const SITE_URL = (process.env.SITE_URL || "https://rewmo.ai").replace(/\/+$/, "");
 
-if (!STRIPE_SECRET_KEY) {
-  console.warn("[checkout] STRIPE_SECRET_KEY is missing");
-}
-const stripe = new Stripe(STRIPE_SECRET_KEY ?? "");
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : (null as unknown as Stripe);
 
-// ---------- Firebase Admin ----------
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FB_ADMIN_PROJECT_ID,
-      clientEmail: process.env.FB_ADMIN_CLIENT_EMAIL,
-      privateKey: (process.env.FB_ADMIN_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
-    }),
-  });
-}
-const adminAuth = getAuth();
-const db = getFirestore();
+// --- CORS helper: echo allowed origins (prod + any *.vercel.app preview) ---
+function setCORS(req: NextApiRequest, res: NextApiResponse) {
+  const origin = (req.headers.origin as string) || "";
+  const allowList = new Set<string>([
+    SITE_URL,
+    "https://rewmo.ai",
+    "https://aitools.rewmo.ai",
+  ]);
 
-// ---------- Helpers ----------
-const ALLOWED = (UNICORN_ORIGIN || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-function isAllowedOrigin(origin?: string | null) {
-  if (!origin) return false;
-  return ALLOWED.includes(origin);
-}
-
-function setCors(res: NextApiResponse, origin?: string | null) {
-  if (origin && isAllowedOrigin(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Vary", "Origin");
+  let allowOrigin = "";
+  try {
+    const u = new URL(origin);
+    if (allowList.has(origin) || u.hostname.endsWith(".vercel.app")) {
+      allowOrigin = origin;
+    }
+  } catch {
+    /* ignore */
   }
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
+  if (!allowOrigin) allowOrigin = SITE_URL;
+
+  res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
 
-type BodyIn = {
-  product?: "RewmoAI + EnterpriseAI" | "RewmoAI" | "EnterpriseAI";
-  source?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-};
+// Map your products → live/test price ids via env
+const PRICE_IDS = {
+  BUNDLE: process.env.STRIPE_PRICE_BUNDLE,          // RewmoAI + EnterpriseAI
+  PERSONAL: process.env.STRIPE_PRICE_REWMO,         // RewmoAI only
+  BUSINESS: process.env.STRIPE_PRICE_ENTERPRISE,    // EnterpriseAI only
+} as const;
 
-const PRICE_IDS: Record<string, string | undefined> = {
-  "RewmoAI + EnterpriseAI": STRIPE_PRICE_BUNDLE,
-  RewmoAI: STRIPE_PRICE_REWMO,
-  EnterpriseAI: STRIPE_PRICE_ENTERPRISE,
-};
+function resolvePriceId(product?: string): string | undefined {
+  if (!product) return PRICE_IDS.BUNDLE || PRICE_IDS.PERSONAL || PRICE_IDS.BUSINESS;
+  const key = product.toLowerCase();
+  if (key.includes("bundle") || key.includes("+")) return PRICE_IDS.BUNDLE;
+  if (key.includes("enterprise")) return PRICE_IDS.BUSINESS;
+  if (key.includes("rewmo")) return PRICE_IDS.PERSONAL;
+  return PRICE_IDS.BUNDLE || PRICE_IDS.PERSONAL || PRICE_IDS.BUSINESS;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const origin = req.headers.origin as string | undefined;
-  setCors(res, origin);
-
-  // Preflight
-  if (req.method === "OPTIONS") {
-    if (!isAllowedOrigin(origin)) return res.status(400).end();
-    return res.status(204).end();
-  }
+  setCORS(req, res);
+  if (req.method === "OPTIONS") return res.status(200).end();
 
   if (req.method === "GET") {
     return res.json({
       ok: true,
       route: "create-checkout-session",
-      hint: "POST email/product/source/utm to create a Stripe Checkout session (email now taken from Firebase ID token).",
+      hint: "POST email/product/source/utm to create a Stripe Checkout session",
     });
   }
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
+  if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: "Missing STRIPE_SECRET_KEY" });
 
-  if (!isAllowedOrigin(origin)) {
-    return res.status(403).json({ error: "Origin not allowed" });
-  }
-
-  if (!STRIPE_SECRET_KEY) {
-    return res.status(500).json({ error: "Missing STRIPE_SECRET_KEY" });
-  }
-
-  const site = SITE_URL || origin || "";
-  if (!site) {
-    return res.status(500).json({ error: "Missing SITE_URL/Origin" });
-  }
-
-  // ---- Require Firebase ID token & pull trusted identity (no client email) ----
   try {
-    const authz = req.headers.authorization || "";
-    const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
-    if (!token) return res.status(401).json({ error: "Sign-in required" });
+    const {
+      email,
+      product,
+      source,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+      utm_term,
+      utm_content,
+    } = (req.body || {}) as Record<string, string | undefined>;
 
-    const decoded = await adminAuth.verifyIdToken(token);
-    const uid = decoded.uid;
-    const email = decoded.email || decoded.firebase?.identities?.email?.[0]; // defensive
-
-    if (!email) {
-      return res.status(400).json({ error: "User email not present on token" });
-    }
-
-    // Body (product + UTM only; email is ignored)
-    const body = (req.body || {}) as BodyIn;
-    const product = body.product || "RewmoAI + EnterpriseAI";
-    const priceId = PRICE_IDS[product];
+    const priceId = resolvePriceId(product);
     if (!priceId) {
-      return res.status(400).json({
-        error: `Unknown product '${product}'. Set STRIPE_PRICE_* envs.`,
-      });
+      return res.status(400).json({ error: "No Stripe price configured. Set STRIPE_PRICE_* envs." });
     }
 
-    // UTM & attribution
-    const source = body.source || "unicorn";
-    const utm = {
-      utm_source: body.utm_source || "",
-      utm_medium: body.utm_medium || "",
-      utm_campaign: body.utm_campaign || "",
-    };
+    const metadata: Record<string, string> = {};
+    if (email) metadata.email = email;
+    if (source) metadata.source = source;
+    if (utm_source) metadata.utm_source = utm_source;
+    if (utm_medium) metadata.utm_medium = utm_medium;
+    if (utm_campaign) metadata.utm_campaign = utm_campaign;
+    if (utm_term) metadata.utm_term = utm_term;
+    if (utm_content) metadata.utm_content = utm_content;
 
-    // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      payment_method_types: ["card"],
-      client_reference_id: uid,
-      customer_email: email, // If a Customer already exists for this email, Stripe will attach it.
-      metadata: {
-        uid,
-        email,
-        source,
-        ...utm,
-      },
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
-      success_url: `${site.replace(/\/$/, "")}/thank-you?email=${encodeURIComponent(
-        email
-      )}`,
-      cancel_url: `${site.replace(/\/$/, "")}/?canceled=1`,
+      success_url: `${SITE_URL}/success?email=${encodeURIComponent(email || "")}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE_URL}/#pricing`,
+      customer_email: email || undefined,
+      metadata,
+      payment_method_types: ["card"],
     });
 
-    // Seed/merge a pending preorder for downstream webhook to finalize
-    try {
-      await db
-        .collection("preorders")
-        .doc(email)
-        .set(
-          {
-            status: "pending",
-            subscriptionStatus: "pending",
-            product,
-            priceId,
-            stripeSessionId: session.id,
-            stripeCustomerId: session.customer || null,
-            source,
-            lastTouch: utm,
-            clientReferenceId: uid,
-            siteUrl: site,
-            checkoutUrlPreview: session.url || null, // handy while testing
-            updatedAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-    } catch (e) {
-      console.warn("[checkout] Firestore seed failed (continuing):", e);
-      // Not fatal for returning the Stripe URL
-    }
-
-    return res.status(200).json({ url: session.url });
+    return res.json({ url: session.url });
   } catch (err: any) {
-    console.error("[checkout] error:", err?.message || err);
-    return res.status(500).json({ error: "Server error" });
+    console.error("[checkout] error", err?.message || err);
+    return res.status(500).json({ error: "Server error creating checkout session" });
   }
 }
