@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -14,6 +14,11 @@ import { logRewardHistory } from "@/utils/logRewardHistory";
 
 export type AuthContextType = {
   currentUser: User | null;
+  // NEW: securely pass identity to APIs
+  getIdToken: () => Promise<string | null>;
+  authHeader: () => Promise<Record<string, string>>;
+
+  // existing auth actions
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
@@ -115,19 +120,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        currentUser,
-        signInWithGoogle,
-        signInWithEmail,
-        signUpWithEmail,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  // NEW: helpers for secure API calls
+  const getIdToken = async (): Promise<string | null> => {
+    try {
+      if (!currentUser) return null;
+      return await currentUser.getIdToken(/* forceRefresh */ false);
+    } catch {
+      return null;
+    }
+  };
+
+  const authHeader = async (): Promise<Record<string, string>> => {
+    const tok = await getIdToken();
+    return tok ? { Authorization: `Bearer ${tok}` } : {};
+  };
+
+  const value = useMemo<AuthContextType>(
+    () => ({
+      currentUser,
+      getIdToken,
+      authHeader,
+      signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
+      logout,
+    }),
+    [currentUser]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // Hook returns a non-null context so `{ currentUser } = useAuth()` is fully typed
@@ -137,5 +158,4 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-// Add default export so both default and named imports work
 export default AuthProvider;

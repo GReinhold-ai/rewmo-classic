@@ -2,16 +2,12 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { AuthProvider } from "@/lib/AuthProvider";
 import Navbar from "@/components/Navbar";
-import { useRouter } from "next/router";
 
 export default function App({ Component, pageProps }: AppProps) {
-  const router = useRouter();
-  const hideNavbar = router.pathname === "/"; // still hide on pure landing page
-
   return (
     <AuthProvider>
-      {!hideNavbar && <Navbar />}
-      <main className={!hideNavbar ? "pt-16 md:pt-20" : ""}>
+      <Navbar />{/* sticky header shown on all pages */}
+      <main className="pt-16 md:pt-20">
         <Component {...pageProps} />
       </main>
     </AuthProvider>

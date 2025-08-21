@@ -1,0 +1,5 @@
+// src/pages/learn/lab.tsx
+import TrainingModule from "@/components/TrainingModule";
+export default function LabPage() {
+  return <TrainingModule />;
+}
