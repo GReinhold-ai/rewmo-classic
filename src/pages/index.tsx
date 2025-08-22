@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { auth, signInWithEmail } from "@/lib/firebaseClient";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import type { User } from "firebase/auth";
-
+import TrainingTeaser from "@/components/TrainingTeaser";
 
 export default function HomePage() {
   const router = useRouter();
@@ -80,6 +80,7 @@ export default function HomePage() {
         <p className="text-white mt-4 max-w-xl">
           The AI-powered hub for rewards, savings, and smarter financial growth.
           Earn for shopping, referrals, and every dollar you manage smarter.
+          <TrainingTeaser />
         </p>
 
         <Link

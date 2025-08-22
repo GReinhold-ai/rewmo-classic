@@ -1,229 +1,228 @@
-// src/components/Navbar.tsx
-
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useAuth } from "@/lib/AuthProvider";
 
-type NavItem = { href: string; label: string };
+const linkBase =
+  "inline-flex items-center px-3 py-2 text-sm font-medium transition hover:opacity-90";
 
-const navItems: NavItem[] = [
-  { href: "/#features", label: "Features" },
-  { href: "/shopping", label: "Shopping" },
-  { href: "/learn/lab", label: "Lean Lab" },
-  { href: "/rewards", label: "Rewards" },
-  { href: "/learn", label: "Training" },
-  { href: "/about", label: "About" },
-];
+const DesktopLink = ({
+  href,
+  children,
+  active,
+}: {
+  href: string;
+  children: React.ReactNode;
+  active?: boolean;
+}) => (
+  <Link
+    href={href}
+    className={`${linkBase} ${
+      active ? "text-white" : "text-white/90"
+    } hover:text-white`}
+  >
+    {children}
+  </Link>
+);
 
 export default function Navbar() {
   const router = useRouter();
-  const { currentUser, logout } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
+  const { currentUser } = useAuth();
 
-  // -----------------------------
-  // Lock body scroll when mobile menu opens
-  // -----------------------------
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Lock body scroll while mobile menu is open
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    if (menuOpen) document.body.classList.add("overflow-hidden");
+    else document.body.classList.remove("overflow-hidden");
+    return () => document.body.classList.remove("overflow-hidden");
+  }, [menuOpen]);
 
-    const body = document.body;
-    let scrollY = 0;
+  // Close mobile menu on route change
+  useEffect(() => {
+    const close = () => setMenuOpen(false);
+    router.events.on("routeChangeStart", close);
+    return () => router.events.off("routeChangeStart", close);
+  }, [router.events]);
 
-    if (isOpen) {
-      // Save current scroll position so we can restore it
-      scrollY = window.scrollY || window.pageYOffset;
-      body.style.position = "fixed";
-      body.style.top = `-${scrollY}px`;
-      body.style.left = "0";
-      body.style.right = "0";
-      body.style.width = "100%";
-      body.style.overflow = "hidden";
-    } else {
-      // Restore scroll position and body styles
-      const top = body.style.top;
-      body.style.position = "";
-      body.style.top = "";
-      body.style.left = "";
-      body.style.right = "";
-      body.style.width = "";
-      body.style.overflow = "";
-      if (top) {
-        const y = Math.abs(parseInt(top, 10)) || 0;
-        window.scrollTo(0, y);
-      }
-    }
-
-    // Cleanup just in case the component unmounts while open
-    return () => {
-      body.style.position = "";
-      body.style.top = "";
-      body.style.left = "";
-      body.style.right = "";
-      body.style.width = "";
-      body.style.overflow = "";
-    };
-  }, [isOpen]);
-
-  // Build a Sign In URL that returns user to where they started
-  const signInHref = useMemo(() => {
-    const ret = router.asPath || "/account";
-    return `/signin?redirect=${encodeURIComponent(ret)}`;
-  }, [router.asPath]);
-
-  // Helpers
-  const isActive = (href: string) =>
-    href !== "/"
-      ? router.asPath === href || router.asPath.startsWith(href)
-      : router.asPath === "/";
-
-  const closeMenuAndNavigate = (href: string) => {
-    setIsOpen(false);
-    router.push(href);
-  };
+  const navLinks = [
+    { name: "Features", href: "/features" },
+    { name: "Shopping", href: "/shopping" },
+    { name: "Lean Lab", href: "/learn/lab" },
+    { name: "Rewards", href: "/rewards" },
+    { name: "About", href: "/about" },
+  ];
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-[#003B49] border-b border-[#0C5560]">
-      <nav className="mx-auto max-w-7xl px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
-        {/* Brand */}
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <img
-              src="/logo.svg"
-              alt="Rewmo"
-              className="h-7 w-auto md:h-8"
-              onError={(e) => {
-                // fallback if /logo.svg doesn't exist
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
-            />
-            <span className="text-white font-extrabold tracking-tight text-xl md:text-2xl">
-              RewmoAI
-            </span>
-          </Link>
-        </div>
+    <header className="fixed inset-x-0 top-0 z-40 bg-[#003B49] border-b border-white/10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        {/* Left: Brand */}
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <div className="h-7 w-7 rounded-md bg-white/10 flex items-center justify-center">
+            {/* simple logo square */}
+            <span className="text-white text-xs font-bold">R</span>
+          </div>
+          <span className="text-white font-semibold text-lg tracking-wide">
+            RewmoAI
+          </span>
+        </Link>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-6">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`text-sm font-medium transition ${
-                isActive(item.href)
-                  ? "text-[#FF9151]"
-                  : "text-[#B6E7EB] hover:text-white"
-              }`}
+        <nav className="hidden md:flex items-center gap-2">
+          {navLinks.map((l) => (
+            <DesktopLink
+              key={l.href}
+              href={l.href}
+              active={router.pathname.startsWith(l.href)}
             >
-              {item.label}
-            </Link>
+              {l.name}
+            </DesktopLink>
           ))}
 
-          {/* Account visible always */}
+          {/* Training dropdown (desktop) */}
+          <div className="relative group">
+            <button
+              className={`${linkBase} text-white/90 hover:text-white`}
+              type="button"
+            >
+              Training
+              <svg
+                className="ml-1 h-4 w-4 opacity-80"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+            <div className="absolute left-0 mt-2 min-w-[12rem] rounded-xl border border-white/10 bg-[#043846] shadow-lg hidden group-hover:block">
+              <Link
+                href="/learn"
+                className="block px-4 py-2.5 text-sm text-white/90 hover:text-white hover:bg-white/5"
+              >
+                All Training
+              </Link>
+              <Link
+                href="/learn/genai"
+                className="block px-4 py-2.5 text-sm text-white/90 hover:text-white hover:bg-white/5"
+              >
+                GenAI
+              </Link>
+              <Link
+                href="/learn/tqm"
+                className="block px-4 py-2.5 text-sm text-white/90 hover:text-white hover:bg-white/5"
+              >
+                TQM
+              </Link>
+            </div>
+          </div>
+        </nav>
+
+        {/* Right: actions */}
+        <div className="hidden md:flex items-center gap-2">
           <Link
             href="/account"
-            className="rounded-lg bg-[#15C5C1] text-[#003B49] px-3.5 py-2 text-sm font-bold hover:opacity-90 transition"
+            className="inline-flex items-center px-3 py-2 rounded-lg bg-[#15C5C1] text-white text-sm font-semibold hover:opacity-90"
           >
             Account
           </Link>
-
-          {/* Sign In / Out */}
-          {currentUser ? (
-            <button
-              onClick={() => logout()}
-              className="rounded-lg bg-[#FF6A00] text-white px-3.5 py-2 text-sm font-bold hover:opacity-90 transition"
-            >
-              Sign Out
-            </button>
-          ) : (
+          {!currentUser && (
             <Link
-              href={signInHref}
-              className="rounded-lg bg-[#FF6A00] text-white px-3.5 py-2 text-sm font-bold hover:opacity-90 transition"
+              href="/signin?redirect=/account"
+              className="inline-flex items-center px-3 py-2 rounded-lg bg-[#FF6A00] text-white text-sm font-semibold hover:opacity-90"
             >
               Sign In
             </Link>
           )}
         </div>
 
-        {/* Mobile toggle */}
+        {/* Mobile menu button */}
         <button
+          onClick={() => setMenuOpen((v) => !v)}
+          className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-md bg-white/10 text-white hover:bg-white/15"
           aria-label="Toggle menu"
-          aria-expanded={isOpen}
-          aria-controls="mobile-menu"
-          className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-lg bg-[#FF6A00] text-white"
-          onClick={() => setIsOpen((s) => !s)}
         >
-          <span className="sr-only">Toggle navigation</span>
-          {/* simple icon */}
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
-            <path
-              d="M4 7h16M4 12h16M4 17h16"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
+          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            {menuOpen ? (
+              <path
+                fillRule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            ) : (
+              <path
+                fillRule="evenodd"
+                d="M3 5h14a1 1 0 100-2H3a1 1 0 000 2zm14 4H3a1 1 0 000 2h14a1 1 0 100-2zM3 15h14a1 1 0 100-2H3a1 1 0 000 2z"
+                clipRule="evenodd"
+              />
+            )}
           </svg>
         </button>
-      </nav>
+      </div>
 
-      {/* Mobile menu (off-canvas overlay) */}
+      {/* Mobile sheet */}
       <div
-        id="mobile-menu"
-        className={`md:hidden fixed inset-0 z-40 bg-[#003B49] transition-opacity duration-200 ${
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        className={`md:hidden transition-[max-height] duration-300 overflow-hidden bg-[#003B49] border-t border-white/10 ${
+          menuOpen ? "max-h-[60vh]" : "max-h-0"
         }`}
-        aria-hidden={!isOpen}
       >
-        <div className="px-6 pt-20 pb-10 flex flex-col gap-4">
-          {navItems.map((item) => (
-            <button
-              key={item.href}
-              onClick={() => closeMenuAndNavigate(item.href)}
-              className={`text-lg text-left font-semibold px-3 py-3 rounded-lg transition ${
-                isActive(item.href)
-                  ? "bg-[#0C5560] text-white"
-                  : "text-[#B6E7EB] hover:bg-[#0C5560] hover:text-white"
-              }`}
+        <div className="px-4 py-3 space-y-1">
+          {navLinks.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="block px-3 py-2 text-white/90 hover:text-white rounded-lg hover:bg-white/10"
             >
-              {item.label}
-            </button>
+              {l.name}
+            </Link>
           ))}
 
-          <div className="h-px bg-[#0C5560] my-2" />
-
-          <button
-            onClick={() => closeMenuAndNavigate("/account")}
-            className="text-lg text-left font-bold px-3 py-3 rounded-lg bg-[#15C5C1] text-[#003B49]"
-          >
-            Account
-          </button>
-
-          {currentUser ? (
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                logout();
-              }}
-              className="mt-1 text-lg text-left font-bold px-3 py-3 rounded-lg bg-[#FF6A00] text-white"
+          {/* Training (mobile as simple links) */}
+          <div className="border-t border-white/10 my-2" />
+          <div className="px-1 pb-1">
+            <div className="text-xs uppercase tracking-wide text-white/60 px-2 pb-1">
+              Training
+            </div>
+            <Link
+              href="/learn"
+              className="block px-3 py-2 text-white/90 hover:text-white rounded-lg hover:bg-white/10"
             >
-              Sign Out
-            </button>
-          ) : (
-            <button
-              onClick={() => closeMenuAndNavigate(signInHref)}
-              className="mt-1 text-lg text-left font-bold px-3 py-3 rounded-lg bg-[#FF6A00] text-white"
+              All Training
+            </Link>
+            <Link
+              href="/learn/genai"
+              className="block px-3 py-2 text-white/90 hover:text-white rounded-lg hover:bg-white/10"
+            >
+              GenAI
+            </Link>
+            <Link
+              href="/learn/tqm"
+              className="block px-3 py-2 text-white/90 hover:text-white rounded-lg hover:bg-white/10"
+            >
+              TQM
+            </Link>
+          </div>
+
+          <div className="border-t border-white/10 my-2" />
+
+          <div className="flex items-center gap-2 pt-2">
+            <Link
+              href="/account"
+              className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-[#15C5C1] text-white font-semibold"
+            >
+              Account
+            </Link>
+            <Link
+              href="/signin?redirect=/account"
+              className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-[#FF6A00] text-white font-semibold"
             >
               Sign In
-            </button>
-          )}
+            </Link>
+          </div>
         </div>
-
-        {/* Clickable backdrop to close */}
-        <button
-          className="absolute inset-0 -z-10"
-          aria-hidden="true"
-          onClick={() => setIsOpen(false)}
-        />
       </div>
     </header>
   );

@@ -1,115 +1,76 @@
-import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient";
+import { useAuth } from "@/lib/AuthProvider";
 
-type Course = {
-  id: string;
-  title?: string;
-  summary?: string;
-  url?: string;      // external URL (LinkedIn/Microsoft/etc.)
-  order?: number;
-};
-
-type TrackKey = "genai-foundations" | "tqm-essentials";
-const TRACKS: { key: TrackKey; label: string; blurb: string }[] = [
-  {
-    key: "genai-foundations",
-    label: "Generative AI Foundations",
-    blurb: "Microsoft’s best free GenAI course series — curated and ready to learn.",
-  },
-  {
-    key: "tqm-essentials",
-    label: "TQM Essentials",
-    blurb: "Lean, Six Sigma, PDCA, SPC, and more — practical quality skills.",
-  },
-];
-
-export default function LearnIndex() {
-  const [courses, setCourses] = useState<Record<string, Course[]>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const out: Record<string, Course[]> = {};
-      for (const track of TRACKS) {
-        const qref = query(
-          collection(db, "catalog", track.key, "courses"),
-          orderBy("order", "asc")
-        );
-        const snap = await getDocs(qref);
-        out[track.key] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
-      }
-      setCourses(out);
-      setLoading(false);
-    })();
-  }, []);
+export default function LearnHub() {
+  const { currentUser } = useAuth();
 
   return (
-    <div className="min-h-screen bg-[#003B49]">
+    <>
       <Head>
-        <title>Learn | RewmoAI</title>
+        <title>Training | Rewmo</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </Head>
 
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <h1 className="text-3xl md:text-5xl font-black text-[#FF9151] mb-2">Learn</h1>
-        <p className="text-[#B6E7EB] max-w-2xl mb-8">
-          Curated training to level up fast — from Microsoft’s GenAI track to TQM fundamentals.
-        </p>
+      <div className="min-h-screen bg-[#003B49]">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-10 pb-20">
+          <h1 className="text-white text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Training
+          </h1>
+          <p className="text-white/80 mt-2 max-w-2xl">
+            Learn practical skills with short, focused modules. Start a track, or continue where you left off.
+          </p>
 
-        {loading && (
-          <div className="text-[#B6E7EB]">Loading courses…</div>
-        )}
-
-        {!loading && TRACKS.map((t) => {
-          const list = courses[t.key] || [];
-          return (
-            <section key={t.key} className="mb-12">
-              <div className="flex items-end justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-[#15C5C1]">{t.label}</h2>
-                  <p className="text-[#B6E7EB]">{t.blurb}</p>
-                </div>
-                <Link
-                  href={`/learn/${t.key}`}
-                  className="text-sm font-semibold text-[#FF9151] hover:text-[#FFB98E] underline"
-                >
-                  View all →
-                </Link>
+          {currentUser ? (
+            <div className="mt-6">
+              <div className="inline-flex items-center rounded-lg bg-white/10 px-4 py-2 text-white">
+                <span className="text-sm">
+                  Signed in as <strong>{currentUser.email}</strong>
+                </span>
               </div>
+            </div>
+          ) : (
+            <div className="mt-6">
+              <Link
+                href="/signin?redirect=/learn"
+                className="inline-flex items-center rounded-lg bg-[#FF6A00] px-4 py-2 text-white font-semibold hover:opacity-90"
+              >
+                Sign in to track progress
+              </Link>
+            </div>
+          )}
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {list.slice(0, 6).map((c) => (
-                  <article
-                    key={c.id}
-                    className="rounded-2xl border border-white/10 bg-[#072b33] p-4 shadow hover:shadow-lg transition"
-                  >
-                    <h3 className="text-lg font-bold text-white mb-1">{c.title ?? c.id}</h3>
-                    <p className="text-sm text-[#B6E7EB] mb-3 line-clamp-3">
-                      {c.summary || "Self-paced lesson"}
-                    </p>
-                    <div className="flex gap-2">
-                      {c.url ? (
-                        <a
-                          href={c.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center rounded-lg bg-[#FF6B00] px-3 py-2 text-sm font-bold text-white hover:bg-[#ff7d22]"
-                        >
-                          Open Lesson
-                        </a>
-                      ) : (
-                        <span className="text-xs text-[#B6E7EB]">No link</span>
-                      )}
-                    </div>
-                  </article>
-                ))}
+          <div className="grid sm:grid-cols-2 gap-6 mt-10">
+            {/* GenAI card */}
+            <Link
+              href="/learn/genai"
+              className="rounded-2xl border border-white/10 bg-[#043846] p-6 hover:bg-[#064256] transition"
+            >
+              <div className="text-white text-xl font-semibold">GenAI</div>
+              <p className="text-white/80 mt-2">
+                Learn how to plan, prompt, and prototype with modern AI tools.
+              </p>
+              <div className="mt-4 inline-flex items-center text-[#15C5C1] font-semibold">
+                Start learning →
               </div>
-            </section>
-          );
-        })}
+            </Link>
+
+            {/* TQM card */}
+            <Link
+              href="/learn/tqm"
+              className="rounded-2xl border border-white/10 bg-[#043846] p-6 hover:bg-[#064256] transition"
+            >
+              <div className="text-white text-xl font-semibold">TQM</div>
+              <p className="text-white/80 mt-2">
+                Total Quality Management: practical tools to reduce waste and improve processes.
+              </p>
+              <div className="mt-4 inline-flex items-center text-[#15C5C1] font-semibold">
+                Explore the track →
+              </div>
+            </Link>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

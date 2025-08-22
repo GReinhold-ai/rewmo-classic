@@ -1,37 +1,46 @@
-// src/pages/signin.tsx
-import type { GetServerSideProps, NextPage } from "next";
 import Head from "next/head";
-import { useEffect } from "react";
-import { useRouter } from "next/router";
+import Link from "next/link";
+import { useAuth } from "@/lib/AuthProvider";
 
-/**
- * Redirect /signin -> /account
- * SSR redirect for hard loads + client redirect for SPA fallback.
- */
-const SignInRedirect: NextPage = () => {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace("/account");
-  }, [router]);
+export default function SignInPage() {
+  const { currentUser, signInWithGoogle } = useAuth();
 
   return (
     <>
       <Head>
-        <title>Redirecting…</title>
-        <meta httpEquiv="refresh" content="0; url=/account" />
+        <title>Sign in | Rewmo</title>
+        <meta name="robots" content="noindex" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <main className="min-h-screen flex items-center justify-center bg-[#003B49] text-[#B6E7EB]">
-        <p>
-          Redirecting to <a href="/account" className="underline">/account</a>…
-        </p>
-      </main>
+
+      <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-[#003B49]">
+        <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md text-center">
+          {!currentUser ? (
+            <>
+              <h1 className="text-2xl font-bold mb-6">Sign in to Rewmo</h1>
+              <button
+                onClick={signInWithGoogle}
+                className="px-5 py-3 rounded-lg bg-[#FF6A00] text-white font-semibold hover:opacity-90 transition"
+              >
+                Sign in with Google
+              </button>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold mb-3">You’re signed in</h1>
+              <p className="mb-6 text-gray-600">
+                {currentUser.email ?? "Authenticated user"}
+              </p>
+              <Link
+                href="/account"
+                className="inline-block px-5 py-3 rounded-lg bg-[#15C5C1] text-white font-semibold hover:opacity-90 transition"
+              >
+                Go to Account
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
     </>
   );
-};
-
-export const getServerSideProps: GetServerSideProps = async () => ({
-  redirect: { destination: "/account", permanent: false },
-});
-
-export default SignInRedirect;
+}
