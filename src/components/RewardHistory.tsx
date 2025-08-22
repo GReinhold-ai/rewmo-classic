@@ -1,48 +1,27 @@
-import { useEffect, useState } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient'; // ✅ fixed!
-
-const mockUserId = 'demoUser1'; // replace with auth uid later
-
-interface RewardEntry {
-  type: string;
-  pointsUsed: number;
-  redeemedAt: string;
-}
+import { useAuth } from "@/lib/AuthProvider";
+import { useUserRewards } from "@/lib/useUserRewards";
 
 export default function RewardHistory() {
-  const [rewards, setRewards] = useState<RewardEntry[]>([]);
+  const { currentUser } = useAuth();
+  const uid = currentUser?.uid;
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      const ref = collection(db, 'users', mockUserId, 'rewards');
-      const q = query(ref, orderBy('redeemedAt', 'desc'));
-      const snap = await getDocs(q);
+  // Public route? Don't query Firestore.
+  if (!uid) return null;
 
-      const list: RewardEntry[] = snap.docs.map(doc => doc.data() as RewardEntry);
-      setRewards(list);
-    };
+  const { rewards, loading } = useUserRewards(uid);
 
-    fetchHistory();
-  }, []);
-
-  if (rewards.length === 0) return <p className="text-gray-500">No rewards redeemed yet.</p>;
+  if (loading) return <div className="text-sm text-gray-500">Loading rewards…</div>;
+  if (!rewards?.length) return <div className="text-sm text-gray-500">No rewards yet.</div>;
 
   return (
-    <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded shadow">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-        🎁 Redemption History
-      </h3>
-      <ul className="space-y-2">
-        {rewards.map((reward, i) => (
-          <li key={i} className="text-sm text-gray-700 dark:text-gray-300">
-            <span className="font-medium">{reward.type}</span> — {reward.pointsUsed} pts
-            <span className="ml-2 text-xs text-gray-400">
-              ({new Date(reward.redeemedAt).toLocaleDateString()})
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul className="space-y-2">
+      {rewards.map((r) => (
+        <li key={r.id} className="text-sm">
+          <span className="font-medium">{r.type}</span>{" "}
+          <span className="text-gray-500">({r.points} pts)</span>
+          {r.description ? <> — {r.description}</> : null}
+        </li>
+      ))}
+    </ul>
   );
 }

@@ -1,24 +1,49 @@
-// src/lib/useUserRewards.ts
 import { useEffect, useState } from "react";
-import { db } from "./firebaseClient"; // or your firebase file
-import { doc, onSnapshot } from "firebase/firestore";
+import { collection, limit, onSnapshot, orderBy, query } from "firebase/firestore";
+import { db } from "@/lib/firebaseClient";
+import { useAuth } from "@/lib/AuthProvider";
 
-export function useUserRewards(uid?: string | null) {
-  const [points, setPoints] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
+export type Reward = {
+  id: string;
+  type: string;
+  points: number;
+  description?: string;
+  createdAt?: any;
+};
+
+export function useUserRewards(userIdOverride?: string) {
+  const { currentUser } = useAuth();
+  const uid = userIdOverride ?? currentUser?.uid;
+
+  const [data, setData] = useState<Reward[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!uid) {
-      setPoints(0);
+    // SSR / logged-out guard
+    if (typeof window === "undefined" || !uid) {
+      setData([]);
       setLoading(false);
       return;
     }
-    const unsub = onSnapshot(doc(db, "users", uid), (docSnap) => {
-      setPoints(docSnap.exists() ? docSnap.data().points ?? 0 : 0);
-      setLoading(false);
-    });
+
+    setLoading(true);
+    const q = query(
+      collection(db, "users", uid, "rewards"),
+      orderBy("createdAt", "desc"),
+      limit(100)
+    );
+
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setData(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+        setLoading(false);
+      },
+      () => setLoading(false) // swallow transient errors
+    );
+
     return () => unsub();
   }, [uid]);
 
-  return { points, loading };
+  return { rewards: data, loading };
 }
