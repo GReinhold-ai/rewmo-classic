@@ -2,202 +2,174 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
-
 import { useAuth } from "@/lib/AuthProvider";
-import { useCoursesByPath, useProgress } from "@/lib/useTraining";
+import { useProgress } from "@/lib/useTraining";
 
-type ProgressMap = Record<
-  string,
-  { percent?: number; status?: string } | undefined
->;
-
-const TRACK_LABEL: Record<string, string> = {
-  genai: "GenAI",
-  tqm: "TQM",
+type Lesson = {
+  id: string;
+  slug: string;
+  title: string;
+  summary?: string;
+  order?: number;
 };
 
-export default function TrackPage() {
-  const router = useRouter();
-  const track = (router.query.track as string) || "";
+function mapTrackToPathId(track?: string): string | null {
+  if (!track) return null;
+  if (track === "genai") return "genai-foundations";
+  if (track === "tqm") return "tqm-essentials";
+  return null; // unknown track -> redirect
+}
 
-  const title = TRACK_LABEL[track?.toLowerCase?.()] ?? "Training";
+async function fetchJson<T>(url: string): Promise<T> {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(String(r.status));
+  return r.json();
+}
+
+export default function TrackIndexPage() {
+  const router = useRouter();
+  const { track } = router.query as { track?: string };
+
+  const pathId = useMemo(() => mapTrackToPathId(track), [track]);
+
+  // redirect unknown tracks to /learn
+  useEffect(() => {
+    if (track && !pathId) router.replace("/learn");
+  }, [track, pathId, router]);
 
   const { currentUser } = useAuth();
+  const { get: getProgress } = useProgress(currentUser?.email ?? undefined);
 
-  // 1) fetch courses for this track (uses your /api/training/courses?path=...)
-  const { path, courses = [], loading } = useCoursesByPath(track);
+  const [courses, setCourses] = useState<Lesson[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [prog, setProg] = useState<Record<string, { percent: number; status: string }>>({});
 
-  // 2) pull progress when signed in
-  const { get } = useProgress(currentUser?.email ?? undefined);
-  const [progress, setProgress] = useState<ProgressMap>({});
-
+  // fetch lessons for the track
   useEffect(() => {
+    if (!pathId) return;
     let cancelled = false;
+
     (async () => {
-      if (!currentUser) {
-        setProgress({});
-        return;
-      }
+      setLoading(true);
+      setErr(null);
       try {
-        const p = await get(); // expecting an object; we’ll defensively map it
-        if (!cancelled) {
-          const map: ProgressMap =
-            p?.progress && typeof p.progress === "object" ? p.progress : {};
-          setProgress(map);
-        }
-      } catch (_e) {
-        if (!cancelled) setProgress({});
+        const data = await fetchJson<{ courses: Lesson[] }>(
+          `/api/training/courses?path=${encodeURIComponent(pathId)}`
+        );
+        if (!cancelled) setCourses((data.courses ?? []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+      } catch (e: any) {
+        if (!cancelled) setErr("Could not load lessons.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  }, [pathId]);
 
-  const breadcrumb = useMemo(
-    () => [
-      { label: "Training", href: "/learn" },
-      { label: title, href: `/learn/${track}` },
-    ],
-    [title, track]
-  );
+  // fetch progress once we have lessons
+  useEffect(() => {
+    if (!courses.length) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const raw = await getProgress();
+        if (cancelled) return;
+
+        const next: Record<string, { percent: number; status: string }> = {};
+        for (const c of courses) {
+          const node =
+            raw?.[c.id] ??
+            raw?.courses?.[c.id] ??
+            raw?.progress?.[c.id] ??
+            null;
+          const percent = Number(node?.percent ?? 0) || 0;
+          const status =
+            node?.status ?? (percent >= 100 ? "completed" : percent > 0 ? "in_progress" : "not_started");
+          next[c.id] = { percent, status };
+        }
+        setProg(next);
+      } catch {
+        // ignore; leave progress empty
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [courses, getProgress]);
+
+  const trackTitle =
+    track === "genai"
+      ? "AI Training"
+      : track === "tqm"
+      ? "TQM Training"
+      : "Training";
 
   return (
     <>
       <Head>
-        <title>{title} Training | Rewmo</title>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover"
-        />
+        <title>{trackTitle} | Rewmo Training</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </Head>
 
-      <div className="min-h-screen bg-[#003B49]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-10 pb-20">
-          {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumb" className="text-white/60 text-sm">
-            <ol className="flex items-center gap-1">
-              {breadcrumb.map((b, idx) => (
-                <li key={b.href} className="flex items-center">
-                  {idx > 0 && <span className="px-1">/</span>}
-                  <Link
-                    href={b.href}
-                    className="hover:text-white transition-colors"
-                  >
-                    {b.label}
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          </nav>
-
-          {/* Header */}
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <div>
-              <h1 className="text-white text-3xl sm:text-4xl font-extrabold tracking-tight">
-                {title}
-              </h1>
-              <p className="text-white/80 mt-2 max-w-2xl">
-                {path?.description ??
-                  (title === "GenAI"
-                    ? "Plan, prompt, and prototype with modern AI tools."
-                    : title === "TQM"
-                    ? "Total Quality Management—practical tools to reduce waste and improve processes."
-                    : "Short, practical modules.")}
-              </p>
+      <div className="min-h-[calc(100vh-5rem)] bg-[#003B49] text-white">
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          {/* Crumbs + signed-in badge */}
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-sm text-[#B6E7EB]">
+              <Link href="/learn" className="hover:underline">Training</Link>
+              {track && <><span className="mx-2">/</span><span>{trackTitle}</span></>}
             </div>
-
-            {!currentUser ? (
-              <Link
-                href={`/signin?redirect=/learn/${encodeURIComponent(track)}`}
-                className="inline-flex items-center rounded-lg bg-[#FF6A00] px-4 py-2 text-white font-semibold hover:opacity-90"
-              >
-                Sign in to track progress
-              </Link>
-            ) : (
-              <div className="inline-flex items-center rounded-lg bg-white/10 px-4 py-2 text-white">
-                <span className="text-sm">
-                  Signed in as <strong>{currentUser.email}</strong>
-                </span>
-              </div>
+            {currentUser && (
+              <span className="rounded-full bg-black/20 px-3 py-1 text-xs text-[#B6E7EB]">
+                Signed in as {currentUser.email}
+              </span>
             )}
           </div>
 
-          {/* Courses / Lessons */}
-          <div className="mt-10">
-            {loading ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-40 rounded-2xl border border-white/10 bg-[#043846] animate-pulse"
-                  />
-                ))}
-              </div>
-            ) : courses.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-[#043846] p-6 text-white/80">
-                No lessons found for this track yet.
-              </div>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.map((c: any) => {
-                  const slug = c?.slug || c?.id || "";
-                  const href = `/learn/${encodeURIComponent(
-                    track
-                  )}/${encodeURIComponent(slug)}`;
+          <h1 className="mb-2 text-2xl md:text-3xl font-extrabold text-[#15C5C1]">
+            {trackTitle}
+          </h1>
+          <p className="mb-6 text-[#B6E7EB]">Short, practical modules.</p>
 
-                  const p = progress?.[c?.id || c?.slug || ""] || {};
-                  const percent =
-                    typeof p?.percent === "number" && p.percent >= 0
-                      ? Math.min(100, Math.max(0, Math.round(p.percent)))
-                      : 0;
-                  const status = p?.status || (percent >= 100 ? "done" : "");
+          {loading && <div className="rounded-lg border border-[#15C5C1]/40 bg-white/5 p-4">Loading…</div>}
+          {err && <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-4">{err}</div>}
 
-                  return (
-                    <Link
-                      key={slug}
-                      href={href}
-                      className="group rounded-2xl border border-white/10 bg-[#043846] p-5 hover:bg-[#064256] transition flex flex-col"
-                    >
-                      <div className="text-white text-lg font-semibold">
-                        {c?.title || "Untitled Lesson"}
-                      </div>
-                      <p className="text-white/70 mt-2 line-clamp-3">
-                        {c?.summary || c?.description || " "}
-                      </p>
-
-                      {/* Progress */}
-                      <div className="mt-4">
-                        <div className="flex items-center justify-between text-xs text-white/60 mb-1">
-                          <span>
-                            {status === "done"
-                              ? "Completed"
-                              : percent > 0
-                              ? `Progress: ${percent}%`
-                              : "Not started"}
+          {!loading && !err && (
+            <>
+              {courses.length === 0 ? (
+                <div className="rounded-lg border border-[#15C5C1]/40 bg-white/5 p-4">
+                  No lessons found for this track yet.
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {courses.map((c) => {
+                    const p = prog[c.id] ?? { percent: 0, status: "not_started" };
+                    return (
+                      <Link
+                        key={c.id}
+                        href={`/learn/${track}/${c.slug}`}
+                        className="block rounded-xl border border-[#15C5C1]/40 bg-white/5 p-4 hover:bg-white/10"
+                      >
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-white">{c.title}</h3>
+                          <span className="rounded-full bg-black/20 px-2 py-1 text-xs">
+                            {p.status.replace("_", " ")} · {p.percent}%
                           </span>
-                          {c?.durationMins ? (
-                            <span>{c.durationMins} min</span>
-                          ) : null}
                         </div>
-                        <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[#15C5C1] transition-all"
-                            style={{ width: `${percent}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mt-4 text-[#15C5C1] font-semibold">
-                        Open lesson →
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                        {c.summary && <p className="mt-2 text-sm text-[#B6E7EB]">{c.summary}</p>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </>
