@@ -1,25 +1,37 @@
-import { useAuth } from "@/lib/AuthProvider";
+// src/pages/signin.tsx
+import type { GetServerSideProps, NextPage } from "next";
+import Head from "next/head";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
 
-export default function SignInPage() {
-  const { signInWithGoogle, currentUser } = useAuth();
+/**
+ * Redirect /signin -> /account
+ * SSR redirect for hard loads + client redirect for SPA fallback.
+ */
+const SignInRedirect: NextPage = () => {
+  const router = useRouter();
 
-  const handleLogin = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (err) {
-      console.error("Login error:", err);
-    }
-  };
+  useEffect(() => {
+    router.replace("/account");
+  }, [router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <h1 className="text-2xl font-semibold mb-4">Sign in to Rewmo</h1>
-      <button
-        onClick={handleLogin}
-        className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 rounded shadow"
-      >
-        Sign in with Google
-      </button>
-    </div>
+    <>
+      <Head>
+        <title>Redirecting…</title>
+        <meta httpEquiv="refresh" content="0; url=/account" />
+      </Head>
+      <main className="min-h-screen flex items-center justify-center bg-[#003B49] text-[#B6E7EB]">
+        <p>
+          Redirecting to <a href="/account" className="underline">/account</a>…
+        </p>
+      </main>
+    </>
   );
-}
+};
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  redirect: { destination: "/account", permanent: false },
+});
+
+export default SignInRedirect;
