@@ -1,300 +1,308 @@
-// src/pages/learn/[track]/[slug].tsx
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useAuth } from "@/lib/AuthProvider";
 import { useProgress } from "@/lib/useTraining";
 
-type Lesson = {
+type Course = {
   id: string;
-  slug: string;
+  slug?: string;
   title: string;
   summary?: string;
-  content?: string;       // optional HTML/markdown (rendered simply here)
-  videoUrl?: string;
-  pathId?: string;
+  description?: string;
+  kind?: string;          // "lesson" | "document" | ...
+  href?: string;          // external or static resource
   order?: number;
+  content?: string;       // optional inline lesson content
 };
 
-type ProgressShape = {
-  percent: number;
-  status: "not_started" | "in_progress" | "completed";
-};
+type PathData = { id: string; title?: string } | null;
 
-const DEFAULT_PROGRESS: ProgressShape = { percent: 0, status: "not_started" };
-
-function extractProgressShape(raw: any, id: string): ProgressShape {
-  // Defensive parsing — accept a few shapes
-  const node =
-    raw?.[id] ??
-    raw?.courses?.[id] ??
-    raw?.progress?.[id] ??
-    null;
-
-  const percent = Number(node?.percent ?? 0) || 0;
-  const status: ProgressShape["status"] =
-    (node?.status as ProgressShape["status"]) ??
-    (percent >= 100 ? "completed" : percent > 0 ? "in_progress" : "not_started");
-
-  return { percent, status };
+function storageKey(courseId: string) {
+  return `progress:${courseId}`;
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const r = await fetch(url);
-  if (!r.ok) {
-    throw new Error(`Failed request: ${r.status}`);
+function readLocalProgress(courseId: string) {
+  try {
+    const raw = localStorage.getItem(storageKey(courseId));
+    if (!raw) return { percent: 0, status: "not_started" };
+    const j = JSON.parse(raw);
+    return {
+      percent: typeof j.percent === "number" ? Math.max(0, Math.min(100, j.percent)) : 0,
+      status: typeof j.status === "string" ? j.status : "not_started",
+    };
+  } catch {
+    return { percent: 0, status: "not_started" };
   }
-  return r.json();
 }
 
-function mapTrackToPathId(track?: string): string | null {
-  if (!track) return null;
-  // Known paths from seeding:
-  // - "genai-foundations"
-  // - "tqm-essentials"
-  if (track === "genai") return "genai-foundations";
-  if (track === "tqm") return "tqm-essentials";
-  return track; // fallback: treat track as pathId if already exact
+function writeLocalProgress(courseId: string, data: { percent?: number; status?: string }) {
+  try {
+    const prev = readLocalProgress(courseId);
+    const merged = {
+      percent: data.percent ?? prev.percent ?? 0,
+      status: data.status ?? prev.status ?? "not_started",
+    };
+    localStorage.setItem(storageKey(courseId), JSON.stringify(merged));
+  } catch {
+    // ignore
+  }
 }
 
 export default function LessonPage() {
   const router = useRouter();
-  const { track: trackParam, slug } = router.query as { track?: string; slug?: string };
-
-  const pathId = useMemo(() => mapTrackToPathId(trackParam), [trackParam]);
+  const track = typeof router.query.track === "string" ? router.query.track : "";
+  const slugParam = typeof router.query.slug === "string" ? router.query.slug : "";
+  const idParam = typeof router.query.id === "string" ? router.query.id : "";
 
   const { currentUser } = useAuth();
-  const { get: getProgress, set: setProgress } = useProgress(currentUser?.email ?? undefined);
+  const { get: getProgress, set: setProgress } = useProgress(currentUser?.email || undefined);
 
-  const [lesson, setLesson] = useState<Lesson | null>(null);
-  const [courses, setCourses] = useState<Lesson[]>([]);
-  const [loadingLesson, setLoadingLesson] = useState(true);
-  const [loadingList, setLoadingList] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [progressState, setProgressState] = useState<ProgressShape>(DEFAULT_PROGRESS);
-  const [error, setError] = useState<string | null>(null);
+  const [pathInfo, setPathInfo] = useState<PathData>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load the lesson by slug
+  // Load all courses for the given track, then pick the requested lesson
   useEffect(() => {
-    if (!slug) return;
+    if (!track) return;
     let cancelled = false;
-    setLoadingLesson(true);
-    setError(null);
 
     (async () => {
+      setLoading(true);
       try {
-        const data = await fetchJson<{ lesson: Lesson }>(`/api/training/${encodeURIComponent(slug)}`);
-        if (!cancelled) setLesson(data.lesson ?? null);
-      } catch (e: any) {
+        const res = await fetch(`/api/training/courses?path=${encodeURIComponent(track)}`);
+        const data = await res.json();
+        if (cancelled) return;
+        setPathInfo(data?.path ?? null);
+        const arr: Course[] = Array.isArray(data?.courses) ? data.courses : [];
+        // Stable sort by "order" then title
+        arr.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999) || a.title.localeCompare(b.title));
+        setCourses(arr);
+      } catch {
         if (!cancelled) {
-          setLesson(null);
-          setError("Could not load lesson.");
+          setPathInfo(null);
+          setCourses([]);
         }
       } finally {
-        if (!cancelled) setLoadingLesson(false);
+        if (!cancelled) setLoading(false);
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
+    return () => { cancelled = true; };
+  }, [track]);
 
-  // Load the course list for this track/path (to compute prev/next)
+  // Resolve the current lesson from slug or id
+  const lesson: Course | null = useMemo(() => {
+    if (!courses.length) return null;
+    if (slugParam) {
+      const bySlug = courses.find((c) => (c.slug || c.id) === slugParam);
+      if (bySlug) return bySlug;
+    }
+    if (idParam) {
+      const byId = courses.find((c) => c.id === idParam);
+      if (byId) return byId;
+    }
+    // fallback to first
+    return courses[0] ?? null;
+  }, [courses, slugParam, idParam]);
+
+  const currentIndex = useMemo(() => {
+    if (!lesson) return -1;
+    return courses.findIndex((c) => c.id === lesson.id);
+  }, [courses, lesson]);
+
+  const prevCourse = currentIndex > 0 ? courses[currentIndex - 1] : null;
+  const nextCourse = currentIndex >= 0 && currentIndex < courses.length - 1 ? courses[currentIndex + 1] : null;
+
+  // Local progress state for this lesson
+  const [percent, setPercent] = useState<number>(0);
+  const [status, setStatus] = useState<string>("not_started");
+  const isComplete = status === "completed" || percent >= 100;
+
+  // Sync progress: prefer Firestore if signed in; otherwise use localStorage
   useEffect(() => {
-    if (!pathId) return;
     let cancelled = false;
-    setLoadingList(true);
-
     (async () => {
-      try {
-        const data = await fetchJson<{ courses: Lesson[]; path?: any }>(
-          `/api/training/courses?path=${encodeURIComponent(pathId)}`
-        );
-        if (!cancelled) setCourses(data.courses ?? []);
-      } catch {
-        if (!cancelled) setCourses([]);
-      } finally {
-        if (!cancelled) setLoadingList(false);
+      if (!lesson) return;
+      // Start with local
+      const local = readLocalProgress(lesson.id);
+      if (!cancelled) {
+        setPercent(local.percent);
+        setStatus(local.status);
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [pathId]);
-
-  // Load progress once we have a lesson
-  useEffect(() => {
-    if (!lesson) return; // guard until loaded
-    let cancelled = false;
-
-    (async () => {
+      // If signed in, try server
       try {
         const raw = await getProgress();
         if (cancelled) return;
-        const p = extractProgressShape(raw, lesson.id);
-        setProgressState(p);
+        // raw.progress is shape { [courseId]: {...} }
+        const serverRec = raw?.progress?.[lesson.id];
+        if (serverRec) {
+          const p = typeof serverRec.percent === "number" ? serverRec.percent : local.percent;
+          const s = typeof serverRec.status === "string" ? serverRec.status : local.status;
+          setPercent(p);
+          setStatus(s);
+          // also refresh local
+          writeLocalProgress(lesson.id, { percent: p, status: s });
+        }
       } catch {
-        if (!cancelled) setProgressState(DEFAULT_PROGRESS);
+        // silently keep local
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [lesson, getProgress]);
 
-  const currentIndex = useMemo(() => {
-    if (!slug || courses.length === 0) return -1;
-    const idx = courses.findIndex((c) => c.slug === slug || c.id === lesson?.id);
-    return idx;
-  }, [courses, lesson?.id, slug]);
+  const goToCourse = useCallback(
+    (c: Course) => {
+      const destSlug = c.slug || c.id;
+      router.push({
+        pathname: "/learn/[track]/[slug]",
+        query: { track, slug: destSlug, id: c.id },
+      });
+    },
+    [router, track]
+  );
 
-  const prevSlug = currentIndex > 0 ? courses[currentIndex - 1]?.slug : null;
-  const nextSlug =
-    currentIndex >= 0 && currentIndex < courses.length - 1 ? courses[currentIndex + 1]?.slug : null;
+  const markComplete = useCallback(async () => {
+    if (!lesson) return;
+    // Update local immediately
+    setPercent(100);
+    setStatus("completed");
+    writeLocalProgress(lesson.id, { percent: 100, status: "completed" });
 
-  const prevHref = prevSlug ? `/learn/${trackParam}/${prevSlug}` : `/learn/${trackParam}`;
-  const nextHref = nextSlug ? `/learn/${trackParam}/${nextSlug}` : `/learn/${trackParam}`;
-
-  const handleComplete = async () => {
-    if (!lesson) return; // guard
+    // Try Firestore if signed in
     try {
-      setSaving(true);
-      await setProgress(lesson.id, { status: "completed", percent: 100 });
-      setProgressState({ status: "completed", percent: 100 });
-      router.push(nextHref);
+      await setProgress(lesson.id, { status: "completed", percent: 100 }, currentUser?.email || undefined);
     } catch {
-      // Keep user on the page; you can surface a toast/snackbar here
-      setSaving(false);
+      // ignore—local already updated
     }
-  };
+  }, [lesson, currentUser?.email, setProgress]);
 
-  const title = lesson?.title ?? "Lesson";
+  const markCompleteAndNext = useCallback(async () => {
+    await markComplete();
+    if (nextCourse) goToCourse(nextCourse);
+    else router.push(`/learn/${encodeURIComponent(track)}`);
+  }, [markComplete, nextCourse, goToCourse, router, track]);
+
+  // Render helpers for a resource lesson (PDF/link)
+  function ResourceBlock({ href }: { href: string }) {
+    const isPdf = /\.pdf(\b|#|\?)/i.test(href);
+    return (
+      <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+        <p className="text-sm text-slate-200">
+          Open the course material in a new tab, then come back and mark complete.
+        </p>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#FF9151] px-4 py-2 font-semibold text-white hover:brightness-110"
+        >
+          {isPdf ? "Open PDF" : "Open Resource"}
+          <span aria-hidden>↗</span>
+        </a>
+      </div>
+    );
+  }
+
+  const pageTitle = `${lesson?.title ?? "Lesson"} | ${pathInfo?.title ?? "Training"}`;
 
   return (
     <>
       <Head>
-        <title>{title} | Rewmo Training</title>
+        <title>{pageTitle}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </Head>
 
-      <div className="min-h-[calc(100vh-5rem)] bg-[#003B49] text-white">
-        <div className="mx-auto max-w-4xl px-4 py-6 md:py-10">
-          {/* Breadcrumbs */}
-          <div className="mb-4 text-sm text-[#B6E7EB]">
-            <Link href="/learn" className="hover:underline">
-              Training
-            </Link>
-            <span className="mx-2">/</span>
-            <Link href={`/learn/${trackParam}`} className="hover:underline">
-              {String(trackParam || "").toUpperCase()}
-            </Link>
-            {lesson && (
-              <>
-                <span className="mx-2">/</span>
-                <span className="opacity-90">{lesson.title}</span>
-              </>
-            )}
-          </div>
+      <div className="mx-auto max-w-4xl px-4 py-8 text-slate-100">
+        <div className="mb-6">
+          <Link href={`/learn/${encodeURIComponent(track)}`} className="text-slate-300 hover:text-white">
+            ← Back to {pathInfo?.title ?? "Training"}
+          </Link>
+        </div>
 
-          {/* Status & Title */}
-          <div className="mb-6 flex items-center justify-between gap-4">
-            <h1 className="text-2xl md:text-3xl font-extrabold text-[#15C5C1]">
-              {loadingLesson ? "Loading…" : title}
-            </h1>
+        {loading ? (
+          <div className="rounded-xl bg-slate-800/60 px-4 py-3">Loading…</div>
+        ) : !lesson ? (
+          <div className="rounded-xl bg-slate-800/60 px-4 py-3">Lesson not found.</div>
+        ) : (
+          <>
+            <h1 className="text-3xl font-bold">{lesson.title}</h1>
+            {lesson.summary && <p className="mt-2 text-slate-300">{lesson.summary}</p>}
+            {lesson.description && <p className="mt-2 text-slate-400">{lesson.description}</p>}
 
-            {/* Simple progress pill */}
-            <div className="rounded-full bg-black/20 px-3 py-1 text-sm">
-              {progressState.status.replace("_", " ")} · {progressState.percent}%
+            {/* Progress pill */}
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-800/70 px-3 py-1 text-sm">
+              <span className="font-medium">{isComplete ? "Completed" : "In Progress"}</span>
+              <span className="opacity-80">·</span>
+              <span>{Math.round(percent)}%</span>
             </div>
-          </div>
 
-          {/* Summary */}
-          {lesson?.summary && (
-            <p className="mb-6 text-[#B6E7EB]">{lesson.summary}</p>
-          )}
+            {/* Content or external resource */}
+            {lesson.href ? (
+              <ResourceBlock href={lesson.href} />
+            ) : lesson.content ? (
+              <div className="prose prose-invert mt-6">
+                {/* If content is markdown in future, render via a MD component.
+                   For now, display as simple paragraphs. */}
+                <p>{lesson.content}</p>
+              </div>
+            ) : null}
 
-          {/* Video (if provided) */}
-          {lesson?.videoUrl && (
-            <div className="mb-6 aspect-video w-full overflow-hidden rounded-xl border border-[#15C5C1]/40 bg-black/20">
-              <iframe
-                className="h-full w-full"
-                src={lesson.videoUrl}
-                title={lesson.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          )}
-
-          {/* Content */}
-          {!loadingLesson && !lesson && (
-            <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-red-100">
-              {error ?? "Lesson not found."}
-            </div>
-          )}
-
-          {lesson?.content && (
-            <div className="prose prose-invert max-w-none prose-headings:text-[#15C5C1] prose-a:text-[#FF6A00]">
-              {/* If content is trusted HTML. Otherwise, render markdown via a renderer. */}
-              <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
-            </div>
-          )}
-
-          {/* Nav + Complete */}
-          <div className="mt-10 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex gap-2">
-              <Link
-                href={prevHref}
-                className="rounded-md border border-[#15C5C1]/40 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
-              >
-                ← {prevSlug ? "Previous Lesson" : "Back to Track"}
-              </Link>
-              {nextSlug && (
-                <Link
-                  href={nextHref}
-                  className="rounded-md border border-[#15C5C1]/40 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+            {/* Actions */}
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              {!isComplete && (
+                <button
+                  onClick={markCompleteAndNext}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#15C5C1] px-4 py-2 font-semibold text-[#003B49] hover:brightness-110"
                 >
-                  Next Lesson →
-                </Link>
+                  Mark complete & continue
+                </button>
+              )}
+              {isComplete && nextCourse && (
+                <button
+                  onClick={() => goToCourse(nextCourse)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#FF9151] px-4 py-2 font-semibold text-white hover:brightness-110"
+                >
+                  Next: {nextCourse.title}
+                </button>
               )}
             </div>
 
-            <button
-              onClick={handleComplete}
-              disabled={!lesson || saving}
-              className={`rounded-md bg-[#FF6A00] px-5 py-2 text-sm font-semibold text-white transition ${
-                !lesson || saving ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"
-              }`}
-            >
-              {saving ? "Saving…" : progressState.status === "completed" ? "Completed ✓" : "Mark complete & continue"}
-            </button>
-          </div>
-
-          {/* Course index (optional quick jump) */}
-          {!loadingList && courses.length > 0 && (
-            <div className="mt-10 rounded-xl border border-[#15C5C1]/30 bg-white/5 p-4">
-              <h2 className="mb-3 text-lg font-bold text-[#15C5C1]">Lessons in this track</h2>
-              <ol className="grid gap-2 md:grid-cols-2">
-                {courses.map((c) => (
-                  <li key={c.id}>
-                    <Link
-                      href={`/learn/${trackParam}/${c.slug}`}
-                      className={`inline-block rounded px-2 py-1 text-sm hover:underline ${
-                        c.slug === slug ? "font-semibold text-white" : "text-[#B6E7EB]"
-                      }`}
-                    >
-                      {c.title}
-                    </Link>
-                  </li>
-                ))}
-              </ol>
+            {/* Prev / Next nav */}
+            <div className="mt-10 flex items-center justify-between">
+              <div>
+                {prevCourse ? (
+                  <button
+                    onClick={() => goToCourse(prevCourse)}
+                    className="text-slate-300 hover:text-white"
+                  >
+                    ← {prevCourse.title}
+                  </button>
+                ) : (
+                  <span />
+                )}
+              </div>
+              <div>
+                {nextCourse ? (
+                  <button
+                    onClick={() => goToCourse(nextCourse)}
+                    className="text-slate-300 hover:text-white"
+                  >
+                    {nextCourse.title} →
+                  </button>
+                ) : (
+                  <Link
+                    href={`/learn/${encodeURIComponent(track)}`}
+                    className="text-slate-300 hover:text-white"
+                  >
+                    Done — Back to track
+                  </Link>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </>
   );
