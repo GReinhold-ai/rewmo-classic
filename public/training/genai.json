@@ -1,0 +1,68 @@
+{
+  "path": { "id": "genai", "title": "AI Training" },
+  "courses": [
+    {
+      "id": "ibm-ai-pm",
+      "title": "IBM AI Product Manager",
+      "summary": "Free, job-ready intro to AI product management from IBM.",
+      "href": "https://lnkd.in/dHujEB-C",
+      "order": 1
+    },
+    {
+      "id": "meta-data-analyst",
+      "title": "Meta Data Analyst",
+      "summary": "Data analysis foundations that pair well with AI skills.",
+      "href": "https://lnkd.in/dtfGa6my",
+      "order": 2
+    },
+    {
+      "id": "intro-llms",
+      "title": "Introduction to LLMs",
+      "summary": "Understand how large language models work under the hood.",
+      "href": "https://lnkd.in/d99KpEd5",
+      "order": 3
+    },
+    {
+      "id": "ai-for-everyone",
+      "title": "AI for Everyone",
+      "summary": "Non-technical overview of AI and how to use it in business.",
+      "href": "https://lnkd.in/dEyZzF6w",
+      "order": 4
+    },
+    {
+      "id": "genai-for-leaders",
+      "title": "Generative AI for Leaders",
+      "summary": "Strategy, risks, and opportunities for leaders adopting GenAI.",
+      "href": "https://lnkd.in/dXA5PcJ4",
+      "order": 5
+    },
+    {
+      "id": "build-a-brain-10m",
+      "title": "Building a Brain in 10 Minutes",
+      "summary": "Fun, fast starter on building an AI ‘brain’.",
+      "href": "https://lnkd.in/dPs9KwsR",
+      "order": 6
+    },
+    {
+      "id": "responsible-ai",
+      "title": "Introduction to Responsible AI",
+      "summary": "Core principles for safe, ethical AI systems.",
+      "href": "https://lnkd.in/dZ_v_sY2",
+      "order": 7
+    },
+    {
+      "id": "elevate-analyst",
+      "title": "Elevate your Data Analyst Career",
+      "summary": "Career moves and skill paths for analysts in the AI era.",
+      "href": "https://lnkd.in/dqvGHfKV",
+      "order": 8
+    },
+    {
+      "id": "elevate-datascience",
+      "title": "Elevate your Data Science Career",
+      "summary": "Advance as a data scientist with AI-native best practices.",
+      "href": "https://lnkd.in/dPc97dgV",
+      "order": 9
+    }
+  ]
+}
