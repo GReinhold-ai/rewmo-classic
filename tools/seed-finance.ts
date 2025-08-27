@@ -1,87 +1,70 @@
-New-Item -ItemType Directory -Force tools | Out-Null
-Set-Content -Encoding UTF8 tools/seed-finance.ts @'
+// tools/seed-finance.ts
 import fs from "fs";
 import path from "path";
-import { getDb } from "@/lib/firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
+import { getDb } from "../src/lib/firebaseAdmin";
 
 type Course = {
   id: string;
   title: string;
   summary?: string;
+  description?: string;
   duration?: string;
-  kind?: "document" | "link" | "lesson";
+  kind?: string;
   href?: string;
   order?: number;
   slug?: string;
 };
 
-type TrackDoc = {
+type FinanceJSON = {
   path: { id: string; title: string };
   courses: Course[];
 };
 
 async function main() {
-  const dryRun = process.argv.includes("--dry-run");
-  const db = getDb();
-  const trackId = "finance";
-
-  // Prefer local JSON fallback (public/training/finance.json)
-  const localPath = path.join(process.cwd(), "public", "training", "finance.json");
-  let payload: TrackDoc;
-
-  if (fs.existsSync(localPath)) {
-    const raw = JSON.parse(fs.readFileSync(localPath, "utf8"));
-    payload = {
-      path: raw.path ?? { id: trackId, title: raw.title ?? "Finance Training" },
-      courses: raw.courses ?? raw.lessons ?? [],
-    };
-  } else {
-    // Minimal inline fallback
-    payload = {
-      path: { id: trackId, title: "Finance Training" },
-      courses: [
-        { id: "pf-101", title: "Personal Finance 101", summary: "Budgeting, emergency funds, goals.", duration: "15m", kind: "link", href: "https://www.investopedia.com/personal-finance-4427768", order: 1 },
-        { id: "invest-101", title: "Investing Basics", summary: "Risk vs. return, diversification.", duration: "15m", kind: "link", href: "https://www.investopedia.com/investing-4689743", order: 2 },
-        { id: "val-101", title: "Intro to Valuation", summary: "DCF, multiples, when to use what.", duration: "20m", kind: "link", href: "https://www.investopedia.com/terms/v/valuation.asp", order: 3 }
-      ]
-    };
+  const dry = process.argv.includes("--dry-run");
+  const file = path.join(process.cwd(), "public", "training", "finance.json");
+  if (!fs.existsSync(file)) {
+    throw new Error(`Missing ${file}`);
   }
 
-  console.log(`Seeding track: ${payload.path.title} (${trackId})`);
-  if (dryRun) {
-    console.log("— Dry run — no writes will be performed.");
-    console.table(payload.courses.map(c => ({ id: c.id, title: c.title, order: c.order })));
+  const data = JSON.parse(fs.readFileSync(file, "utf8")) as FinanceJSON;
+  const pathId = data.path?.id || "finance";
+  const title = data.path?.title || "Finance Training";
+
+  if (dry) {
+    console.log(`[DRY RUN] Would upsert path '${pathId}' (${title})`);
+    for (const c of data.courses || []) {
+      console.log(`  - course ${c.id}: ${c.title}`);
+    }
     return;
   }
 
-  // Upsert the path doc
-  await db.collection("paths").doc(trackId).set(
-    { title: payload.path.title, updatedAt: new Date() },
+  const db = getDb();
+
+  // Upsert path
+  await db.collection("paths").doc(pathId).set(
+    {
+      id: pathId,
+      title,
+      updatedAt: FieldValue.serverTimestamp(),
+    },
     { merge: true }
   );
 
-  // Upsert courses subcollection
+  // Upsert courses (batch)
   const batch = db.batch();
-  payload.courses.forEach((c) => {
-    const ref = db.collection("paths").doc(trackId).collection("courses").doc(c.id);
-    batch.set(ref, {
-      title: c.title,
-      summary: c.summary ?? "",
-      duration: c.duration ?? "",
-      kind: c.kind ?? "lesson",
-      href: c.href ?? "",
-      order: c.order ?? 999,
-      slug: c.slug ?? c.id,
-      updatedAt: new Date(),
-    }, { merge: true });
-  });
-
+  const coll = db.collection("paths").doc(pathId).collection("courses");
+  for (const c of data.courses || []) {
+    const ref = coll.doc(c.id);
+    batch.set(ref, { ...c, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  }
   await batch.commit();
-  console.log(`✅ Seeded ${payload.courses.length} finance course(s).`);
+
+  console.log(`✅ Seed complete. Path: ${pathId} (${data.courses?.length ?? 0} courses)`);
 }
 
-main().catch((e) => {
-  console.error("❌ Seed failed:", e);
+main().catch((err) => {
+  console.error("❌ Seed failed:", err?.message || err);
   process.exit(1);
 });
-'@
