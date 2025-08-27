@@ -1,256 +1,148 @@
 // src/components/Navbar.tsx
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/AuthProvider";
+import { useEffect, useState, useRef } from "react";
 import { auth } from "@/lib/firebaseClient";
-import { signOut as fbSignOut } from "firebase/auth";
+import { onAuthStateChanged, signOut as fbSignOut, type User } from "firebase/auth";
 
 export default function Navbar() {
   const router = useRouter();
-  const { currentUser } = useAuth();
-
+  const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
-  const [trainingOpen, setTrainingOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // Lock body scroll when the mobile menu is open
   useEffect(() => {
-    if (open) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
-    return () => document.body.classList.remove("overflow-hidden");
-  }, [open]);
+    const off = onAuthStateChanged(auth, setUser);
+    return () => off();
+  }, []);
 
-  const handleSignOut = async () => {
-    try {
-      await fbSignOut(auth);
-      setOpen(false);
-      setTrainingOpen(false);
-      router.push("/");
-    } catch (e) {
-      console.error("Sign out failed:", e);
-    }
+  useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
+
+  const signOut = async () => {
+    await fbSignOut(auth);
+    router.push("/");
   };
 
-  const NavLink = ({
-    href,
-    children,
-    className = "",
-    onClick,
-  }: {
-    href: string;
-    children: React.ReactNode;
-    className?: string;
-    onClick?: () => void;
-  }) => (
-    <Link
-      href={href}
-      className={`px-3 py-2 hover:opacity-90 transition ${className}`}
-      onClick={() => {
-        onClick?.();
-        setOpen(false);
-        setTrainingOpen(false);
-      }}
-    >
-      {children}
-    </Link>
-  );
-
   return (
-    <header className="fixed top-0 inset-x-0 z-40 bg-[#003B49]/95 backdrop-blur text-white">
-      <nav className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
-        {/* Left: brand */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <img
-              src="/logo.png"
-              alt="Rewmo"
-              className="h-7 w-7 md:h-8 md:w-8 rounded"
-            />
-            <span className="font-semibold text-lg md:text-xl">RewmoAI</span>
-          </Link>
-        </div>
+    <header className="fixed inset-x-0 top-0 z-[100] bg-[#003B49]/90 backdrop-blur">
+      <nav className="mx-auto flex h-16 md:h-20 max-w-7xl items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/logos/logo.png"
+            alt="Rewmo"
+            width={36}
+            height={36}
+            className="h-9 w-9"
+            priority
+          />
+          <span className="text-[#FF9151] font-extrabold text-lg md:text-xl">
+            RewmoAI
+          </span>
+        </Link>
 
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-2">
-          <NavLink href="/features">Features</NavLink>
-          <NavLink href="/shopping">Shopping</NavLink>
+        <div className="hidden md:flex items-center gap-6 text-white/90">
+          <Link href="/features" className="hover:opacity-80">Features</Link>
+          <Link href="/shopping" className="hover:opacity-80">Shopping</Link>
 
           {/* Training dropdown */}
           <div
             className="relative"
-            onMouseEnter={() => setTrainingOpen(true)}
-            onMouseLeave={() => setTrainingOpen(false)}
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+            ref={menuRef}
           >
             <button
-              className="px-3 py-2 hover:opacity-90 transition"
-              onClick={() => setTrainingOpen((v) => !v)}
+              type="button"
               aria-haspopup="menu"
-              aria-expanded={trainingOpen}
+              aria-expanded={open}
+              onClick={() => setOpen(v => !v)}
+              className="hover:opacity-80 inline-flex items-center gap-1"
             >
-              Training ▾
+              Training
+              <svg width="12" height="12" viewBox="0 0 20 20" className={`transition ${open ? "rotate-180" : ""}`}>
+                <path fill="currentColor" d="M5.5 7.5L10 12l4.5-4.5H5.5z" />
+              </svg>
             </button>
-            {trainingOpen && (
+
+            {open && (
               <div
                 role="menu"
-                className="absolute mt-2 w-56 rounded-lg bg-white text-[#003B49] shadow-lg overflow-hidden"
+                className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[#053d4b] p-2 shadow-xl z-[200] pointer-events-auto"
               >
-                <Link href="/learn/finance" className="block px-4 py-2 hover:bg-white/10 rounded-md">
-  Finance Training
-</Link>
-
-                <NavLink href="/learn/genai" className="block w-full px-4 py-3">
-                  AI Training
-                </NavLink>
-                <NavLink href="/learn/tqm" className="block w-full px-4 py-3">
-                  TQM Training
-                </NavLink>
+                <Link
+                  href="/learn"
+                  className="block rounded-lg px-3 py-2 hover:bg-white/10"
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
+                >
+                  All tracks
+                </Link>
+                <Link
+                  href="/learn/genai"
+                  className="block rounded-lg px-3 py-2 hover:bg-white/10"
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
+                >
+                  GenAI
+                </Link>
+                <Link
+                  href="/learn/tqm"
+                  className="block rounded-lg px-3 py-2 hover:bg-white/10"
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
+                >
+                  TQM
+                </Link>
+                <Link
+                  href="/learn/finance"
+                  className="block rounded-lg px-3 py-2 hover:bg-white/10"
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
+                >
+                  Finance
+                </Link>
               </div>
             )}
           </div>
 
-          <NavLink href="/rewards">Rewards</NavLink>
-          <NavLink href="/about">About</NavLink>
+          <Link href="/rewards" className="hover:opacity-80">Rewards</Link>
+          <Link href="/about" className="hover:opacity-80">About</Link>
+        </div>
 
-          {currentUser ? (
+        <div className="flex items-center gap-3">
+          {user ? (
             <>
-              <NavLink
+              <Link
                 href="/account"
-                className="ml-2 rounded-lg bg-teal-500 text-white font-semibold"
+                className="rounded-lg bg-teal-500/90 px-3 py-1.5 text-white hover:bg-teal-400"
               >
                 Account
-              </NavLink>
+              </Link>
               <button
-                onClick={handleSignOut}
-                className="ml-2 px-3 py-2 rounded-lg bg-orange-500 font-semibold hover:opacity-90 transition"
+                onClick={signOut}
+                className="rounded-lg bg-orange-500 px-3 py-1.5 text-white hover:bg-orange-600"
               >
                 Sign out
               </button>
             </>
           ) : (
-            <>
-              <NavLink
-                href="/account"
-                className="ml-2 rounded-lg bg-teal-500 text-white font-semibold"
-              >
-                Account
-              </NavLink>
-              <NavLink
-                href="/signin"
-                className="ml-2 rounded-lg bg-orange-500 text-white font-semibold"
-              >
-                Sign In
-              </NavLink>
-            </>
+            <Link
+              href="/signin"
+              className="rounded-lg bg-orange-500 px-3 py-1.5 text-white hover:bg-orange-600"
+            >
+              Sign In
+            </Link>
           )}
         </div>
-
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded bg-[#FF6A00] focus:outline-none focus:ring-2 focus:ring-white/60"
-          aria-label="Open menu"
-          onClick={() => setOpen((v) => !v)}
-        >
-          <span className="sr-only">Open menu</span>
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
       </nav>
-
-      {/* Mobile sheet */}
-      {open && (
-        <div className="md:hidden fixed inset-0 z-40">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setOpen(false)}
-          />
-          {/* Panel */}
-          <div className="absolute right-0 top-0 h-full w-72 max-w-[85vw] bg-[#003B49] text-white shadow-xl p-4 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-semibold text-lg">Menu</span>
-              <button
-                className="h-9 w-9 inline-flex items-center justify-center rounded bg-white/10"
-                onClick={() => setOpen(false)}
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="flex flex-col">
-              <NavLink href="/features" className="py-3">
-                Features
-              </NavLink>
-              <NavLink href="/shopping" className="py-3">
-                Shopping
-              </NavLink>
-
-              {/* Training group */}
-              <div className="mt-2">
-                <div className="px-3 py-2 text-sm uppercase tracking-wide text-white/70">
-                  Training
-                </div>
-                <NavLink href="/learn/genai" className="py-3">
-                  AI Training
-                </NavLink>
-                <NavLink href="/learn/tqm" className="py-3">
-                  TQM Training
-                </NavLink>
-              </div>
-
-              <NavLink href="/rewards" className="py-3">
-                Rewards
-              </NavLink>
-              <NavLink href="/about" className="py-3">
-                About
-              </NavLink>
-
-              <div className="h-px my-3 bg-white/15" />
-
-              {currentUser ? (
-                <>
-                  <NavLink
-                    href="/account"
-                    className="py-3 rounded-lg bg-teal-500 text-center font-semibold"
-                  >
-                    Account
-                  </NavLink>
-                  <button
-                    onClick={handleSignOut}
-                    className="mt-2 py-3 rounded-lg bg-orange-500 font-semibold"
-                  >
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <NavLink
-                    href="/account"
-                    className="py-3 rounded-lg bg-teal-500 text-center font-semibold"
-                  >
-                    Account
-                  </NavLink>
-                  <NavLink
-                    href="/signin"
-                    className="mt-2 py-3 rounded-lg bg-orange-500 text-center font-semibold"
-                  >
-                    Sign In
-                  </NavLink>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

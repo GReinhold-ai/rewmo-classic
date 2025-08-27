@@ -1,26 +1,18 @@
+// src/pages/api/training/courses.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getDb } from "@/lib/firebaseAdmin";
 import fs from "fs";
 import path from "path";
 
-/** Read local JSON and normalize to the shape the UI expects */
 function readLocal(pathId: string) {
   try {
     const p = path.join(process.cwd(), "public", "training", `${pathId}.json`);
     if (!fs.existsSync(p)) return null;
-    const raw = JSON.parse(fs.readFileSync(p, "utf8"));
-
-    const pathMeta = raw.path ?? { id: pathId, title: raw.title ?? pathId };
-
-    const courses = (raw.courses ?? raw.lessons ?? [])
-      .map((c: any) => ({
-        ...c,
-        // normalize so UI can read either property
-        summary: c.summary ?? c.description ?? "",
-      }))
-      .sort((a: any, b: any) => (a.order ?? 9999) - (b.order ?? 9999));
-
-    return { path: pathMeta, courses };
+    const j = JSON.parse(fs.readFileSync(p, "utf8"));
+    return {
+      path: j.path ?? { id: pathId, title: (j.title as string) ?? pathId },
+      courses: j.courses ?? j.lessons ?? [],
+    };
   } catch {
     return null;
   }
@@ -28,11 +20,18 @@ function readLocal(pathId: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") return res.status(405).end("Method Not Allowed");
+  const pathId = String(req.query.path || "");
+  const forceLocal = String(req.query.source || "") === "local";
 
-  const pathId = String(req.query.path || req.query.id || "");
   if (!pathId) return res.status(400).json({ path: null, courses: [] });
 
-  // Try Firestore first
+  // Prefer local if requested
+  if (forceLocal) {
+    const local = readLocal(pathId);
+    return local ? res.json(local) : res.status(404).json({ path: null, courses: [] });
+  }
+
+  // Try Firestore
   try {
     const db = getDb();
     const doc = await db.collection("paths").doc(pathId).get();
@@ -44,25 +43,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .collection("courses")
         .orderBy("order", "asc")
         .get();
-
-      const courses = snap.docs.map((d) => {
-        const data = d.data() as any;
-        return {
-          id: d.id,
-          ...data,
-          summary: data.summary ?? data.description ?? "",
-        };
-      });
-
+      const courses = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       return res.json({ path: { id: pathId, ...pathData }, courses });
     }
   } catch {
-    // swallow and try local
+    // ignore and fall back
   }
 
-  // Fallback: local JSON
+  // Fallback local
   const local = readLocal(pathId);
-  if (local) return res.json(local);
-
-  return res.status(404).json({ path: null, courses: [] });
+  return local ? res.json(local) : res.status(404).json({ path: null, courses: [] });
 }
