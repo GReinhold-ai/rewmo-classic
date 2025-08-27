@@ -1,0 +1,4 @@
+[
+  { "id": "genai", "title": "AI Training", "description": "Short, practical modules." },
+  { "id": "tqm",   "title": "TQM Training", "description": "Process Management modules." }
+]

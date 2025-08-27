@@ -1,0 +1,23 @@
+{
+  "path": { "id": "tqm", "title": "TQM Training" },
+  "courses": [
+    {
+      "id": "intro",
+      "title": "Introduction to RewmoAI Process Management",
+      "description": "Course overview PDF",
+      "duration": "10m",
+      "kind": "document",
+      "href": "/rewmoai-module-1.pdf",
+      "order": 1
+    },
+    {
+      "id": "mission-objectives",
+      "title": "Course Mission & Objectives",
+      "description": "Slides (page 2)",
+      "duration": "5m",
+      "kind": "document",
+      "href": "/rewmoai-module-1.pdf#page=2",
+      "order": 2
+    }
+  ]
+}

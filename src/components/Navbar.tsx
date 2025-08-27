@@ -97,6 +97,10 @@ export default function Navbar() {
                 role="menu"
                 className="absolute mt-2 w-56 rounded-lg bg-white text-[#003B49] shadow-lg overflow-hidden"
               >
+                <Link href="/learn/finance" className="block px-4 py-2 hover:bg-white/10 rounded-md">
+  Finance Training
+</Link>
+
                 <NavLink href="/learn/genai" className="block w-full px-4 py-3">
                   AI Training
                 </NavLink>

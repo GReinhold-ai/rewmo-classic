@@ -1,0 +1,59 @@
+{
+  "path": { "id": "genai", "title": "AI Training" },
+  "courses": [
+    {
+      "id": "ibm-ai-pm",
+      "title": "IBM AI Product Manager",
+      "summary": "Free, job-ready intro to AI product management from IBM.",
+      "href": "https://www.coursera.org/professional-certificates/ibm-ai-product-manager"
+    },
+    {
+      "id": "meta-data-analyst",
+      "title": "Meta Data Analyst",
+      "summary": "Data analysis foundations that pair well with AI skills.",
+      "href": "https://www.coursera.org/professional-certificates/meta-data-analyst"
+    },
+    {
+      "id": "intro-llms",
+      "title": "Introduction to LLMs",
+      "summary": "Understand how large language models work under the hood.",
+      "href": "https://ai.google.dev/learning/introlm"
+    },
+    {
+      "id": "ai-for-everyone",
+      "title": "AI for Everyone",
+      "summary": "Non-technical overview of AI and how to use it in business.",
+      "href": "https://www.coursera.org/learn/ai-for-everyone"
+    },
+    {
+      "id": "genai-for-leaders",
+      "title": "Generative AI for Leaders",
+      "summary": "Strategy, risks, and opportunities for leaders adopting GenAI.",
+      "href": "https://www.edx.org/learn/ai/harvard-university-leaders-for-ai"
+    },
+    {
+      "id": "brain-in-10",
+      "title": "Building a Brain in 10 Minutes",
+      "summary": "Fun, fast starter on building an AI 'brain'.",
+      "href": "https://www.youtube.com/watch?v=G3t7J7WNbJ0"
+    },
+    {
+      "id": "responsible-ai",
+      "title": "Introduction to Responsible AI",
+      "summary": "Core principles for safe, ethical AI systems.",
+      "href": "https://learn.microsoft.com/en-us/training/paths/responsible-ai-principles/"
+    },
+    {
+      "id": "elevate-analyst",
+      "title": "Elevate your Data Analyst Career",
+      "summary": "Career moves and skill paths for analysts in the AI era.",
+      "href": "https://www.coursera.org/specializations/google-data-analytics"
+    },
+    {
+      "id": "elevate-datasci",
+      "title": "Elevate your Data Science Career",
+      "summary": "Advance as a data scientist with AI-native best practices.",
+      "href": "https://www.deeplearning.ai/short-courses/"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+﻿{
+  "path": { "id": "finance", "title": "Finance Training" },
+  "courses": [
+    {
+      "id": "pf-101",
+      "title": "Personal Finance 101",
+      "summary": "Budgeting, emergency funds, goal setting.",
+      "duration": "15m",
+      "kind": "link",
+      "href": "https://www.investopedia.com/personal-finance-4427768",
+      "order": 1
+    },
+    {
+      "id": "invest-101",
+      "title": "Investing Basics",
+      "summary": "Risk/return, diversification, index funds.",
+      "duration": "15m",
+      "kind": "link",
+      "href": "https://www.investopedia.com/investing-4689743",
+      "order": 2
+    },
+    {
+      "id": "val-101",
+      "title": "Intro to Valuation",
+      "summary": "DCF, multiples, when to use what.",
+      "duration": "20m",
+      "kind": "link",
+      "href": "https://www.investopedia.com/terms/v/valuation.asp",
+      "order": 3
+    }
+  ]
+}

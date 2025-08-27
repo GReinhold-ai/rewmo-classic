@@ -1,91 +1,65 @@
-// src/pages/learn/[track]/index.tsx
 import Head from "next/head";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import { useCoursesByPath } from "@/lib/useTraining";
+import { usePaths } from "@/lib/useTraining";
 
-const TRACK_TITLES: Record<string, string> = {
-  genai: "AI Training",
-  tqm: "TQM Training",
-};
+const FALLBACK = [
+  { id: "genai", title: "AI Training", blurb: "GenAI basics, prompts, apps" },
+  { id: "tqm", title: "TQM Training", blurb: "Lean, Six Sigma, Kaizen" },
+  { id: "finance", title: "Finance Training", blurb: "Modeling, valuation, risk" },
+];
 
-export default function TrackPage() {
-  const router = useRouter();
-  const track = typeof router.query.track === "string" ? router.query.track : "";
-  const { path, courses, loading } = useCoursesByPath(track);
-  const title = TRACK_TITLES[track] ?? "Training";
+export default function LearnIndex() {
+  const { paths, loading } = usePaths();
+
+  const list = (paths?.length ? paths : FALLBACK).map((p: any) => ({
+    id: p.id,
+    title: p.title || p.id.toUpperCase(),
+    blurb:
+      p.blurb ||
+      (p.id === "genai"
+        ? "GenAI basics, prompts, apps"
+        : p.id === "tqm"
+        ? "Lean, Six Sigma, Kaizen"
+        : p.id === "finance"
+        ? "Modeling, valuation, risk"
+        : "Training track"),
+  }));
 
   return (
     <>
       <Head>
-        <title>{title} | Rewmo</title>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover"
-        />
+        <title>Learn | Rewmo</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </Head>
 
       <div className="mx-auto max-w-6xl px-4 py-8 text-slate-100">
-        <h1 className="text-3xl font-bold">{title}</h1>
-        <p className="mt-2 text-slate-300">Short, practical modules.</p>
+        <h1 className="text-3xl font-bold">Training</h1>
+        <p className="mt-2 text-slate-300">Pick a track to get started.</p>
 
-        <div className="mt-6">
-          {loading ? (
-            <div className="rounded-xl bg-slate-800/60 px-4 py-3">Loading…</div>
-          ) : !courses?.length ? (
-            <div className="rounded-xl bg-slate-800/60 px-4 py-3">
-              No lessons found for this track yet.
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {courses.map((c: any) => {
-                const slug = c.slug || c.id;
-                const linkHref = c.href || `/learn/${track}/${slug}`;
-                const inner = (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">{c.title}</h3>
-                      <span className="text-xs rounded-full bg-slate-700/70 px-2 py-1">
-                        not started · 0%
-                      </span>
-                    </div>
-                    {c.summary ? (
-                      <p className="mt-2 text-slate-300">{c.summary}</p>
-                    ) : null}
-                  </>
-                );
+        {loading && (
+          <div className="mt-6 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+            Loading…
+          </div>
+        )}
 
-                // External/doc lesson (e.g., PDF) → open new tab
-                if (c.href) {
-                  return (
-                    <a
-                      key={c.id}
-                      href={linkHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block rounded-xl border border-white/10 bg-slate-800/50 p-4 hover:border-white/20 transition"
-                    >
-                      {inner}
-                    </a>
-                  );
-                }
-
-                // In-app lesson
-                return (
-                  <Link
-                    key={c.id}
-                    href={{
-                      pathname: "/learn/[track]/[slug]",
-                      query: { track, slug, id: c.id },
-                    }}
-                    className="rounded-xl border border-white/10 bg-slate-800/50 p-4 hover:border-white/20 transition block"
-                  >
-                    {inner}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {list.map((t) => (
+            <Link
+              key={t.id}
+              href={`/learn/${t.id}`}
+              className="block rounded-xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 transition"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-xl font-semibold">{t.title}</h3>
+                {t.id === "finance" && (
+                  <span className="text-[10px] uppercase tracking-wide rounded-full bg-emerald-600/20 border border-emerald-400/30 px-2 py-1">
+                    new
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-sm text-slate-300">{t.blurb}</p>
+            </Link>
+          ))}
         </div>
       </div>
     </>
