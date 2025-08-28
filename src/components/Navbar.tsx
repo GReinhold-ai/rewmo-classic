@@ -1,134 +1,177 @@
-// src/components/Navbar.tsx
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState, useRef } from "react";
-import { auth } from "@/lib/firebaseClient";
+import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut as fbSignOut, type User } from "firebase/auth";
+import { auth } from "@/lib/firebaseClient";
+
+function MenuItem({
+  href,
+  children,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="block px-3 py-2 text-sm rounded-md hover:bg-white/10 focus:bg-white/10"
+    >
+      {children}
+    </Link>
+  );
+}
 
 export default function Navbar() {
   const router = useRouter();
+
+  // Auth (lightweight)
   const [user, setUser] = useState<User | null>(null);
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
-    const off = onAuthStateChanged(auth, setUser);
-    return () => off();
+    const unsub = onAuthStateChanged(auth, setUser);
+    return () => unsub();
   }, []);
 
-  useEffect(() => {
-    const handle = (e: MouseEvent) => {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, []);
-
-  const signOut = async () => {
+  const handleSignOut = async () => {
     await fbSignOut(auth);
-    router.push("/");
+    router.push("/signin");
   };
 
+  // Mobile menu lock (optional UX nicety)
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = mobileOpen ? "hidden" : prev || "";
+    return () => {
+      document.body.style.overflow = prev || "";
+    };
+  }, [mobileOpen]);
+
+  // Training dropdown state
+  const [trainOpen, setTrainOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const hoverTimer = useRef<number | null>(null);
+
+  const openTrain = () => {
+    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
+    setTrainOpen(true);
+  };
+  const scheduleClose = () => {
+    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => setTrainOpen(false), 120);
+  };
+
+  // Close on route change
+  useEffect(() => {
+    setTrainOpen(false);
+    setMobileOpen(false);
+  }, [router.asPath]);
+
+  // Click outside to close
+  useEffect(() => {
+    if (!trainOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setTrainOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [trainOpen]);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-[100] bg-[#003B49]/90 backdrop-blur">
-      <nav className="mx-auto flex h-16 md:h-20 max-w-7xl items-center justify-between px-4">
+    <header className="sticky top-0 z-50 bg-[#003B49]/95 backdrop-blur supports-[backdrop-filter]:bg-[#003B49]/80">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 text-white">
+        {/* Brand */}
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/logos/logo.png"
-            alt="Rewmo"
-            width={36}
-            height={36}
-            className="h-9 w-9"
+            alt="RewmoAI"
+            width={28}
+            height={28}
+            className="h-7 w-7"
             priority
           />
-          <span className="text-[#FF9151] font-extrabold text-lg md:text-xl">
-            RewmoAI
-          </span>
+          <span className="font-bold text-lg text-[#FF9151]">RewmoAI</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6 text-white/90">
-          <Link href="/features" className="hover:opacity-80">Features</Link>
-          <Link href="/shopping" className="hover:opacity-80">Shopping</Link>
+        {/* Desktop links */}
+        <div className="hidden items-center gap-4 md:flex">
+          <Link href="/features" className="hover:underline">
+            Features
+          </Link>
+          <Link href="/shopping" className="hover:underline">
+            Shopping
+          </Link>
 
-          {/* Training dropdown */}
+          {/* Training Dropdown (hover + click) */}
           <div
-            className="relative"
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
             ref={menuRef}
+            className="relative"
+            onMouseEnter={openTrain}
+            onMouseLeave={scheduleClose}
           >
             <button
               type="button"
               aria-haspopup="menu"
-              aria-expanded={open}
-              onClick={() => setOpen(v => !v)}
-              className="hover:opacity-80 inline-flex items-center gap-1"
+              aria-expanded={trainOpen}
+              onClick={() => setTrainOpen((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-white/10 focus:bg-white/10"
             >
               Training
-              <svg width="12" height="12" viewBox="0 0 20 20" className={`transition ${open ? "rotate-180" : ""}`}>
-                <path fill="currentColor" d="M5.5 7.5L10 12l4.5-4.5H5.5z" />
+              <svg
+                className={`h-3 w-3 transition-transform ${trainOpen ? "rotate-180" : ""}`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M5.25 7.5l4.5 4.5 4.5-4.5" />
               </svg>
             </button>
 
-            {open && (
+            {trainOpen && (
               <div
                 role="menu"
-                className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[#053d4b] p-2 shadow-xl z-[200] pointer-events-auto"
+                className="absolute left-0 top-full mt-2 w-56 rounded-lg bg-[#043846] shadow-lg ring-1 ring-white/10 focus:outline-none z-[60]"
+                onMouseEnter={openTrain}
+                onMouseLeave={scheduleClose}
               >
-                <Link
-                  href="/learn"
-                  className="block rounded-lg px-3 py-2 hover:bg-white/10"
-                  onClick={() => setOpen(false)}
-                  role="menuitem"
-                >
-                  All tracks
-                </Link>
-                <Link
-                  href="/learn/genai"
-                  className="block rounded-lg px-3 py-2 hover:bg-white/10"
-                  onClick={() => setOpen(false)}
-                  role="menuitem"
-                >
-                  GenAI
-                </Link>
-                <Link
-                  href="/learn/tqm"
-                  className="block rounded-lg px-3 py-2 hover:bg-white/10"
-                  onClick={() => setOpen(false)}
-                  role="menuitem"
-                >
-                  TQM
-                </Link>
-                <Link
-                  href="/learn/finance"
-                  className="block rounded-lg px-3 py-2 hover:bg-white/10"
-                  onClick={() => setOpen(false)}
-                  role="menuitem"
-                >
-                  Finance
-                </Link>
+                <MenuItem href="/learn" onClick={() => setTrainOpen(false)}>
+                  All Training
+                </MenuItem>
+                <div className="mx-3 my-1 h-px bg-white/10" />
+                <MenuItem href="/learn/genai" onClick={() => setTrainOpen(false)}>
+                  AI Training
+                </MenuItem>
+                <MenuItem href="/learn/tqm" onClick={() => setTrainOpen(false)}>
+                  TQM Training
+                </MenuItem>
+                <MenuItem href="/learn/finance" onClick={() => setTrainOpen(false)}>
+                  Finance Training
+                </MenuItem>
               </div>
             )}
           </div>
 
-          <Link href="/rewards" className="hover:opacity-80">Rewards</Link>
-          <Link href="/about" className="hover:opacity-80">About</Link>
-        </div>
+          <Link href="/rewards" className="hover:underline">
+            Rewards
+          </Link>
+          <Link href="/about" className="hover:underline">
+            About
+          </Link>
 
-        <div className="flex items-center gap-3">
           {user ? (
             <>
               <Link
                 href="/account"
-                className="rounded-lg bg-teal-500/90 px-3 py-1.5 text-white hover:bg-teal-400"
+                className="rounded-md bg-teal-500 px-3 py-1 text-sm font-semibold text-[#003B49] hover:bg-teal-400"
               >
                 Account
               </Link>
               <button
-                onClick={signOut}
-                className="rounded-lg bg-orange-500 px-3 py-1.5 text-white hover:bg-orange-600"
+                onClick={handleSignOut}
+                className="rounded-md bg-orange-500 px-3 py-1 text-sm font-semibold hover:bg-orange-600"
               >
                 Sign out
               </button>
@@ -136,13 +179,113 @@ export default function Navbar() {
           ) : (
             <Link
               href="/signin"
-              className="rounded-lg bg-orange-500 px-3 py-1.5 text-white hover:bg-orange-600"
+              className="rounded-md bg-orange-500 px-3 py-1 text-sm font-semibold hover:bg-orange-600"
             >
               Sign In
             </Link>
           )}
         </div>
+
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden rounded-md p-2 hover:bg-white/10"
+          aria-label="Open menu"
+          onClick={() => setMobileOpen(true)}
+        >
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
       </nav>
+
+      {/* Mobile sheet */}
+      {mobileOpen && (
+        <div className="md:hidden">
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="fixed inset-y-0 right-0 z-50 w-72 bg-[#043846] p-4 text-white shadow-xl">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-[#FF9151]">Menu</span>
+              <button
+                aria-label="Close menu"
+                className="rounded-md p-2 hover:bg-white/10"
+                onClick={() => setMobileOpen(false)}
+              >
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+
+            <nav className="mt-4 space-y-1">
+              <Link href="/features" className="block rounded-md px-3 py-2 hover:bg-white/10">
+                Features
+              </Link>
+              <Link href="/shopping" className="block rounded-md px-3 py-2 hover:bg-white/10">
+                Shopping
+              </Link>
+
+              <div className="rounded-md bg-white/5">
+                <div className="px-3 py-2 text-xs uppercase tracking-wide text-white/70">
+                  Training
+                </div>
+                <MenuItem href="/learn" onClick={() => setMobileOpen(false)}>
+                  All Training
+                </MenuItem>
+                <MenuItem href="/learn/genai" onClick={() => setMobileOpen(false)}>
+                  AI Training
+                </MenuItem>
+                <MenuItem href="/learn/tqm" onClick={() => setMobileOpen(false)}>
+                  TQM Training
+                </MenuItem>
+                <MenuItem href="/learn/finance" onClick={() => setMobileOpen(false)}>
+                  Finance Training
+                </MenuItem>
+              </div>
+
+              <Link href="/rewards" className="block rounded-md px-3 py-2 hover:bg-white/10">
+                Rewards
+              </Link>
+              <Link href="/about" className="block rounded-md px-3 py-2 hover:bg-white/10">
+                About
+              </Link>
+
+              <div className="mt-3 flex gap-2">
+                {user ? (
+                  <>
+                    <Link
+                      href="/account"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex-1 rounded-md bg-teal-500 px-3 py-2 text-center font-semibold text-[#003B49] hover:bg-teal-400"
+                    >
+                      Account
+                    </Link>
+                    <button
+                      onClick={async () => {
+                        await handleSignOut();
+                        setMobileOpen(false);
+                      }}
+                      className="flex-1 rounded-md bg-orange-500 px-3 py-2 font-semibold hover:bg-orange-600"
+                    >
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    href="/signin"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex-1 rounded-md bg-orange-500 px-3 py-2 text-center font-semibold hover:bg-orange-600"
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </div>
+            </nav>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
