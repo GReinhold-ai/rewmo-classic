@@ -1,4 +1,3 @@
-// src/pages/learn/[track]/index.tsx
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -10,12 +9,10 @@ const TRACK_TITLES: Record<string, string> = {
   finance: "Finance Training",
 };
 
-export default function LearnIndex() {
+export default function TrackPage() {
   const router = useRouter();
-  const track =
-    typeof router.query.track === "string" ? router.query.track : "";
-
-  const { path, courses, loading, error } = useCoursesByPath(track);
+  const track = typeof router.query.track === "string" ? router.query.track : "";
+  const { path, courses, loading } = useCoursesByPath(track); // <-- no `error`
   const title = TRACK_TITLES[track] ?? "Training";
 
   return (
@@ -29,22 +26,12 @@ export default function LearnIndex() {
       </Head>
 
       <div className="mx-auto max-w-6xl px-4 py-8 text-slate-100">
-        <h1 className="text-3xl font-bold">{title}</h1>
+        <h1 className="text-3xl font-bold">{path?.title ?? title}</h1>
         <p className="mt-2 text-slate-300">Short, practical modules.</p>
 
         <div className="mt-6">
-          {!track ? (
-            <div className="rounded-xl bg-slate-800/60 px-4 py-3">
-              Loading track…
-            </div>
-          ) : loading ? (
-            <div className="rounded-xl bg-slate-800/60 px-4 py-3">
-              Loading…
-            </div>
-          ) : error ? (
-            <div className="rounded-xl bg-slate-800/60 px-4 py-3">
-              Could not load lessons.
-            </div>
+          {loading ? (
+            <div className="rounded-xl bg-slate-800/60 px-4 py-3">Loading…</div>
           ) : !courses?.length ? (
             <div className="rounded-xl bg-slate-800/60 px-4 py-3">
               No lessons found for this track yet.
@@ -52,52 +39,45 @@ export default function LearnIndex() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {courses.map((c: any) => {
+                const href = c.href as string | undefined;
                 const slug = c.slug || c.id;
-                const isExternal = !!c.href;
 
-                // Internal lesson link (goes to /learn/[track]/[slug])
-                if (!isExternal) {
-                  return (
-                    <Link
-                      key={c.id}
-                      href={{
-                        pathname: "/learn/[track]/[slug]",
-                        query: { track, slug, id: c.id },
-                      }}
-                      className="block rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition"
-                    >
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">{c.title}</h3>
-                        <span className="text-xs rounded-full bg-slate-700/70 px-2 py-1">
-                          not started · 0%
-                        </span>
-                      </div>
-                      {c.summary ? (
-                        <p className="mt-2 text-slate-300">{c.summary}</p>
-                      ) : null}
-                    </Link>
-                  );
-                }
-
-                // External resource link (opens new tab)
-                return (
-                  <a
-                    key={c.id}
-                    href={c.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition"
-                  >
+                const TileInner = (
+                  <>
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold">{c.title}</h3>
                       <span className="text-xs rounded-full bg-slate-700/70 px-2 py-1">
-                        external
+                        {c.duration ?? "lesson"}
                       </span>
                     </div>
                     {c.summary ? (
                       <p className="mt-2 text-slate-300">{c.summary}</p>
                     ) : null}
+                  </>
+                );
+
+                // External links (documents/videos) use <a>; internal lessons use <Link>
+                return href ? (
+                  <a
+                    key={c.id}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-white/10 bg-slate-800/50 p-4 hover:border-white/20 block"
+                  >
+                    {TileInner}
                   </a>
+                ) : (
+                  <Link
+                    key={c.id}
+                    href={{
+                      pathname: "/learn/[track]/[slug]",
+                      query: { track, slug, id: c.id },
+                    }}
+                    className="rounded-xl border border-white/10 bg-slate-800/50 p-4 hover:border-white/20 block"
+                  >
+                    {TileInner}
+                  </Link>
                 );
               })}
             </div>
