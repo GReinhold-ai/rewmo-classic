@@ -1,23 +1,38 @@
 {
-  "path": { "id": "tqm", "title": "TQM Training" },
-  "courses": [
+  "path": { "id": "tqm", "title": "TQM (LeanAI) Training", "blurb": "Process improvement the Rewmo way." },
+  "items": [
     {
       "id": "intro",
       "title": "Introduction to RewmoAI Process Management",
-      "description": "Course overview (interactive Google Slides)",
+      "description": "Interactive deck (free preview).",
       "duration": "10m",
       "kind": "embed",
-      "href": "https://docs.google.com/presentation/d/e/2PACX-1vRyhLH-uYMqKK9RXPoEauVW5mYo_2yIFjLok3ALT7B2wQbvRAyrOeRqyVbuD7zD2Q/pubembed?start=false&loop=false",
-      "order": 1
+      "href": "https://docs.google.com/presentation/d/e/2PACX-.../pubembed?start=false&loop=false",
+      "order": 1,
+      "locked": false,
+      "tier": "free"
     },
     {
       "id": "mission-objectives",
       "title": "Course Mission & Objectives",
-      "description": "Direct link to Mission & Objectives slide",
+      "description": "Jump straight to slide 2.",
       "duration": "5m",
       "kind": "embed",
-      "href": "https://docs.google.com/presentation/d/e/2PACX-1vRyhLH-uYMqKK9RXPoEauVW5mYo_2yIFjLok3ALT7B2wQbvRAyrOeRqyVbuD7zD2Q/pubembed#slide=id.p2",
-      "order": 2
+      "href": "https://docs.google.com/presentation/d/e/2PACX-.../pubembed#slide=id.p2",
+      "order": 2,
+      "locked": true,
+      "tier": "pro"
+    },
+    {
+      "id": "fourteen-points",
+      "title": "The Fourteen Points",
+      "description": "Management obligations for quality.",
+      "duration": "15m",
+      "kind": "document",
+      "href": "/tqm-fourteen-points.pdf",
+      "order": 3,
+      "locked": true,
+      "tier": "pro"
     }
   ]
 }

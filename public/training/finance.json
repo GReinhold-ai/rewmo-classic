@@ -1,32 +1,40 @@
 ﻿{
-  "path": { "id": "finance", "title": "Finance Training" },
-  "courses": [
+  "path": { "id": "finance", "title": "Financial Literacy Training", "blurb": "Money skills for individuals and small business." },
+  "items": [
     {
-      "id": "pf-101",
-      "title": "Personal Finance 101",
-      "summary": "Budgeting, emergency funds, goal setting.",
-      "duration": "15m",
+      "id": "budgeting",
+      "title": "Budgeting & Saving (Khan Academy)",
+      "description": "Build a practical budget & savings plan.",
+      "duration": "12m",
       "kind": "link",
-      "href": "https://www.investopedia.com/personal-finance-4427768",
-      "order": 1
+      "href": "https://www.khanacademy.org/economics-finance-domain/finance/budgeting-saving",
+      "order": 1,
+      "locked": false,
+      "tier": "free",
+      "tags": ["beginner"]
     },
     {
-      "id": "invest-101",
-      "title": "Investing Basics",
-      "summary": "Risk/return, diversification, index funds.",
-      "duration": "15m",
+      "id": "credit-debt",
+      "title": "Credit & Debt Basics",
+      "description": "Credit scores, interest, repayment strategies.",
+      "duration": "12m",
       "kind": "link",
-      "href": "https://www.investopedia.com/investing-4689743",
-      "order": 2
+      "href": "https://www.khanacademy.org/economics-finance-domain/finance/credit-debt",
+      "order": 2,
+      "locked": true,
+      "tier": "pro"
     },
     {
-      "id": "val-101",
-      "title": "Intro to Valuation",
-      "summary": "DCF, multiples, when to use what.",
-      "duration": "20m",
-      "kind": "link",
-      "href": "https://www.investopedia.com/terms/v/valuation.asp",
-      "order": 3
+      "id": "smb-finance",
+      "title": "Small Business Finance Basics",
+      "description": "Cash flow, P&L, breakeven, funding.",
+      "duration": "30m",
+      "kind": "document",
+      "href": "/smb-finance.pdf",
+      "order": 3,
+      "locked": true,
+      "tier": "business",
+      "tags": ["smb"]
     }
   ]
 }

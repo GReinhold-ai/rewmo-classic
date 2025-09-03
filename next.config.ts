@@ -16,6 +16,19 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // 🔁 Canonicalize training routes
+      {
+        source: '/learn/:track',
+        destination: '/training/:track',
+        permanent: true,
+      },
+      {
+        source: '/lean-lab',
+        destination: '/training/tqm',
+        permanent: true,
+      },
+
+      // ✅ Existing redirects
       {
         source: '/blog',
         destination: 'https://www.linkedin.com/in/rewmoai/recent-activity/newsletter/',
