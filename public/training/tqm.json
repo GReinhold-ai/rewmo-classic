@@ -4,19 +4,19 @@
     {
       "id": "intro",
       "title": "Introduction to RewmoAI Process Management",
-      "description": "Course overview PDF",
+      "description": "Course overview (interactive Google Slides)",
       "duration": "10m",
-      "kind": "document",
-      "href": "/rewmoai-module-1.pdf",
+      "kind": "embed",
+      "href": "https://docs.google.com/presentation/d/e/2PACX-1vRyhLH-uYMqKK9RXPoEauVW5mYo_2yIFjLok3ALT7B2wQbvRAyrOeRqyVbuD7zD2Q/pubembed?start=false&loop=false",
       "order": 1
     },
     {
       "id": "mission-objectives",
       "title": "Course Mission & Objectives",
-      "description": "Slides (page 2)",
+      "description": "Direct link to Mission & Objectives slide",
       "duration": "5m",
-      "kind": "document",
-      "href": "/rewmoai-module-1.pdf#page=2",
+      "kind": "embed",
+      "href": "https://docs.google.com/presentation/d/e/2PACX-1vRyhLH-uYMqKK9RXPoEauVW5mYo_2yIFjLok3ALT7B2wQbvRAyrOeRqyVbuD7zD2Q/pubembed#slide=id.p2",
       "order": 2
     }
   ]
