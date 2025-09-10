@@ -1,0 +1,63 @@
+{
+  "path": { "id": "shopping", "title": "Shopping Rewards", "blurb": "Earn points when you shop." },
+  "items": [
+    {
+      "id": "amazon",
+      "title": "Amazon",
+      "description": "Free access for all members.",
+      "kind": "store",
+      "href": "https://www.amazon.com/?tag=YOUR_AFF_TAG",
+      "order": 1,
+      "locked": false,
+      "tier": "free",
+      "tags": [],
+      "logo": "/logos/amazon.png",
+      "multiplier": "1x",
+      "notes": "Some categories may be excluded.",
+      "active": true
+    },
+    {
+      "id": "walmart",
+      "title": "Walmart",
+      "description": "Unlock with Pro to earn rewards.",
+      "kind": "store",
+      "href": "https://www.walmart.com/?aff=YOUR_TAG",
+      "order": 2,
+      "locked": true,
+      "tier": "pro",
+      "tags": ["made-in-usa"],
+      "logo": "/logos/walmart.png",
+      "multiplier": "2x",
+      "notes": "No rewards on gift cards.",
+      "active": true
+    },
+    {
+      "id": "delta",
+      "title": "Delta Airlines",
+      "description": "Flight rewards for Pro members.",
+      "kind": "store",
+      "href": "https://www.delta.com/?aff=YOUR_TAG",
+      "order": 3,
+      "locked": true,
+      "tier": "pro",
+      "tags": ["travel"],
+      "logo": "/logos/delta.png",
+      "multiplier": "3x",
+      "active": true
+    },
+    {
+      "id": "office-bulk",
+      "title": "Office Supplies (Bulk)",
+      "description": "Business members only.",
+      "kind": "store",
+      "href": "https://example.com/office-bulk?aff=YOUR_TAG",
+      "order": 4,
+      "locked": true,
+      "tier": "business",
+      "tags": ["smb", "sustainable"],
+      "logo": "/logos/office-bulk.png",
+      "multiplier": "4x",
+      "active": true
+    }
+  ]
+}

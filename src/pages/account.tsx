@@ -1,5 +1,7 @@
-﻿import React, { useEffect, useState } from "react";
+﻿// src/pages/account.tsx
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { useAuth } from "@/lib/AuthProvider";
 
 type SubStatus =
@@ -12,73 +14,59 @@ type SubStatus =
   | "unknown";
 
 export default function AccountPage() {
+  const router = useRouter();
   const { currentUser, signInWithGoogle, logout } = useAuth();
+
   const [status, setStatus] = useState<SubStatus>("unknown");
   const [loading, setLoading] = useState(false);
 
-  // Try to read subscription status (optional helper API if you add it)
+  // Fetch (optional) subscription status from your API if present
   useEffect(() => {
     let ignore = false;
+
     (async () => {
-      if (!currentUser?.email) {
+      const email = currentUser?.email;
+      if (!email) {
         setStatus("unknown");
         return;
       }
       try {
         const r = await fetch(
-          `/api/subscription-status?email=${encodeURIComponent(
-            currentUser.email
-          )}`
+          `/api/subscription-status?email=${encodeURIComponent(email)}`
         );
         if (!r.ok) {
-          setStatus("unknown");
+          if (!ignore) setStatus("unknown");
           return;
         }
         const j = await r.json();
-        if (!ignore)
-          setStatus(
-            (j?.subscriptionStatus as SubStatus) ?? "unknown"
-          );
+        if (!ignore) {
+          setStatus((j?.subscriptionStatus as SubStatus) ?? "unknown");
+        }
       } catch {
         if (!ignore) setStatus("unknown");
       }
     })();
+
     return () => {
       ignore = true;
     };
   }, [currentUser?.email]);
 
-  async function startMembership() {
-    if (!currentUser?.email) return signInWithGoogle();
-    setLoading(true);
-    try {
-      const r = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Requested-With": "fetch" },
-        body: JSON.stringify({
-          email: currentUser.email,
-          product: "RewmoAI + EnterpriseAI",
-          source: "account",
-          utm_source: "app",
-          utm_medium: "account",
-          utm_campaign: "bundle10",
-        }),
-      });
-      const j = await r.json();
-      if (j?.url) window.location.href = j.url;
-      else alert(j?.error || "Could not start checkout.");
-    } catch (e: any) {
-      alert(e?.message || "Network error.");
-    } finally {
-      setLoading(false);
-    }
+  // New: simple upgrade router (keeps Stripe checkout separate/optional)
+  function startMembership() {
+    // Default users to Pro
+    router.push("/account/upgrade?plan=PRO");
   }
 
+  // Keep your existing (optional) customer portal handler
   async function manageBilling() {
-    if (!currentUser?.email) return signInWithGoogle();
+    if (!currentUser?.email) {
+      await signInWithGoogle();
+      return;
+    }
     setLoading(true);
     try {
-      // If you add a portal route, this will work; otherwise it fails gracefully.
+      // Try your preferred portal route first; fall back to /api/portal if it exists.
       let r = await fetch("/api/customer-portal", { method: "POST" });
       if (r.status === 404) r = await fetch("/api/portal", { method: "POST" });
       const j = await r.json();
@@ -123,14 +111,29 @@ export default function AccountPage() {
 
             {signedIn && (
               <>
+                {/* One-click upgrade to the pricing page */}
                 <button
                   onClick={startMembership}
-                  disabled={loading}
-                  className="inline-flex items-center rounded-lg bg-[#FF6B00] px-4 py-2 font-bold text-white hover:bg-[#ff7d22] disabled:opacity-50"
+                  className="inline-flex items-center rounded-lg bg-[#FF6B00] px-4 py-2 font-bold text-white hover:bg-[#ff7d22]"
                 >
                   {status === "active" ? "Update Plan" : "Start Membership"}
                 </button>
 
+                {/* Direct deep-links to specific plans */}
+                <Link
+                  href="/account/upgrade?plan=PRO"
+                  className="inline-flex items-center rounded-lg bg-[#FF9151] px-4 py-2 font-bold text-[#003B49] hover:bg-[#FFA36C]"
+                >
+                  Upgrade to Pro
+                </Link>
+                <Link
+                  href="/account/upgrade?plan=BUSINESS"
+                  className="inline-flex items-center rounded-lg bg-white/10 px-4 py-2 font-semibold hover:bg-white/20"
+                >
+                  Upgrade to Business
+                </Link>
+
+                {/* Manage billing (Stripe portal) */}
                 <button
                   onClick={manageBilling}
                   disabled={loading}
@@ -156,6 +159,15 @@ export default function AccountPage() {
               ← Back to Home
             </Link>
           </div>
+        </div>
+
+        {/* Optional: helpful links */}
+        <div className="mt-6 text-sm text-[#9bd1d6]">
+          Need help?{" "}
+          <Link href="/contact" className="underline">
+            Contact support
+          </Link>
+          .
         </div>
       </div>
     </div>

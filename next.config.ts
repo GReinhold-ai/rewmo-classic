@@ -1,42 +1,53 @@
 // next.config.ts
-import path from 'path';
-import type { NextConfig } from 'next';
+import path from "path";
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+
   images: {
     unoptimized: true,
     // If you ever use next/image with external hosts, add:
     // domains: ['assets.stripe.com', 'firebasestorage.googleapis.com'],
   },
+
   webpack: (config) => {
-    config.resolve.alias['@'] = path.resolve(__dirname, 'src');
+    config.resolve.alias["@"] = path.resolve(__dirname, "src");
     return config;
   },
+
   async redirects() {
     return [
-      // 🔁 Canonicalize training routes
+      // Canonicalize training routes
       {
-        source: '/learn/:track',
-        destination: '/training/:track',
+        source: "/learn/:track",
+        destination: "/training/:track",
         permanent: true,
       },
       {
-        source: '/lean-lab',
-        destination: '/training/tqm',
+        source: "/lean-lab",
+        destination: "/training/tqm",
         permanent: true,
       },
 
-      // ✅ Existing redirects
+      // Shopping: legacy path → new path
       {
-        source: '/blog',
-        destination: 'https://www.linkedin.com/in/rewmoai/recent-activity/newsletter/',
-        permanent: false, // keep temporary while you iterate
+        source: "/rewards/shopping",
+        destination: "/shopping",
+        permanent: true,
+      },
+
+      // Existing redirects
+      {
+        source: "/blog",
+        destination:
+          "https://www.linkedin.com/in/rewmoai/recent-activity/newsletter/",
+        permanent: false,
       },
       {
-        source: '/privacy',
-        destination: 'https://rewmo.ai/privacy',
+        source: "/privacy",
+        destination: "https://rewmo.ai/privacy",
         permanent: false,
       },
     ];

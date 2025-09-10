@@ -1,47 +1,59 @@
 // src/pages/profile.tsx
+import Head from "next/head";
+import Link from "next/link";
 import { useAuth } from "@/lib/AuthProvider";
-import { db } from "@/lib/firebaseClient";
-import { useEffect, useState } from "react";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import RewardHistory from "@/components/RewardHistory";
 
 export default function Profile() {
-  const auth = useAuth();
-  const currentUser = auth?.currentUser;
-  const [rewards, setRewards] = useState<any[]>([]);
+  const { currentUser } = useAuth();
 
-  useEffect(() => {
-    if (!currentUser) return;
-    const fetchRewards = async () => {
-      const q = query(
-        collection(db, "rewardHistory"),
-        where("userId", "==", currentUser.uid),
-        orderBy("timestamp", "desc")
-      );
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setRewards(data);
-    };
-    fetchRewards();
-  }, [currentUser]);
+  // Logged-out view
+  if (!currentUser) {
+    return (
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Head>
+          <title>Profile • Rewmo</title>
+        </Head>
+        <h1 className="text-2xl font-bold mb-3">Profile</h1>
+        <p className="mb-6">Please sign in to view your profile and rewards.</p>
+        <Link
+          href="/login"
+          className="inline-block rounded-lg bg-orange-500 text-white px-4 py-2"
+        >
+          Log in
+        </Link>
+      </main>
+    );
+  }
 
+  // Logged-in view
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Your Profile</h1>
-      <p>Email: {currentUser?.email}</p>
+    <main className="max-w-3xl mx-auto px-6 py-12">
+      <Head>
+        <title>Profile • Rewmo</title>
+      </Head>
 
-      <h2 className="text-xl font-semibold mt-6">Reward History</h2>
-      <ul className="mt-2 space-y-2">
-        {rewards.map((r) => (
-          <li key={r.id} className="p-3 border rounded-lg shadow-sm">
-            <div className="font-bold text-[#003B49]">{r.type}</div>
-            <div className="text-sm text-gray-500">{r.notes}</div>
-            <div className="text-sm text-[#FF9151]">+{r.points} pts</div>
-            <div className="text-xs text-gray-400">
-              {r.timestamp?.toDate?.().toLocaleString()}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+      <header className="mb-8">
+        <h1 className="text-2xl font-bold">Profile</h1>
+        <p className="opacity-80">
+          Signed in as <span className="font-mono">{currentUser.email}</span>
+        </p>
+      </header>
+
+      <section className="rounded-xl border border-white/10 bg-white/5 p-5">
+        <h2 className="text-lg font-semibold mb-3">Reward history</h2>
+        {/* Renders live updates from Firestore via useUserRewards(uid) */}
+        <RewardHistory />
+      </section>
+
+      <div className="mt-8 flex gap-4">
+        <Link href="/rewards/shopping" className="underline">
+          Browse shopping partners →
+        </Link>
+        <Link href="/training" className="underline">
+          Go to Training →
+        </Link>
+      </div>
+    </main>
   );
 }

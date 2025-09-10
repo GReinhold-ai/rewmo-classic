@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, limit, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
-import { useAuth } from "@/lib/AuthProvider";
 
 export type Reward = {
   id: string;
@@ -11,17 +10,19 @@ export type Reward = {
   createdAt?: any;
 };
 
-export function useUserRewards(userIdOverride?: string) {
-  const { currentUser } = useAuth();
-  const uid = userIdOverride ?? currentUser?.uid;
-
-  const [data, setData] = useState<Reward[]>([]);
-  const [loading, setLoading] = useState(false);
+/**
+ * Unconditional hook:
+ * - Pass `uid` (string | null). If null/undefined, the hook no-ops.
+ * - Safe for SSR (checks typeof window).
+ */
+export function useUserRewards(uid: string | null | undefined) {
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [loading, setLoading] = useState<boolean>(!!uid);
 
   useEffect(() => {
-    // SSR / logged-out guard
+    // SSR or logged-out: no subscription
     if (typeof window === "undefined" || !uid) {
-      setData([]);
+      setRewards([]);
       setLoading(false);
       return;
     }
@@ -36,7 +37,8 @@ export function useUserRewards(userIdOverride?: string) {
     const unsub = onSnapshot(
       q,
       (snap) => {
-        setData(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+        const data = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Reward[];
+        setRewards(data);
         setLoading(false);
       },
       () => setLoading(false) // swallow transient errors
@@ -45,5 +47,5 @@ export function useUserRewards(userIdOverride?: string) {
     return () => unsub();
   }, [uid]);
 
-  return { rewards: data, loading };
+  return { rewards, loading };
 }

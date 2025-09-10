@@ -1,15 +1,15 @@
+// src/components/RewardHistory.tsx
 import { useAuth } from "@/lib/AuthProvider";
 import { useUserRewards } from "@/lib/useUserRewards";
 
 export default function RewardHistory() {
   const { currentUser } = useAuth();
-  const uid = currentUser?.uid;
+  const uid = currentUser?.uid ?? null;
 
-  // Public route? Don't query Firestore.
-  if (!uid) return null;
-
+  // ✅ Always call the hook (safe even if uid is null)
   const { rewards, loading } = useUserRewards(uid);
 
+  if (!uid) return null; // Or: return <div>Sign in to view your rewards.</div>
   if (loading) return <div className="text-sm text-gray-500">Loading rewards…</div>;
   if (!rewards?.length) return <div className="text-sm text-gray-500">No rewards yet.</div>;
 

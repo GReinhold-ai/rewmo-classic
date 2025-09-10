@@ -36,8 +36,8 @@ type TrackDocNormalized = {
   id: string;
   title: string;
   blurb?: string;
-  items: Required<Pick<Item, "id" | "title" | "href">> &
-    Omit<Item, "id" | "title" | "href">[];
+  // ⬇️ Make it an array of the intersection, not intersection with an array
+  items: (Required<Pick<Item, "id" | "title" | "href">> & Omit<Item, "id" | "title" | "href">)[];
 };
 
 const RANK: Record<Tier, number> = { free: 0, pro: 1, business: 2 };

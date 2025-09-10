@@ -1,80 +1,76 @@
 // src/pages/join.tsx
-import React, { useState } from "react";
-import { useAuth } from "@/lib/AuthProvider";
+import Head from "next/head";
 import Link from "next/link";
 
 export default function JoinPage() {
-  const { signInWithGoogle, signInWithEmail } = useAuth();
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      await signInWithEmail(form.email, form.password);
-      // Optionally redirect to dashboard
-    } catch (err: any) {
-      setError(err.message || "Sign in failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#003B49] px-4">
-      <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-lg">
-        <h1 className="text-2xl font-black text-[#FF9151] mb-2">Join RewmoAI</h1>
-        {error && <p className="text-red-600 mb-2">{error}</p>}
-        <button
-          onClick={signInWithGoogle}
-          className="w-full mb-4 py-2 bg-[#FF9151] text-[#003B49] rounded font-semibold hover:bg-[#FFA36C] transition"
-          disabled={loading}
-        >
-          Continue with Google
-        </button>
-        <form onSubmit={handleEmailSignIn} className="flex flex-col gap-3">
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            className="border rounded p-2"
-            value={form.email}
-            onChange={handleInput}
-            required
-            autoComplete="email"
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            className="border rounded p-2"
-            value={form.password}
-            onChange={handleInput}
-            required
-            autoComplete="current-password"
-          />
-          <button
-            type="submit"
-            className="w-full py-2 bg-[#003B49] text-white rounded font-semibold hover:bg-[#15C5C1] transition"
-            disabled={loading}
-          >
-            {loading ? "Signing in..." : "Sign in with Email"}
-          </button>
-        </form>
-        <p className="mt-4 text-center text-sm text-[#003B49]">
-          Already a member?{" "}
-          <Link href="/" className="underline text-[#FF9151]">
-            Go to Home
-          </Link>
+    <div className="min-h-screen bg-[#003B49] text-white font-sans flex flex-col">
+      <Head>
+        <title>Join RewmoAI</title>
+        <meta
+          name="description"
+          content="Join RewmoAI to start earning shopping rewards, referral bonuses, and unlock Pro & Business tiers."
+        />
+      </Head>
+
+      <main className="flex-1 flex flex-col items-center text-center px-4 py-12">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#FF9151] mb-4">
+          Start Your Rewards Journey
+        </h1>
+        <p className="max-w-xl text-white/90 leading-relaxed mb-8">
+          Create your account and unlock rewards on shopping, referrals, and training.
+          Upgrade anytime to Pro ($10/mo) or Business ($20/mo).
         </p>
-      </div>
+
+        <div className="flex flex-col gap-4 w-full max-w-sm">
+          {/* Free Tier */}
+          <div className="rounded-2xl border border-white/20 bg-white/[0.03] p-6">
+            <h2 className="text-xl font-bold text-white mb-2">Free</h2>
+            <p className="text-sm text-white/80 mb-4">
+              Amazon shopping rewards, referral tracking, and training access.
+            </p>
+            <Link
+              href="/account"
+              className="inline-block w-full rounded-lg bg-[#FF9151] text-[#003B49] py-2 font-semibold hover:bg-[#FFA36C]"
+            >
+              Sign up free →
+            </Link>
+          </div>
+
+          {/* Pro Tier */}
+          <div className="rounded-2xl border border-teal-500/50 bg-white/[0.03] p-6">
+            <h2 className="text-xl font-bold text-teal-300 mb-2">Pro – $10/mo</h2>
+            <p className="text-sm text-white/80 mb-4">
+              Unlock Walmart, Delta Airlines, and more brands. Earn 2–3x multipliers.
+            </p>
+            <Link
+              href="/account/upgrade?plan=pro"
+              className="inline-block w-full rounded-lg bg-teal-600 text-white py-2 font-semibold hover:bg-teal-500"
+            >
+              Upgrade to Pro →
+            </Link>
+          </div>
+
+          {/* Business Tier */}
+          <div className="rounded-2xl border border-amber-500/50 bg-white/[0.03] p-6">
+            <h2 className="text-xl font-bold text-amber-300 mb-2">Business – $20/mo</h2>
+            <p className="text-sm text-white/80 mb-4">
+              Unlock bulk office supplies & SMB perks. Earn 4x multipliers.
+            </p>
+            <Link
+              href="/account/upgrade?plan=business"
+              className="inline-block w-full rounded-lg bg-amber-500 text-[#003B49] py-2 font-semibold hover:bg-amber-400"
+            >
+              Upgrade to Business →
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      <footer className="text-center text-sm text-white/70 py-6">
+        © 2025 RewmoAI · <Link href="/privacy" className="underline">Privacy</Link> ·{" "}
+        <Link href="/terms" className="underline">Terms</Link>
+      </footer>
     </div>
   );
 }

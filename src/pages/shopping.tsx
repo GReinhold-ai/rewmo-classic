@@ -1,174 +1,277 @@
 // src/pages/shopping.tsx
-
-import React, { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 
-const PERSONAL_BRANDS = [
-  {
-    name: "Amazon",
-    description: "Earn up to 5% back on your everyday shopping.",
-    logo: "/logos/amazon.png",
-    active: true,
-    reward: "Up to 5% back",
-    url: "https://www.amazon.com/?tag=YOUR_AMAZON_AFFILIATE_ID", // <- insert your affiliate code
-  },
-  {
-    name: "Walmart",
-    description: "Get 3% back on electronics, groceries, and more.",
-    logo: "/logos/walmart.png",
-    active: false,
-    reward: "3% back",
-  },
-  {
-    name: "Target",
-    description: "Shop & earn instant cash back in-store and online.",
-    logo: "/logos/target.png",
-    active: false,
-    reward: "2% back",
-  },
-  {
-    name: "Apple",
-    description: "Earn up to 4% back on Apple Store purchases.",
-    logo: "/logos/apple.png", // Make sure this image exists or remove the object
-    active: false,
-    reward: "Up to 4% back",
-  },
-];
+type Tier = "free" | "pro" | "business";
+type Kind = "store";
 
-const BUSINESS_BRANDS = [
-  {
-    name: "Amazon Business",
-    description: "Earn up to 5% back on office and business supplies.",
-    logo: "/logos/amazon.png",
-    active: true,
-    reward: "Up to 5% back",
-    url: "https://www.amazon.com/?tag=YOUR_AMAZON_AFFILIATE_ID",
-  },
-  {
-    name: "Staples",
-    description: "Get exclusive business supply deals (Coming Soon).",
-    logo: "/logos/staples.png", // Add this image or remove the brand
-    active: false,
-    reward: "Coming Soon",
-  },
-  {
-    name: "Office Depot",
-    description: "Earn cash back on business essentials (Coming Soon).",
-    logo: "/logos/officedepot.png", // Add this image or remove the brand
-    active: false,
-    reward: "Coming Soon",
-  },
-  {
-    name: "Best Buy Business",
-    description: "Get rewards for electronics and more (Coming Soon).",
-    logo: "/logos/bestbuy.png", // Add this image or remove the brand
-    active: false,
-    reward: "Coming Soon",
-  },
-];
+type Item = {
+  id: string;
+  title: string;
+  description?: string;
+  kind: Kind;
+  href: string;
+  order?: number;
+  // gating & metadata
+  locked?: boolean;
+  tier?: Tier;               // which tier unlocks this item (default: free)
+  tags?: string[];
+  logo?: string;             // /brands/xxx.svg or /logos/xxx.png
+  multiplier?: string;       // "1x" | "2x" | "3x" | ...
+  notes?: string;
+  active?: boolean;
+};
+
+type TrackDoc = {
+  path: { id: string; title: string; blurb?: string };
+  items: Item[];
+};
 
 export default function ShoppingRewardsPage() {
-  const [tab, setTab] = useState<"personal" | "business">("personal");
+  const [doc, setDoc] = useState<TrackDoc | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const brands = tab === "personal" ? PERSONAL_BRANDS : BUSINESS_BRANDS;
+  // Read member tier from localStorage; default to 'free'
+  const [tier, setTier] = useState<Tier>("free");
+  useEffect(() => {
+    try {
+      const v = (localStorage.getItem("rewmo.tier") as Tier) || "free";
+      setTier(v);
+    } catch {
+      setTier("free");
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/training/shopping.json", { cache: "no-store" });
+        const j = (await r.json()) as TrackDoc;
+        if (!cancelled) {
+          // sort by explicit order, then title
+          const items = [...(j.items || [])].sort((a, b) => {
+            const ao = a.order ?? 1e9;
+            const bo = b.order ?? 1e9;
+            return ao !== bo ? ao - bo : a.title.localeCompare(b.title);
+          });
+          setDoc({ ...j, items });
+        }
+      } catch {
+        if (!cancelled) setDoc(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const canAccess = (required: Tier | undefined, _locked?: boolean) => {
+    const need = required ?? "free";
+    if (_locked === false) return true;
+    if (need === "free") return true;
+    if (need === "pro") return tier === "pro" || tier === "business";
+    if (need === "business") return tier === "business";
+    return false;
+  };
+
+  const multiplierClasses = (required: Tier | undefined) => {
+    const need = required ?? "free";
+    if (need === "business") return "bg-[#FF9151] text-[#003B49]";
+    if (need === "pro") return "bg-[#15C5C1] text-[#003B49]";
+    return "bg-white/10 text-white";
+  };
+
+  const lockBadge = (required: Tier | undefined) => {
+    const need = required ?? "free";
+    if (need === "business") return "Business members only";
+    if (need === "pro") return "Pro members only";
+    return "Free for all members";
+  };
+
+  const upgradeHref = (required: Tier | undefined) => {
+    const need = required ?? "free";
+    if (need === "business") return "/account/upgrade?plan=business";
+    if (need === "pro") return "/account/upgrade?plan=pro";
+    return "/account/upgrade";
+  };
+
+  const upgradeLabel = (required: Tier | undefined) => {
+    const need = required ?? "free";
+    if (need === "business") return "Upgrade to Business ($20/mo)";
+    if (need === "pro") return "Upgrade to Pro ($10/mo)";
+    return "Upgrade";
+  };
+
+  const unlockedItems = useMemo(() => {
+    if (!doc?.items) return [];
+    return doc.items.map((it) => ({
+      ...it,
+      _unlocked: canAccess(it.tier, it.locked) && (it.active ?? true),
+    }));
+  }, [doc, tier]);
 
   return (
-    <div className="min-h-screen bg-[#003B49] font-sans flex flex-col items-center px-2">
-      <main className="w-full flex flex-col items-center py-8">
-        <h1 className="text-3xl md:text-4xl font-black text-[#FF9151] mb-3 text-center tracking-tight">
-          Shopping Rewards
-        </h1>
+    <div className="min-h-screen bg-[#003B49] text-white">
+      <Head>
+        <title>Shopping Rewards</title>
+      </Head>
 
-        {/* Tab Switcher */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setTab("personal")}
-            className={`px-6 py-2 rounded-xl font-bold text-lg border ${
-              tab === "personal"
-                ? "bg-[#FF9151] text-[#003B49] border-[#FF9151]"
-                : "bg-[#072b33] text-[#15C5C1] border-[#15C5C1] hover:bg-[#02404d]"
-            } transition`}
-          >
-            Personal
-          </button>
-          <button
-            onClick={() => setTab("business")}
-            className={`px-6 py-2 rounded-xl font-bold text-lg border ${
-              tab === "business"
-                ? "bg-[#FF9151] text-[#003B49] border-[#FF9151]"
-                : "bg-[#072b33] text-[#15C5C1] border-[#15C5C1] hover:bg-[#02404d]"
-            } transition`}
-          >
-            Business
-          </button>
+      <div className="mx-auto max-w-6xl px-4 md:px-6 py-10">
+        <h1 className="text-3xl md:text-4xl font-black mb-3">Shopping Rewards</h1>
+        {doc?.path?.blurb ? (
+          <p className="text-[#B6E7EB] mb-6">{doc.path.blurb}</p>
+        ) : null}
+
+        {/* Free-tier banner + nudge */}
+        <div className="rounded-xl border border-[#15C5C1]/30 bg-[#072b33] px-4 md:px-6 py-4 mb-6">
+          <div className="text-sm md:text-base text-[#B6E7EB]">
+            Amazon is free for all members. Unlock more stores with{" "}
+            <Link href="/account/upgrade?plan=pro" className="text-[#15C5C1] underline">
+              Pro ($10/mo)
+            </Link>
+            .
+          </div>
+          <div className="mt-1 text-xs md:text-sm text-[#9bd1d6]">
+            Upgrade to access Walmart, Delta, Business office supplies, and more.
+          </div>
         </div>
 
-        <p className="text-[#B6E7EB] text-center mb-8 max-w-xl">
-          Shop for yourself or your business and get instant rewards on popular brands.
-          <br />
-          <span className="text-[#FFA36C] font-semibold">Amazon is live. Other brands are coming soon!</span>
-        </p>
+        {loading && <div className="text-[#B6E7EB]">Loading offers…</div>}
+        {!loading && !doc?.items?.length && (
+          <div className="text-[#B6E7EB]">No offers available yet.</div>
+        )}
 
-        {/* Brand List */}
-        <div className="flex flex-col gap-5 w-full max-w-2xl mb-8">
-          {brands.map((b) => (
-            <div
-              key={b.name}
-              className={`flex items-center justify-between bg-[#072b33] rounded-2xl border ${
-                b.active ? "border-[#15C5C1]" : "border-[#B6E7EB] opacity-60"
-              } px-6 py-5 shadow`}
-            >
-              <div className="flex items-center gap-3">
-                <Image
-                  src={b.logo}
-                  alt={b.name}
-                  width={46}
-                  height={46}
-                  className={b.active ? "" : "opacity-60"}
-                />
-                <div>
-                  <span
-                    className={`font-bold text-lg ${
-                      b.active ? "text-[#FF9151]" : "text-[#B6E7EB]"
-                    }`}
+        {/* Cards */}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {unlockedItems.map((it) => {
+            const unlocked = it._unlocked;
+            const need = it.tier ?? "free";
+
+            return (
+              <div
+                key={it.id}
+                className={`relative rounded-2xl border bg-[#072b33] p-4 transition ${
+                  unlocked
+                    ? "border-[#15C5C1]/30 hover:border-[#15C5C1]/60"
+                    : "border-white/10"
+                }`}
+              >
+                {/* Top-right multiplier */}
+                {it.multiplier ? (
+                  <div
+                    className={`absolute right-3 top-3 rounded-full px-2 py-0.5 text-xs font-bold ${multiplierClasses(
+                      it.tier
+                    )}`}
+                    title={need === "free" ? "Free" : need === "pro" ? "Pro" : "Business"}
                   >
-                    {b.name}
-                  </span>
-                  <p className="text-[#B6E7EB] text-sm mt-1">{b.description}</p>
-                </div>
-              </div>
-              {b.active ? (
-                <a
-                  href={b.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold px-5 py-2 rounded-lg shadow transition"
-                >
-                  {b.reward} →
-                </a>
-              ) : (
-                <span className="bg-gray-400 text-white font-bold px-5 py-2 rounded-lg cursor-not-allowed">
-                  Coming Soon
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+                    {it.multiplier}
+                  </div>
+                ) : null}
 
-        {/* Info/How Rewards Work */}
-        <div className="mb-4 text-center w-full">
-          <Link
-            href="/how-rewards-work"
-            className="text-[#15C5C1] font-semibold underline hover:text-[#FFA36C]"
-          >
-            How shopping rewards work →
-          </Link>
+                {/* Logo + Title */}
+                <div className="flex items-center gap-3">
+                  {it.logo ? (
+                    <div className="h-8 w-8 relative shrink-0 rounded-md overflow-hidden bg-white/5">
+                      <Image
+                        src={it.logo}
+                        alt={it.title}
+                        fill
+                        className="object-contain p-1"
+                        sizes="32px"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-8 w-8 shrink-0 rounded-md bg-white/10" />
+                  )}
+
+                  <div className="min-w-0">
+                    <div className="font-semibold truncate">{it.title}</div>
+                    <div className="text-xs text-[#9bd1d6] truncate">
+                      {it.description ?? lockBadge(it.tier)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lock line / Notes */}
+                <div className="mt-3 space-y-2">
+                  {/* Lock status (if not free) */}
+                  {need !== "free" && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="inline-flex h-3 w-3 items-center justify-center rounded-sm bg-white/10">
+                        🔒
+                      </span>
+                      <span className="text-[#9bd1d6]">
+                        {lockBadge(it.tier)}.{" "}
+                        {!unlocked && (
+                          <>
+                            <Link
+                              className="underline text-[#15C5C1] hover:text-white"
+                              href={upgradeHref(it.tier)}
+                            >
+                              Upgrade
+                            </Link>
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {it.notes ? (
+                    <div className="text-xs text-[#9bd1d6]">{it.notes}</div>
+                  ) : null}
+
+                  {/* Tags */}
+                  {it.tags?.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {it.tags.map((t) => (
+                        <span
+                          key={t}
+                          className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-[#B6E7EB]"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* CTA */}
+                <div className="mt-4">
+                  {unlocked ? (
+                    <a
+                      href={it.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center rounded-lg bg-[#FF9151] px-4 py-2 text-[#003B49] font-bold hover:bg-[#FFA36C]"
+                    >
+                      Shop & earn →
+                    </a>
+                  ) : (
+                    <Link
+                      href={upgradeHref(it.tier)}
+                      className="inline-flex items-center rounded-lg border border-white/20 px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10"
+                    >
+                      {upgradeLabel(it.tier)}
+                    </Link>
+                  )}
+                </div>
+
+                {/* Dim overlay for locked items */}
+                {!unlocked && (
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[#001a1f]/20" />
+                )}
+              </div>
+            );
+          })}
         </div>
-        <div className="text-xs text-[#B6E7EB] text-center max-w-2xl mb-2">
-          We may receive compensation when you shop through our affiliate partners. Rewards terms may vary by offer.
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

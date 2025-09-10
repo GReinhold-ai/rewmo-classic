@@ -5,7 +5,11 @@ import Stripe from "stripe";
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY as string | undefined;
 const SITE_URL = (process.env.SITE_URL || "https://rewmo.ai").replace(/\/+$/, "");
 
-const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : (null as unknown as Stripe);
+// Price IDs for subscriptions (set these in .env.local)
+const PRICE_PRO = process.env.STRIPE_PRICE_PRO;           // Pro monthly price
+const PRICE_BUSINESS = process.env.STRIPE_PRICE_BUSINESS; // Business monthly price
+
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" }) : (null as unknown as Stripe);
 
 // --- CORS helper: echo allowed origins (prod + any *.vercel.app preview) ---
 function setCORS(req: NextApiRequest, res: NextApiResponse) {
@@ -33,20 +37,21 @@ function setCORS(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
 
-// Map your products → live/test price ids via env
-const PRICE_IDS = {
-  BUNDLE: process.env.STRIPE_PRICE_BUNDLE,          // RewmoAI + EnterpriseAI
-  PERSONAL: process.env.STRIPE_PRICE_REWMO,         // RewmoAI only
-  BUSINESS: process.env.STRIPE_PRICE_ENTERPRISE,    // EnterpriseAI only
-} as const;
+// best-effort origin (works on Vercel too)
+function getOrigin(req: NextApiRequest) {
+  const proto =
+    (req.headers["x-forwarded-proto"] as string) ||
+    (req.headers["x-forwarded-protocol"] as string) ||
+    "http";
+  const host = (req.headers["x-forwarded-host"] as string) || (req.headers.host as string) || "";
+  if (!host) return SITE_URL;
+  return `${proto}://${host}`;
+}
 
-function resolvePriceId(product?: string): string | undefined {
-  if (!product) return PRICE_IDS.BUNDLE || PRICE_IDS.PERSONAL || PRICE_IDS.BUSINESS;
-  const key = product.toLowerCase();
-  if (key.includes("bundle") || key.includes("+")) return PRICE_IDS.BUNDLE;
-  if (key.includes("enterprise")) return PRICE_IDS.BUSINESS;
-  if (key.includes("rewmo")) return PRICE_IDS.PERSONAL;
-  return PRICE_IDS.BUNDLE || PRICE_IDS.PERSONAL || PRICE_IDS.BUSINESS;
+async function getOrCreateCustomerByEmail(email: string) {
+  const list = await stripe.customers.list({ email, limit: 1 });
+  if (list.data.length > 0) return list.data[0];
+  return stripe.customers.create({ email });
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -57,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.json({
       ok: true,
       route: "create-checkout-session",
-      hint: "POST email/product/source/utm to create a Stripe Checkout session",
+      hint: 'POST { email, plan: "pro" | "business", priceId?, source?, utm_*? } to create a Stripe Checkout session',
     });
   }
 
@@ -65,9 +70,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: "Missing STRIPE_SECRET_KEY" });
 
   try {
+    const origin = getOrigin(req);
     const {
       email,
-      product,
+      // Preferred new param:
+      plan, // "pro" | "business"
+      // Optional explicit price override (takes precedence)
+      priceId,
+      // Tracking (optional)
       source,
       utm_source,
       utm_medium,
@@ -76,12 +86,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       utm_content,
     } = (req.body || {}) as Record<string, string | undefined>;
 
-    const priceId = resolvePriceId(product);
-    if (!priceId) {
-      return res.status(400).json({ error: "No Stripe price configured. Set STRIPE_PRICE_* envs." });
+    if (!email) return res.status(400).json({ error: "Missing email" });
+
+    // Resolve the price to use
+    let selectedPrice = priceId;
+    if (!selectedPrice) {
+      const normalizedPlan = (plan || "pro").toLowerCase();
+      if (normalizedPlan === "business") {
+        selectedPrice = PRICE_BUSINESS || undefined;
+      } else {
+        selectedPrice = PRICE_PRO || undefined; // default pro
+      }
+    }
+    if (!selectedPrice) {
+      return res.status(400).json({
+        error:
+          "No Stripe price configured. Set STRIPE_PRICE_PRO and STRIPE_PRICE_BUSINESS or pass a priceId.",
+      });
     }
 
-    const metadata: Record<string, string> = {};
+    // Build useful metadata
+    const metadata: Record<string, string> = {
+      plan: (plan || "pro").toLowerCase(),
+    };
     if (email) metadata.email = email;
     if (source) metadata.source = source;
     if (utm_source) metadata.utm_source = utm_source;
@@ -90,14 +117,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (utm_term) metadata.utm_term = utm_term;
     if (utm_content) metadata.utm_content = utm_content;
 
+    // Use a real Stripe customer (helps the portal & receipts)
+    const customer = await getOrCreateCustomerByEmail(email);
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
+      customer: customer.id,
+      line_items: [{ price: selectedPrice, quantity: 1 }],
       allow_promotion_codes: true,
-      success_url: `${SITE_URL}/success?email=${encodeURIComponent(email || "")}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${SITE_URL}/#pricing`,
-      customer_email: email || undefined,
+      success_url: `${origin}/account?checkout=success`,
+      cancel_url: `${origin}/account?checkout=cancel`,
       metadata,
+      subscription_data: { metadata },
       payment_method_types: ["card"],
     });
 

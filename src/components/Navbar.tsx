@@ -1,291 +1,290 @@
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
-import { onAuthStateChanged, signOut as fbSignOut, type User } from "firebase/auth";
+import Logo from "@/components/Logo";
+import clsx from "clsx";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
 
-function MenuItem({
-  href,
-  children,
-  onClick,
-}: {
-  href: string;
-  children: React.ReactNode;
-  onClick?: () => void;
-}) {
+function ChevronDown({ className = "" }: { className?: string }) {
   return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="block px-3 py-2 text-sm rounded-md hover:bg-white/10 focus:bg-white/10"
-    >
-      {children}
-    </Link>
+    <svg viewBox="0 0 20 20" fill="currentColor" className={clsx("h-4 w-4", className)} aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.112l3.71-2.88a.75.75 0 1 1 .92 1.18l-4.2 3.26a.75.75 0 0 1-.92 0l-4.2-3.26a.75.75 0 0 1-.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
   );
 }
 
 export default function Navbar() {
   const router = useRouter();
 
-  // Auth (lightweight)
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [trainOpen, setTrainOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  const trainRef = useRef<HTMLDivElement | null>(null);
+  const hoverTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Subscribe to Firebase auth
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, setUser);
+    setMounted(true);
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
     return () => unsub();
   }, []);
 
-  const handleSignOut = async () => {
-    await fbSignOut(auth);
-    router.push("/signin");
-  };
-
-  // Mobile menu lock (optional UX nicety)
-  const [mobileOpen, setMobileOpen] = useState(false);
+  // Close dropdowns on outside click / ESC / route change
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = mobileOpen ? "hidden" : prev || "";
+    function onDocClick(e: MouseEvent) {
+      if (!trainRef.current) return;
+      if (!trainRef.current.contains(e.target as Node)) {
+        setTrainOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setTrainOpen(false);
+        setMobileOpen(false);
+      }
+    }
+    const routeSub = router.events.on("routeChangeStart", () => {
+      setTrainOpen(false);
+      setMobileOpen(false);
+    });
+
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev || "";
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+      router.events.off("routeChangeStart", routeSub as unknown as () => void);
     };
-  }, [mobileOpen]);
+  }, [router.events]);
 
-  // Training dropdown state
-  const [trainOpen, setTrainOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const hoverTimer = useRef<number | null>(null);
-
-  const openTrain = () => {
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    setTrainOpen(true);
+  // Stable hover open/close to prevent flicker
+  const openTrainSoon = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setTrainOpen(true), 80);
   };
-  const scheduleClose = () => {
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    hoverTimer.current = window.setTimeout(() => setTrainOpen(false), 120);
+  const closeTrainSoon = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setTrainOpen(false), 140);
   };
 
-  // Close on route change
-  useEffect(() => {
-    setTrainOpen(false);
-    setMobileOpen(false);
-  }, [router.asPath]);
+  const NavLink = ({
+    href,
+    children,
+    onClick,
+    className = "",
+  }: {
+    href: string;
+    children: React.ReactNode;
+    onClick?: () => void;
+    className?: string;
+  }) => (
+    <Link
+      href={href}
+      className={clsx(
+        "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition",
+        className
+      )}
+      onClick={onClick}
+    >
+      {children}
+    </Link>
+  );
 
-  // Click outside to close
-  useEffect(() => {
-    if (!trainOpen) return;
-    const onDown = (e: PointerEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) setTrainOpen(false);
-    };
-    document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
-  }, [trainOpen]);
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      setTrainOpen(false);
+      setMobileOpen(false);
+      router.push("/"); // send home after logout
+    } catch (err) {
+      console.error("Sign out failed:", err);
+    }
+  };
+
+  // Avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <header className="sticky top-0 z-50 bg-[#003B49]/95 backdrop-blur supports-[backdrop-filter]:bg-[#003B49]/80">
+        <nav className="mx-auto max-w-6xl px-4">
+          <div className="flex h-14 items-center justify-between">
+            <Link href="/" aria-label="RewmoAI home" className="shrink-0">
+              <Logo size={36} withWordmark />
+            </Link>
+          </div>
+        </nav>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-[#003B49]/95 backdrop-blur supports-[backdrop-filter]:bg-[#003B49]/80">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 text-white">
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/logos/logo.png"
-            alt="RewmoAI"
-            width={28}
-            height={28}
-            className="h-7 w-7"
-            priority
-          />
-          <span className="font-bold text-lg text-[#FF9151]">RewmoAI</span>
-        </Link>
-
-        {/* Desktop links */}
-        <div className="hidden items-center gap-4 md:flex">
-          <Link href="/features" className="hover:underline">
-            Features
-          </Link>
-          <Link href="/shopping" className="hover:underline">
-            Shopping
+      <nav className="mx-auto max-w-6xl px-4">
+        <div className="flex h-14 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" aria-label="RewmoAI home" className="shrink-0">
+            <Logo size={36} withWordmark />
           </Link>
 
-          {/* Training Dropdown (hover + click) */}
-          <div
-            ref={menuRef}
-            className="relative"
-            onMouseEnter={openTrain}
-            onMouseLeave={scheduleClose}
-          >
-            <button
-              type="button"
-              aria-haspopup="menu"
-              aria-expanded={trainOpen}
-              onClick={() => setTrainOpen((v) => !v)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-white/10 focus:bg-white/10"
+          {/* Desktop */}
+          <div className="hidden md:flex items-center gap-1">
+            <NavLink href="/features">Features</NavLink>
+            <NavLink href="/shopping">Shopping</NavLink>
+
+            {/* Training dropdown */}
+            <div
+              ref={trainRef}
+              className="relative"
+              onMouseEnter={openTrainSoon}
+              onMouseLeave={closeTrainSoon}
             >
-              Training
-              <svg
-                className={`h-3 w-3 transition-transform ${trainOpen ? "rotate-180" : ""}`}
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={trainOpen}
+                className={clsx(
+                  "inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                )}
+                onClick={() => setTrainOpen((s) => !s)}
+                onFocus={openTrainSoon}
               >
-                <path d="M5.25 7.5l4.5 4.5 4.5-4.5" />
-              </svg>
-            </button>
-
-            {trainOpen && (
+                Training
+                <ChevronDown className={clsx(trainOpen && "rotate-180 transition")} />
+              </button>
               <div
                 role="menu"
-                className="absolute left-0 top-full mt-2 w-56 rounded-lg bg-[#043846] shadow-lg ring-1 ring-white/10 focus:outline-none z-[60]"
-                onMouseEnter={openTrain}
-                onMouseLeave={scheduleClose}
+                aria-label="Training"
+                className={clsx(
+                  "absolute left-0 mt-2 w-52 rounded-xl border border-white/10 bg-[#0b4a57] shadow-lg ring-1 ring-black/5 py-1",
+                  trainOpen ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-1 opacity-0",
+                  "transition"
+                )}
+                onMouseEnter={openTrainSoon}
+                onMouseLeave={closeTrainSoon}
               >
-                <MenuItem href="/learn" onClick={() => setTrainOpen(false)}>
+                <Link role="menuitem" href="/learn/genai" className="block px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
+                  GenAI
+                </Link>
+                <Link role="menuitem" href="/learn/rpm" className="block px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
+                  R-PM (Lean Lab)
+                </Link>
+                <Link role="menuitem" href="/learn/finance" className="block px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
+                  Finance
+                </Link>
+                <div className="my-1 border-t border-white/10" />
+                <Link role="menuitem" href="/training" className="block px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
                   All Training
-                </MenuItem>
-                <div className="mx-3 my-1 h-px bg-white/10" />
-                <MenuItem href="/learn/genai" onClick={() => setTrainOpen(false)}>
-                  AI Training
-                </MenuItem>
-                <MenuItem href="/learn/tqm" onClick={() => setTrainOpen(false)}>
-                  TQM Training
-                </MenuItem>
-                <MenuItem href="/learn/finance" onClick={() => setTrainOpen(false)}>
-                  Finance Training
-                </MenuItem>
+                </Link>
+              </div>
+            </div>
+
+            <NavLink href="/rewards">Rewards</NavLink>
+            <NavLink href="/about">About</NavLink>
+
+            {/* Right side auth */}
+            {user ? (
+              <div className="ml-2 flex items-center gap-2">
+                <span className="px-2 py-1 text-xs rounded bg-white/10 text-white/80">
+                  {user.email || "Signed in"}
+                </span>
+                <NavLink href="/dashboard" className="bg-emerald-500/20 hover:bg-emerald-500/30">
+                  Account
+                </NavLink>
+                <button
+                  onClick={handleSignOut}
+                  className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition"
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <div className="ml-2 flex items-center gap-2">
+                <NavLink href="/account" className="bg-emerald-500/20 hover:bg-emerald-500/30">
+                  Account
+                </NavLink>
+                <NavLink href="/login" className="bg-orange-500 text-white hover:bg-orange-600">
+                  Sign in
+                </NavLink>
               </div>
             )}
           </div>
 
-          <Link href="/rewards" className="hover:underline">
-            Rewards
-          </Link>
-          <Link href="/about" className="hover:underline">
-            About
-          </Link>
-
-          {user ? (
-            <>
-              <Link
-                href="/account"
-                className="rounded-md bg-teal-500 px-3 py-1 text-sm font-semibold text-[#003B49] hover:bg-teal-400"
-              >
-                Account
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="rounded-md bg-orange-500 px-3 py-1 text-sm font-semibold hover:bg-orange-600"
-              >
-                Sign out
-              </button>
-            </>
-          ) : (
-            <Link
-              href="/signin"
-              className="rounded-md bg-orange-500 px-3 py-1 text-sm font-semibold hover:bg-orange-600"
-            >
-              Sign In
-            </Link>
-          )}
+          {/* Mobile toggle */}
+          <button
+            type="button"
+            className="md:hidden inline-flex items-center justify-center rounded-md px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            aria-label="Open menu"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((s) => !s)}
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={2}>
+              {mobileOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden rounded-md p-2 hover:bg-white/10"
-          aria-label="Open menu"
-          onClick={() => setMobileOpen(true)}
-        >
-          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </nav>
+        {/* Mobile menu */}
+        <div className={clsx("md:hidden overflow-hidden transition-[max-height,opacity] duration-300", mobileOpen ? "max-h-[65vh] opacity-100" : "max-h-0 opacity-0")}>
+          <div className="flex flex-col gap-1 pb-3">
+            <NavLink href="/features" onClick={() => setMobileOpen(false)}>Features</NavLink>
+            <NavLink href="/shopping" onClick={() => setMobileOpen(false)}>Shopping</NavLink>
 
-      {/* Mobile sheet */}
-      {mobileOpen && (
-        <div className="md:hidden">
-          <div
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="fixed inset-y-0 right-0 z-50 w-72 bg-[#043846] p-4 text-white shadow-xl">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-[#FF9151]">Menu</span>
-              <button
-                aria-label="Close menu"
-                className="rounded-md p-2 hover:bg-white/10"
-                onClick={() => setMobileOpen(false)}
-              >
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
-
-            <nav className="mt-4 space-y-1">
-              <Link href="/features" className="block rounded-md px-3 py-2 hover:bg-white/10">
-                Features
-              </Link>
-              <Link href="/shopping" className="block rounded-md px-3 py-2 hover:bg-white/10">
-                Shopping
-              </Link>
-
-              <div className="rounded-md bg-white/5">
-                <div className="px-3 py-2 text-xs uppercase tracking-wide text-white/70">
-                  Training
+            <details className="group">
+              <summary className="list-none">
+                <div className="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition cursor-pointer">
+                  <span>Training</span>
+                  <ChevronDown className="transition group-open:rotate-180" />
                 </div>
-                <MenuItem href="/learn" onClick={() => setMobileOpen(false)}>
-                  All Training
-                </MenuItem>
-                <MenuItem href="/learn/genai" onClick={() => setMobileOpen(false)}>
-                  AI Training
-                </MenuItem>
-                <MenuItem href="/learn/tqm" onClick={() => setMobileOpen(false)}>
-                  TQM Training
-                </MenuItem>
-                <MenuItem href="/learn/finance" onClick={() => setMobileOpen(false)}>
-                  Finance Training
-                </MenuItem>
+              </summary>
+              <div className="pl-2">
+                <NavLink href="/learn/genai" onClick={() => setMobileOpen(false)}>GenAI</NavLink>
+                <NavLink href="/learn/rpm" onClick={() => setMobileOpen(false)}>R-PM (Lean Lab)</NavLink>
+                <NavLink href="/learn/finance" onClick={() => setMobileOpen(false)}>Finance</NavLink>
+                <NavLink href="/training" onClick={() => setMobileOpen(false)}>All Training</NavLink>
               </div>
+            </details>
 
-              <Link href="/rewards" className="block rounded-md px-3 py-2 hover:bg-white/10">
-                Rewards
-              </Link>
-              <Link href="/about" className="block rounded-md px-3 py-2 hover:bg-white/10">
-                About
-              </Link>
+            <NavLink href="/rewards" onClick={() => setMobileOpen(false)}>Rewards</NavLink>
+            <NavLink href="/about" onClick={() => setMobileOpen(false)}>About</NavLink>
 
-              <div className="mt-3 flex gap-2">
-                {user ? (
-                  <>
-                    <Link
-                      href="/account"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex-1 rounded-md bg-teal-500 px-3 py-2 text-center font-semibold text-[#003B49] hover:bg-teal-400"
-                    >
-                      Account
-                    </Link>
-                    <button
-                      onClick={async () => {
-                        await handleSignOut();
-                        setMobileOpen(false);
-                      }}
-                      className="flex-1 rounded-md bg-orange-500 px-3 py-2 font-semibold hover:bg-orange-600"
-                    >
-                      Sign out
-                    </button>
-                  </>
-                ) : (
-                  <Link
-                    href="/signin"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex-1 rounded-md bg-orange-500 px-3 py-2 text-center font-semibold hover:bg-orange-600"
-                  >
-                    Sign In
-                  </Link>
-                )}
+            {user ? (
+              <div className="mt-1 flex flex-col gap-1">
+                <span className="px-3 py-1 text-xs rounded bg-white/10 text-white/80 ml-1">
+                  {user.email || "Signed in"}
+                </span>
+                <NavLink href="/dashboard" onClick={() => setMobileOpen(false)} className="bg-emerald-500/20 hover:bg-emerald-500/30">
+                  Account
+                </NavLink>
+                <button
+                  onClick={handleSignOut}
+                  className="mx-3 mt-1 inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition"
+                >
+                  Sign out
+                </button>
               </div>
-            </nav>
+            ) : (
+              <div className="mt-1 flex flex-col gap-1">
+                <NavLink href="/account" onClick={() => setMobileOpen(false)} className="bg-emerald-500/20 hover:bg-emerald-500/30">
+                  Account
+                </NavLink>
+                <NavLink href="/login" onClick={() => setMobileOpen(false)} className="bg-orange-500 text-white hover:bg-orange-600">
+                  Sign in
+                </NavLink>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </nav>
     </header>
   );
 }
