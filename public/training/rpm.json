@@ -1,0 +1,21 @@
+{
+  "path": "rpm",
+  "courses": [
+    {
+      "id": "rpm-101",
+      "title": "Intro to R-Process Management",
+      "subtitle": "What R-PM is, why it matters, and how to map a routine.",
+      "href": "/rewmoai-module-1.pdf",
+      "badge": "PDF",
+      "minutes": 8
+    },
+    {
+      "id": "rpm-quality-approach",
+      "title": "Quality Approach: Defects, Waste & Flow",
+      "subtitle": "Spot waste, reduce variation, and improve flow with simple tools.",
+      "href": "/rewmoai-module-1.pdf",
+      "badge": "Module",
+      "minutes": 12
+    }
+  ]
+}
