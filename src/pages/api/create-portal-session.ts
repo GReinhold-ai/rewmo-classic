@@ -5,7 +5,11 @@ import Stripe from "stripe";
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end();
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+  const stripe = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY)
+  : (null as unknown as Stripe);
+
+
   const { customerId, returnUrl } = req.body as { customerId: string; returnUrl?: string };
 
   if (!customerId) return res.status(400).json({ error: "Missing customerId" });
