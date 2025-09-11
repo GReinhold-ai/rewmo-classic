@@ -9,7 +9,9 @@ const SITE_URL = (process.env.SITE_URL || "https://rewmo.ai").replace(/\/+$/, ""
 const PRICE_PRO = process.env.STRIPE_PRICE_PRO;           // Pro monthly price
 const PRICE_BUSINESS = process.env.STRIPE_PRICE_BUSINESS; // Business monthly price
 
-const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" }) : (null as unknown as Stripe);
+const stripe = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY)
+  : (null as unknown as Stripe);
 
 // --- CORS helper: echo allowed origins (prod + any *.vercel.app preview) ---
 function setCORS(req: NextApiRequest, res: NextApiResponse) {
