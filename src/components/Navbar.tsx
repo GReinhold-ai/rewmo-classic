@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Logo from "@/components/Logo";
@@ -27,7 +27,7 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
 
   const trainRef = useRef<HTMLDivElement | null>(null);
-  const hoverTimer = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Subscribe to Firebase auth
   useEffect(() => {
@@ -50,17 +50,18 @@ export default function Navbar() {
         setMobileOpen(false);
       }
     }
-    const routeSub = router.events.on("routeChangeStart", () => {
+    const handleRoute = () => {
       setTrainOpen(false);
       setMobileOpen(false);
-    });
+    };
+    router.events.on("routeChangeStart", handleRoute);
 
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
     return () => {
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onKey);
-      router.events.off("routeChangeStart", routeSub as unknown as () => void);
+      router.events.off("routeChangeStart", handleRoute);
     };
   }, [router.events]);
 
@@ -81,7 +82,7 @@ export default function Navbar() {
     className = "",
   }: {
     href: string;
-    children: React.ReactNode;
+    children: ReactNode;
     onClick?: () => void;
     className?: string;
   }) => (
@@ -102,7 +103,7 @@ export default function Navbar() {
       await signOut(auth);
       setTrainOpen(false);
       setMobileOpen(false);
-      router.push("/"); // send home after logout
+      router.push("/");
     } catch (err) {
       console.error("Sign out failed:", err);
     }
@@ -218,7 +219,7 @@ export default function Navbar() {
           {/* Mobile toggle */}
           <button
             type="button"
-            className="md:hidden inline-flex items-center justify-center rounded-md px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            className="md:hidden inline-flex items-center justify-center rounded-md px-3 py-2 text-white/90 hover:text-white hover:bg_WHITE/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             aria-label="Open menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((s) => !s)}
@@ -234,14 +235,14 @@ export default function Navbar() {
         </div>
 
         {/* Mobile menu */}
-        <div className={clsx("md:hidden overflow-hidden transition-[max-height,opacity] duration-300", mobileOpen ? "max-h-[65vh] opacity-100" : "max-h-0 opacity-0")}>
+        <div className={clsx("md:hidden overflow-hidden transition-[max-height,opacity] duration-300", mobileOpen ? "max-h[65vh] opacity-100" : "max-h-0 opacity-0")}>
           <div className="flex flex-col gap-1 pb-3">
             <NavLink href="/features" onClick={() => setMobileOpen(false)}>Features</NavLink>
             <NavLink href="/shopping" onClick={() => setMobileOpen(false)}>Shopping</NavLink>
 
             <details className="group">
               <summary className="list-none">
-                <div className="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition cursor-pointer">
+                <div className="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text_white/90 hover:text-white hover:bg-white/10 transition cursor-pointer">
                   <span>Training</span>
                   <ChevronDown className="transition group-open:rotate-180" />
                 </div>

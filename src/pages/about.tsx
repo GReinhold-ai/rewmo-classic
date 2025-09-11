@@ -1,210 +1,149 @@
 // src/pages/about.tsx
 import Head from "next/head";
 import Link from "next/link";
-import Image from "next/image";
 
-export default function About() {
+function ExternalLink({
+  href,
+  children,
+  className = "",
+}: {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className={className || "text-teal-300 underline hover:opacity-90"}
+    >
+      {children}
+    </a>
+  );
+}
+
+export default function AboutPage() {
   return (
     <>
       <Head>
-        <title>About • RewmoAI</title>
-        <meta
-          name="description"
-          content="RewmoAI turns everyday payments into rewards, wealth, and AI power. Learn our vision, mission, and principles."
-        />
-        <link rel="canonical" href="https://rewmo.ai/about" />
-        <meta property="og:title" content="About • RewmoAI" />
-        <meta
-          property="og:description"
-          content="RewmoAI turns everyday payments into rewards, wealth, and AI power. Learn our vision, mission, and principles."
-        />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://rewmo.ai/about" />
-        <meta property="og:site_name" content="RewmoAI" />
-        <meta name="twitter:card" content="summary_large_image" />
+        <title>About RewmoAI</title>
+        <meta name="description" content="Learn more about RewmoAI — rewards, training, and Lean Lab." />
       </Head>
 
-      <div className="flex min-h-screen flex-col bg-[#07343A] font-sans text-[#E9F7FF]">
-        <main className="flex-1 px-4 py-10">
-          {/* Logo + Title */}
-          <div className="mx-auto max-w-3xl text-center">
-            <Image
-              src="/logos/logo.png"
-              alt="RewmoAI logo"
-              width={120}
-              height={120}
-              className="mx-auto mb-4 rounded-full border-2 border-[#FF6B00]"
-              priority
-            />
-            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-[#FF6B00]">
-              About RewmoAI
-            </h1>
+      <main className="mx-auto max-w-4xl px-6 py-12 text-white">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold">About RewmoAI</h1>
+          <p className="mt-2 text-white/80">
+            Rewards + practical training to help you save money, improve processes, and grow skills.
+          </p>
+        </header>
 
-            <p className="mx-auto mt-4 max-w-2xl text-[#CFEAF6]">
-              We combine a rewards engine with EnterpriseAI agents to help you
-              earn more, automate the boring stuff, and make smarter decisions—
-              for just $10/month. No contracts. Cancel anytime.
-            </p>
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">What we do</h2>
+          <p className="text-white/85">
+            RewmoAI is building an easy on-ramp to smarter personal finance, GenAI skills, and practical process
+            improvement (R-PM / Lean Lab). Earn rewards while you learn, connect your everyday shopping, and unlock
+            continuous improvement habits.
+          </p>
+        </section>
 
-            <div className="mt-5 flex items-center justify-center gap-3">
-              <a
-                href="https://www.linkedin.com/in/rewmoai/recent-activity/newsletter/"
-                target="_blank"
-                rel="noopener"
-                className="inline-flex items-center rounded-md border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/5"
-              >
-                Blog (LinkedIn Newsletter)
-              </a>
-              <Link
-                href="/"
-                className="inline-flex items-center rounded-md bg-[#FF6B00] px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#E55F00] focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
-              >
-                Start for $10/month →
-              </Link>
-            </div>
-          </div>
+        <section className="mt-8 space-y-4">
+          <h2 className="text-xl font-semibold">Training</h2>
+          <p className="text-white/85">
+            We offer short, hands-on modules across three tracks:
+          </p>
+          <ul className="list-disc pl-6 space-y-2 text-white/85">
+            <li>
+              <Link href="/learn/genai" className="text-teal-300 underline hover:opacity-90">
+                GenAI
+              </Link>{" "}
+              — practical prompts, workflows, and tools.
+            </li>
+            <li>
+              <Link href="/learn/rpm" className="text-teal-300 underline hover:opacity-90">
+                R-PM (Lean Lab)
+              </Link>{" "}
+              — map routines, reduce waste, and improve flow.
+            </li>
+            <li>
+              <Link href="/learn/finance" className="text-teal-300 underline hover:opacity-90">
+                Finance
+              </Link>{" "}
+              — foundations, investing basics, and valuation intros.
+            </li>
+          </ul>
+          <p className="text-white/85">
+            Prefer to browse everything? Visit{" "}
+            <Link href="/training" className="text-teal-300 underline hover:opacity-90">
+              All Training
+            </Link>
+            .
+          </p>
+        </section>
 
-          {/* Cards */}
-          <section className="mx-auto mt-10 max-w-4xl space-y-8">
-            <div className="rounded-2xl bg-white/5 p-8 ring-1 ring-white/10">
-              <h2 className="text-2xl font-bold text-[#20C3C0]">Our Vision</h2>
-              <p className="mt-3 text-lg text-[#CFEAF6]">
-                <span className="font-bold text-[#FF6B00]">
-                  To empower everyone—individuals, families, and small
-                  businesses—
-                </span>{" "}
-                to unlock hidden value in everyday spending and daily routines,
-                making smarter, more sustainable financial choices accessible to
-                all.
-              </p>
-            </div>
+        <section className="mt-8 space-y-4">
+          <h2 className="text-xl font-semibold">How rewards work</h2>
+          <p className="text-white/85">
+            Earn for shopping and referrals (following our{" "}
+            <Link href="/reward-rules" className="text-teal-300 underline hover:opacity-90">
+              Reward Rules
+            </Link>
+            ). Your activity accrues points during beta; withdrawals open after launch.
+          </p>
+        </section>
 
-            <div className="rounded-2xl bg-white/5 p-8 ring-1 ring-white/10">
-              <h2 className="text-2xl font-bold text-[#20C3C0]">Our Mission</h2>
-              <p className="mt-3 text-lg text-[#CFEAF6]">
-                <span className="font-bold text-[#FF6B00]">RewmoAI</span>{" "}
-                delivers powerful AI-driven rewards and practical process
-                management tools, helping our members earn more, save more, and
-                do better—one purchase and one workflow at a time.
-              </p>
-            </div>
+        <section className="mt-8 space-y-4">
+          <h2 className="text-xl font-semibold">Security & privacy</h2>
+          <p className="text-white/85">
+            We take privacy seriously. Review our{" "}
+            <Link href="/privacy" className="text-teal-300 underline hover:opacity-90">
+              Privacy Policy
+            </Link>{" "}
+            and{" "}
+            <Link href="/terms" className="text-teal-300 underline hover:opacity-90">
+              Terms of Use
+            </Link>
+            .
+          </p>
+        </section>
 
-            <div className="rounded-2xl bg-white/5 p-8 ring-1 ring-white/10">
-              <h2 className="text-2xl font-bold text-[#20C3C0]">
-                Guiding Principles
-              </h2>
-              <ul className="mt-4 space-y-4 text-[#CFEAF6]">
-                <li>
-                  <span className="font-bold text-[#FF6B00]">
-                    1) Simplicity First:
-                  </span>{" "}
-                  clear, direct value—no jargon, no barriers.
-                </li>
-                <li>
-                  <span className="font-bold text-[#FF6B00]">
-                    2) Empower Through AI:
-                  </span>{" "}
-                  technology that serves you—boost savings, optimize routines,
-                  reveal opportunities.
-                </li>
-                <li>
-                  <span className="font-bold text-[#FF6B00]">
-                    3) Quality & Integrity:
-                  </span>{" "}
-                  Lean + TQM—continuous improvement in every feature and
-                  interaction.
-                </li>
-                <li>
-                  <span className="font-bold text-[#FF6B00]">
-                    4) Transparency & Trust:
-                  </span>{" "}
-                  how rewards work, how data is used, and how we make money.
-                </li>
-                <li>
-                  <span className="font-bold text-[#FF6B00]">
-                    5) Inclusive Impact:
-                  </span>{" "}
-                  tools that help everyone get ahead—businesses and families
-                  alike.
-                </li>
-              </ul>
-            </div>
+        <section className="mt-8 space-y-4">
+          <h2 className="text-xl font-semibold">Contact</h2>
+          <p className="text-white/85">
+            Have a question or partnership idea? Reach out on{" "}
+            <ExternalLink href="mailto:support@rewmo.ai">support@rewmo.ai</ExternalLink> or connect with us on{" "}
+            <ExternalLink href="https://www.linkedin.com/">LinkedIn</ExternalLink>.
+          </p>
+        </section>
 
-            {/* Promise */}
-            <div className="rounded-2xl bg-[#0B454B] p-8 ring-1 ring-white/10">
-              <h3 className="text-xl font-bold text-[#20C3C0]">
-                The RewmoAI Promise
-              </h3>
-              <p className="mt-2 text-[#CFEAF6]">
-                More than just rewards—RewmoAI is your partner in a smarter,
-                more empowered financial future.
-              </p>
-            </div>
-
-            {/* Team teaser */}
-            <div className="text-center text-[#CFEAF6]">
-              <p>
-                RewmoAI was built for you—by people who believe everyone should
-                have a path to smarter money and better results.
-              </p>
-              <Link
-                href="/team"
-                className="mt-2 inline-block font-semibold text-[#20C3C0] underline hover:text-[#FF6B00]"
-              >
-                Meet the team &gt;
-              </Link>
-            </div>
-
-            {/* CTA */}
-            <div className="rounded-2xl bg-white/5 p-6 text-center ring-1 ring-white/10">
-              <h4 className="text-lg font-bold">
-                Stop wasting potential. Start earning more every day.
-              </h4>
-              <div className="mt-4 flex items-center justify-center gap-3">
-                <Link
-                  href="/"
-                  className="inline-flex items-center rounded-md bg-[#FF6B00] px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#E55F00]"
-                >
-                  Start for $10/month →
-                </Link>
-                <Link
-                  href="/faq"
-                  className="inline-flex items-center rounded-md border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/5"
-                >
-                  FAQ
-                </Link>
-              </div>
-            </div>
-          </section>
-        </main>
-
-        {/* Local footer (optional, if your layout doesn’t already include one) */}
-        <footer className="border-t border-white/10 bg-[#07343A] py-5 text-center text-xs text-[#CFEAF6]">
-          © {new Date().getFullYear()} RewmoAI •{" "}
-          <Link
-            href="/affiliate-disclosure"
-            className="text-[#FF6B00] underline hover:text-[#E55F00]"
-          >
-            Affiliate Disclosure
-          </Link>{" "}
-          •{" "}
-          <a
-            href="https://rewmo.ai/privacy"
-            target="_blank"
-            rel="noopener"
-            className="text-[#FF6B00] underline hover:text-[#E55F00]"
-          >
-            Privacy
-          </a>{" "}
-          •{" "}
-          <Link
-            href="/terms"
-            className="text-[#FF6B00] underline hover:text-[#E55F00]"
-          >
-            Terms
-          </Link>
-        </footer>
-      </div>
+        <section className="mt-8 space-y-3">
+          <h2 className="text-xl font-semibold">Attributions & external resources</h2>
+          <ul className="list-disc pl-6 space-y-2 text-white/85">
+            <li>
+              Icons by{" "}
+              <ExternalLink href="https://lucide.dev/">
+                Lucide
+              </ExternalLink>
+              .
+            </li>
+            <li>
+              Charts by{" "}
+              <ExternalLink href="https://recharts.org/en-US/">
+                Recharts
+              </ExternalLink>
+              .
+            </li>
+            <li>
+              UI built with{" "}
+              <ExternalLink href="https://nextjs.org/">
+                Next.js
+              </ExternalLink>{" "}
+              and Tailwind CSS.
+            </li>
+          </ul>
+        </section>
+      </main>
     </>
   );
 }

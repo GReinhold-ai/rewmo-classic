@@ -1,186 +1,167 @@
-import fs from "fs";
-import path from "path";
-import { useEffect, useState } from "react";
-import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
+// src/pages/training/[track].tsx
+import Head from "next/head";
+import Link from "next/link";
+import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 
-type Tier = "free" | "pro" | "business";
-type Kind = "embed" | "document" | "link" | "store";
-
-type Item = {
+type Course = {
   id: string;
   title: string;
-  description?: string;          // prefer this
-  summary?: string;              // legacy support
+  summary?: string;
+  description?: string;
   duration?: string;
-  kind?: Kind;                   // default: "link"
-  href: string;                  // iframe src or external URL
+  kind?: string;       // "link" | "document" | "lesson" etc.
+  href?: string;       // external or internal asset link
+  slug?: string;
   order?: number;
-  locked?: boolean;              // default: false
-  tier?: Tier;                   // default: "free"
-  tags?: string[];
 };
 
-type TrackDoc = {
-  path: { id: string; title: string; blurb?: string };
-  // Support both new `items` and legacy `courses`
-  items?: Item[];
-  courses?: Item[];
+type ApiResp = {
+  path: { id: string; title?: string } | null;
+  courses: Course[];
 };
 
-type PageProps = {
-  track: string;
-  data: TrackDocNormalized;
+const TITLE_BY_TRACK: Record<string, string> = {
+  genai: "AI Training",
+  tqm: "R-Process Management (Lean Lab)",
+  rpm: "R-Process Management (Lean Lab)", // alias, displayed name
+  finance: "Finance Training",
 };
 
-type TrackDocNormalized = {
-  id: string;
-  title: string;
-  blurb?: string;
-  // ⬇️ Make it an array of the intersection, not intersection with an array
-  items: (Required<Pick<Item, "id" | "title" | "href">> & Omit<Item, "id" | "title" | "href">)[];
+export const getServerSideProps: GetServerSideProps<{
+  data: ApiResp | null;
+  trackParam: string;
+}> = async ({ params, req }) => {
+  const trackParam = typeof params?.track === "string" ? params.track : "";
+  // Map display alias rpm -> tqm for the API / local files
+  const apiTrack = trackParam === "rpm" ? "tqm" : trackParam;
+
+  try {
+    const base =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      `http://${req.headers.host}`;
+    const r = await fetch(
+      `${base}/api/training/courses?path=${encodeURIComponent(apiTrack)}`
+    );
+    const data = (await r.json()) as ApiResp;
+    return { props: { data, trackParam } };
+  } catch {
+    return { props: { data: null, trackParam } };
+  }
 };
 
-const RANK: Record<Tier, number> = { free: 0, pro: 1, business: 2 };
-function canAccess(userTier: Tier, itemTier: Tier, locked: boolean) {
-  if (!locked) return true;
-  return RANK[userTier] >= RANK[itemTier];
-}
-
-// TODO: wire to your auth / Firebase user document.
-// For now: default to "free"; if you store a tier in localStorage, we pick it up.
-function useUserTier(): Tier {
-  const [tier, setTier] = useState<Tier>("free");
-  useEffect(() => {
-    try {
-      const t = (window.localStorage.getItem("rewmo.tier") || "free") as Tier;
-      if (t === "free" || t === "pro" || t === "business") setTier(t);
-    } catch {}
-  }, []);
-  return tier;
-}
-
-export const getStaticPaths: GetStaticPaths = async () => {
-  const dir = path.join(process.cwd(), "public", "training");
-  const files = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
-  const paths = files
-    .filter((f) => f.endsWith(".json"))
-    .map((f) => ({ params: { track: f.replace(/\.json$/, "") } }));
-  return { paths, fallback: false };
-};
-
-export const getStaticProps: GetStaticProps<PageProps> = async ({ params }) => {
-  const track = String(params?.track);
-  const filePath = path.join(process.cwd(), "public", "training", `${track}.json`);
-  const raw = fs.readFileSync(filePath, "utf8");
-  const json = JSON.parse(raw) as TrackDoc;
-
-  // Normalize: prefer `items`, fallback to `courses`
-  const srcItems = (json.items && json.items.length ? json.items : json.courses) || [];
-
-  const normItems: TrackDocNormalized["items"] = srcItems
-    .map((it) => ({
-      id: it.id,
-      title: it.title,
-      href: it.href,
-      description: it.description ?? it.summary,   // legacy support
-      duration: it.duration,
-      kind: (it.kind as Kind) ?? "link",
-      order: it.order ?? 9999,
-      locked: it.locked ?? false,
-      tier: (it.tier as Tier) ?? "free",
-      tags: it.tags ?? [],
-    }))
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-  const data: TrackDocNormalized = {
-    id: json.path?.id ?? track,
-    title: json.path?.title ?? track,
-    blurb: json.path?.blurb,
-    items: normItems,
-  };
-
-  return { props: { track, data } };
-};
-
-export default function TrainingTrack(
-  { data }: InferGetStaticPropsType<typeof getStaticProps>
+export default function TrackPage(
+  { data, trackParam }: InferGetServerSidePropsType<typeof getServerSideProps>
 ) {
-  const userTier = useUserTier();
+  const title = TITLE_BY_TRACK[trackParam] ?? "Training";
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-10">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold">{data.title}</h1>
-        {data.blurb && <p className="opacity-80 mt-2">{data.blurb}</p>}
-      </header>
+    <>
+      <Head>
+        <title>{title} • RewmoAI</title>
+        <meta name="description" content={`${title} modules and resources`} />
+      </Head>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        {data.items.map((item) => {
-          const allowed = canAccess(userTier, item.tier ?? "free", !!item.locked);
+      <main className="mx-auto max-w-6xl px-4 py-8 text-white">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">{title}</h1>
+            <p className="mt-1 text-white/80">Short, practical modules.</p>
+          </div>
+          <Link
+            href="/training"
+            className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
+          >
+            ← All Training
+          </Link>
+        </div>
 
-          return (
-            <section key={item.id} className="rounded-xl p-5 border border-white/10 bg-white/5 relative overflow-hidden">
-              <div className="flex items-baseline justify-between mb-2">
-                <h2 className="text-lg font-semibold">{item.title}</h2>
-                {item.duration && <span className="text-sm opacity-70">{item.duration}</span>}
-              </div>
-              {item.description && <p className="text-sm opacity-80 mb-3">{item.description}</p>}
+        {!data ? (
+          <div className="mt-6 rounded-xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
+            Failed to load modules. Please try again.
+          </div>
+        ) : data.courses?.length ? (
+          <ul className="mt-6 grid gap-4 md:grid-cols-2">
+            {data.courses.map((c) => {
+              const displaySummary = c.summary || c.description;
+              const displayDuration = c.duration ? String(c.duration) : undefined;
 
-              {/* Content / CTA */}
-              {allowed ? (
-                item.kind === "embed" ? (
-                  <div className="w-full aspect-video">
-                    <iframe
-                      src={item.href}
-                      className="w-full h-full rounded-lg"
-                      frameBorder={0}
-                      allow="fullscreen; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    />
+              // If course provides an explicit href (external link or a PDF in /public),
+              // open in a new tab. Otherwise, route to our lesson page.
+              const hasHref = !!c.href;
+              const targetTrackForLinks = trackParam; // keep "rpm" in the URL for display
+              const lessonHref = hasHref
+                ? c.href!
+                : `/learn/${encodeURIComponent(targetTrackForLinks)}/${encodeURIComponent(
+                    c.slug || c.id
+                  )}`;
+
+              const CardInner = (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">{c.title}</h3>
+                    {displayDuration ? (
+                      <span className="text-xs rounded-full bg-white/10 px-2 py-1">
+                        {displayDuration}
+                      </span>
+                    ) : null}
                   </div>
-                ) : (
-                  <a
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block px-4 py-2 rounded-lg bg-orange-500 text-white"
-                  >
-                    Open
-                  </a>
-                )
-              ) : (
-                <div className="rounded-lg bg-black/30 p-4 border border-white/10">
-                  <div className="mb-2">
-                    🔒 {item.tier === "business" ? "Business" : "Pro"} members only.
-                  </div>
-                  <div className="flex gap-2">
-                    {item.tier !== "business" && (
-                      <a href="/account/upgrade?plan=PRO" className="inline-block px-4 py-2 rounded-lg bg-orange-500 text-white">
-                        Upgrade for $10/mo
-                      </a>
-                    )}
-                    {item.tier === "business" && (
-                      <a href="/account/upgrade?plan=BUSINESS" className="inline-block px-4 py-2 rounded-lg bg-indigo-500 text-white">
-                        Business plan
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
+                  {displaySummary ? (
+                    <p className="mt-2 text-sm text-white/80">{displaySummary}</p>
+                  ) : null}
+                </>
+              );
 
-              {/* Tag row */}
-              {item.tags && item.tags.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {item.tags.map((t) => (
-                    <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-white/10">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </section>
-          );
-        })}
-      </div>
-    </main>
+              return (
+                <li key={c.id} className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
+                  {hasHref ? (
+                    // External (or asset) link: use <a> with rel="noreferrer"
+                    <a
+                      href={lessonHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block p-4"
+                    >
+                      {CardInner}
+                    </a>
+                  ) : (
+                    // Internal lesson page
+                    <Link href={lessonHref} className="block p-4">
+                      {CardInner}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="mt-6 rounded-xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
+            No lessons found for this track yet.
+          </div>
+        )}
+
+        {/* Quick track switcher */}
+        <div className="mt-10 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-white/70">Switch track:</span>
+          <Link
+            href="/training/genai"
+            className="rounded-full bg-teal-600/90 px-3 py-1 text-sm font-semibold hover:bg-teal-500"
+          >
+            GenAI
+          </Link>
+          <Link
+            href="/training/rpm"
+            className="rounded-full bg-slate-600/90 px-3 py-1 text-sm font-semibold hover:bg-slate-500"
+          >
+            R-PM
+          </Link>
+          <Link
+            href="/training/finance"
+            className="rounded-full bg-amber-500/90 px-3 py-1 text-sm font-semibold hover:bg-amber-400"
+          >
+            Finance
+          </Link>
+        </div>
+      </main>
+    </>
   );
 }
