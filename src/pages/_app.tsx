@@ -5,8 +5,7 @@ import Head from "next/head";
 
 import { AuthProvider } from "@/lib/AuthProvider";
 import Navbar from "@/components/Navbar";
-// If you have a ToastProvider component, keep this import; otherwise remove it.
-import ToastProvider from "@/components/ToastProvider";
+import { ToastProvider } from "@/components/ToastProvider"; // ⬅️ named import
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -23,7 +22,6 @@ export default function App({ Component, pageProps }: AppProps) {
 
       <Navbar />
 
-      {/* If you don't have ToastProvider, remove this wrapper */}
       <ToastProvider>
         <main className="pt-16 md:pt-20">
           <Component {...pageProps} />
