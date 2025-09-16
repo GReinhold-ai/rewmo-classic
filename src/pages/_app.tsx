@@ -1,22 +1,14 @@
+// src/pages/_app.tsx
 import "@/styles/globals.css";
-import type { AppProps, NextPage } from "next/app";
+import type { AppProps } from "next/app";
 import Head from "next/head";
-import { useEffect } from "react";
+
 import { AuthProvider } from "@/lib/AuthProvider";
 import Navbar from "@/components/Navbar";
-import { saveRefFromUrl } from "@/lib/referral";
-import { ToastProvider } from "@/components/ToastProvider";
+// If you have a ToastProvider component, keep this import; otherwise remove it.
+import ToastProvider from "@/components/ToastProvider";
 
-type NextPageWithFlags = NextPage & { hideGlobalNav?: boolean };
-type AppPropsWithFlags = AppProps & { Component: NextPageWithFlags };
-
-export default function App({ Component, pageProps }: AppPropsWithFlags) {
-  useEffect(() => {
-    saveRefFromUrl();
-  }, []);
-
-  const hideGlobalNav = Component.hideGlobalNav === true;
-
+export default function App({ Component, pageProps }: AppProps) {
   return (
     <AuthProvider>
       <Head>
@@ -29,14 +21,14 @@ export default function App({ Component, pageProps }: AppPropsWithFlags) {
         />
       </Head>
 
-      {!hideGlobalNav && <Navbar />}
+      <Navbar />
 
-      <main className={hideGlobalNav ? "" : "pt-16 md:pt-20"}>
-        <Component {...pageProps} />
-      </main>
-
-      {/* Toasts overlay */}
-      <ToastProvider />
+      {/* If you don't have ToastProvider, remove this wrapper */}
+      <ToastProvider>
+        <main className="pt-16 md:pt-20">
+          <Component {...pageProps} />
+        </main>
+      </ToastProvider>
     </AuthProvider>
   );
 }
