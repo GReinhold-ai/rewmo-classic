@@ -14,7 +14,7 @@ import * as admin from "firebase-admin";
 let adminApp: admin.app.App | null = null;
 
 function coercePrivateKey(pk?: string | null) {
-  if (!pk) return pk;
+  if (!pk) return pk as any;
   // Handle env-inlined keys like "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
   return pk.replace(/\\n/g, "\n");
 }
@@ -24,7 +24,6 @@ function decodeBase64Json(b64?: string | null) {
   try {
     const jsonStr = Buffer.from(b64, "base64").toString("utf8");
     const parsed = JSON.parse(jsonStr);
-    // Normalize private_key just in case
     if (parsed.private_key) parsed.private_key = coercePrivateKey(parsed.private_key);
     return parsed as admin.ServiceAccount;
   } catch {
@@ -55,8 +54,6 @@ function buildCredential(): admin.credential.Credential {
   }
 
   // 3) GOOGLE_APPLICATION_CREDENTIALS / ADC
-  // (reads JSON from a file if GOOGLE_APPLICATION_CREDENTIALS is set,
-  //  or uses GCP metadata when running on GCP)
   try {
     return admin.credential.applicationDefault();
   } catch (err: any) {
@@ -89,3 +86,6 @@ export function getAdminDb(): admin.firestore.Firestore {
 export function getAdminAuth(): admin.auth.Auth {
   return getAdminApp().auth();
 }
+
+// Back-compat alias for older imports expecting { getDb }
+export const getDb = getAdminDb;
