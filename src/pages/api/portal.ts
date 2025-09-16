@@ -1,10 +1,7 @@
 // src/pages/api/portal.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import Stripe from "stripe";
+import { stripe } from "@/lib/stripe";
 import { getAdminDb } from "./_firebaseAdmin";
-
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
-const stripe = new Stripe(STRIPE_SECRET_KEY as string, { apiVersion: "2024-06-20" });
 
 /**
  * POST /api/portal
@@ -15,7 +12,11 @@ const stripe = new Stripe(STRIPE_SECRET_KEY as string, { apiVersion: "2024-06-20
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
-  if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: "Stripe not configured" });
+
+  // since we import a shared client, just ensure env is present
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return res.status(500).json({ error: "Stripe not configured" });
+  }
 
   try {
     const { email, returnUrl } = (req.body ?? {}) as { email?: string; returnUrl?: string };
@@ -29,10 +30,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const customerId = data.stripeCustomerId as string | undefined;
     if (!customerId) return res.status(404).json({ error: "No Stripe customer attached" });
 
+    // prefer caller-provided returnUrl, then SITE_URL, then current origin
     const defaultReturn =
       returnUrl ||
       process.env.SITE_URL ||
-      (typeof process !== "undefined" ? "http://localhost:3000/account" : "/account");
+      `${(req.headers.origin as string) || "http://localhost:3000"}/account`;
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
