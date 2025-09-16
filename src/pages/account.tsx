@@ -11,64 +11,81 @@ type SubStatus =
   | "canceled"
   | "unpaid"
   | "paused"
-  | "unknown";
+  | "unknown"
+  | "none";
+
+type PlanTier = "FREE" | "PRO" | "BUSINESS" | "UNKNOWN";
 
 export default function AccountPage() {
   const router = useRouter();
   const { currentUser, signInWithGoogle, logout } = useAuth();
 
   const [status, setStatus] = useState<SubStatus>("unknown");
+  const [planTier, setPlanTier] = useState<PlanTier>("FREE");
+  const [periodEnd, setPeriodEnd] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const signedIn = !!currentUser;
 
-  // Fetch (optional) subscription status from your API if present
+  // ✅ Use ID token → /api/status (no ?email=)
   useEffect(() => {
     let ignore = false;
 
     (async () => {
-      const email = currentUser?.email;
-      if (!email) {
-        setStatus("unknown");
+      if (!currentUser) {
+        if (!ignore) {
+          setStatus("unknown");
+          setPlanTier("FREE");
+          setPeriodEnd(null);
+        }
         return;
       }
+
       try {
-        const r = await fetch(
-          `/api/subscription-status?email=${encodeURIComponent(email)}`
-        );
-        if (!r.ok) {
-          if (!ignore) setStatus("unknown");
-          return;
-        }
+        const token = await currentUser.getIdToken(/* forceRefresh? */ false);
+        const r = await fetch("/api/status", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         const j = await r.json();
         if (!ignore) {
           setStatus((j?.subscriptionStatus as SubStatus) ?? "unknown");
+          setPlanTier((j?.planTier as PlanTier) ?? "FREE");
+          setPeriodEnd(j?.currentPeriodEnd ?? null);
         }
       } catch {
-        if (!ignore) setStatus("unknown");
+        if (!ignore) {
+          setStatus("unknown");
+          setPlanTier("FREE");
+          setPeriodEnd(null);
+        }
       }
     })();
 
     return () => {
       ignore = true;
     };
-  }, [currentUser?.email]);
+  }, [currentUser]);
 
-  // New: simple upgrade router (keeps Stripe checkout separate/optional)
   function startMembership() {
-    // Default users to Pro
     router.push("/account/upgrade?plan=PRO");
   }
 
-  // Keep your existing (optional) customer portal handler
   async function manageBilling() {
     if (!currentUser?.email) {
-      await signInWithGoogle();
+      await signInWithGoogle?.();
       return;
     }
     setLoading(true);
     try {
-      // Try your preferred portal route first; fall back to /api/portal if it exists.
-      let r = await fetch("/api/customer-portal", { method: "POST" });
-      if (r.status === 404) r = await fetch("/api/portal", { method: "POST" });
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      let r = await fetch("/api/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser.email, returnUrl: `${origin}/account` }),
+      });
       const j = await r.json();
       if (j?.url) window.location.href = j.url;
       else alert(j?.error || "Customer portal not available.");
@@ -78,8 +95,6 @@ export default function AccountPage() {
       setLoading(false);
     }
   }
-
-  const signedIn = !!currentUser;
 
   return (
     <div className="min-h-screen bg-[#003B49] text-white">
@@ -94,9 +109,18 @@ export default function AccountPage() {
               {signedIn ? currentUser?.email || "(no email)" : "Not signed in"}
             </div>
             <div>
-              <span className="text-[#15C5C1] font-semibold">Membership status:</span>{" "}
-              {status}
+              <span className="text-[#15C5C1] font-semibold">Membership:</span>{" "}
+              {planTier === "FREE" && "Free"}
+              {planTier === "PRO" && "Pro"}
+              {planTier === "BUSINESS" && "Business"}
+              {planTier === "UNKNOWN" && "Unknown"}{" "}
+              <span className="text-[#9bd1d6]">({status})</span>
             </div>
+            {periodEnd && (
+              <div className="text-sm text-[#9bd1d6]">
+                Renews / ends: {new Date(periodEnd).toLocaleDateString()}
+              </div>
+            )}
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
@@ -111,7 +135,6 @@ export default function AccountPage() {
 
             {signedIn && (
               <>
-                {/* One-click upgrade to the pricing page */}
                 <button
                   onClick={startMembership}
                   className="inline-flex items-center rounded-lg bg-[#FF6B00] px-4 py-2 font-bold text-white hover:bg-[#ff7d22]"
@@ -119,7 +142,6 @@ export default function AccountPage() {
                   {status === "active" ? "Update Plan" : "Start Membership"}
                 </button>
 
-                {/* Direct deep-links to specific plans */}
                 <Link
                   href="/account/upgrade?plan=PRO"
                   className="inline-flex items-center rounded-lg bg-[#FF9151] px-4 py-2 font-bold text-[#003B49] hover:bg-[#FFA36C]"
@@ -133,7 +155,6 @@ export default function AccountPage() {
                   Upgrade to Business
                 </Link>
 
-                {/* Manage billing (Stripe portal) */}
                 <button
                   onClick={manageBilling}
                   disabled={loading}
@@ -161,7 +182,6 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Optional: helpful links */}
         <div className="mt-6 text-sm text-[#9bd1d6]">
           Need help?{" "}
           <Link href="/contact" className="underline">

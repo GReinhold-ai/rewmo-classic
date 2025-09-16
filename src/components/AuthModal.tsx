@@ -1,134 +1,198 @@
-import React, { useState } from "react";
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
-import { useAuth } from "@/lib/AuthProvider";
-import { FcGoogle } from "react-icons/fc";
+import { useState } from "react";
+import { useRouter } from "next/router";
+import {
+  signInWithGoogle,
+  signInWithEmail,
+  signUpWithEmail,
+  resetPassword,
+} from "@/lib/firebaseClient";
+import { claimReferralOnFirstLogin } from "@/lib/claimReferralOnFirstLogin";
 
-export default function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const auth = useAuth();
+type Props = {
+  isOpen: boolean;
+  onClose: () => void;
+  redirectTo?: string; // default: "/dashboard"
+};
 
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+export default function AuthModal({ isOpen, onClose, redirectTo = "/dashboard" }: Props) {
+  const router = useRouter();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleEmailAuth = async () => {
-    if (!auth) return;
-    setLoading(true);
-    setError("");
+  if (!isOpen) return null;
+
+  const go = async () => {
+    // Avoid double pushes if already on target
+    if (router.pathname !== redirectTo) await router.push(redirectTo);
+    onClose();
+  };
+
+  const afterAuth = async (user: { uid: string; email?: string | null }) => {
+    // Try to claim referral if this is the user's first login (no user doc yet)
+    await claimReferralOnFirstLogin({ uid: user.uid, email: user.email ?? null });
+    await go();
+  };
+
+  const handleGoogle = async () => {
     try {
-      if (isSignUp) {
-        await auth.signUpWithEmail(form.email, form.password);
-      } else {
-        await auth.signInWithEmail(form.email, form.password);
-      }
-      onClose();
-    } catch (err: any) {
-      setError(err.message);
+      setBusy(true);
+      setError(null);
+      const cred = await signInWithGoogle();
+      await afterAuth({ uid: cred.user.uid, email: cred.user.email });
+    } catch (e: any) {
+      setError(e?.message || "Google sign-in failed.");
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   };
 
-  const handleGoogleAuth = async () => {
-    if (!auth) return;
-    setLoading(true);
-    setError("");
+  const handleEmailAuth = async () => {
     try {
-      await auth.signInWithGoogle();
-      onClose();
-    } catch (err: any) {
-      setError(err.message);
+      setBusy(true);
+      setError(null);
+
+      if (!email) throw new Error("Please enter your email.");
+      if (mode === "signup" && password.length < 6) {
+        throw new Error("Password must be at least 6 characters.");
+      }
+
+      const cred =
+        mode === "signup"
+          ? await signUpWithEmail(email, password)
+          : await signInWithEmail(email, password);
+
+      await afterAuth({ uid: cred.user.uid, email: cred.user.email });
+    } catch (e: any) {
+      setError(e?.message || "Authentication failed.");
     } finally {
-      setLoading(false);
+      setBusy(false);
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      setBusy(true);
+      setError(null);
+      if (!email) throw new Error("Enter your email above first.");
+      await resetPassword(email);
+      setError("Password reset email sent. Check your inbox.");
+    } catch (e: any) {
+      setError(e?.message || "Reset failed.");
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <Transition appear show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        {/* Header */}
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-extrabold text-orange-500">
+            {mode === "signin" ? "Sign in to RewMoAI" : "Create your RewMoAI account"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
+            aria-label="Close"
+            disabled={busy}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Google */}
+        <button
+          onClick={handleGoogle}
+          disabled={busy}
+          className="w-full rounded-xl bg-black py-3 text-white transition hover:opacity-90 disabled:opacity-50"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-50" />
-        </Transition.Child>
+          Continue with Google
+        </button>
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
+        {/* Divider */}
+        <div className="my-4 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs uppercase tracking-wide text-gray-500">or</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        {/* Email form */}
+        <div className="space-y-3">
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-orange-500"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            disabled={busy}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-orange-500"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            disabled={busy}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void handleEmailAuth();
+            }}
+          />
+
+          <button
+            onClick={handleEmailAuth}
+            disabled={busy}
+            className="w-full rounded-xl bg-orange-500 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+          >
+            {busy
+              ? "Please wait…"
+              : mode === "signin"
+              ? "Sign In with Email"
+              : "Create Account"}
+          </button>
+
+          <div className="flex items-center justify-between text-sm">
+            <button
+              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+              className="text-teal-700 underline disabled:opacity-50"
+              disabled={busy}
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white dark:bg-gray-900 p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title className="text-xl font-bold text-center text-orange-600 mb-4">
-                  {isSignUp ? "Create Your RewMo Account" : "Welcome Back"}
-                </Dialog.Title>
+              {mode === "signin" ? "Create an account" : "Have an account? Sign in"}
+            </button>
 
-                <div className="space-y-4">
-                  <button
-                    onClick={handleGoogleAuth}
-                    className="w-full flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-600 text-black dark:text-white bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium py-2 rounded-md transition"
-                  >
-                    <FcGoogle size={20} />
-                    Continue with Google
-                  </button>
-
-                  <div className="relative my-2 text-center text-sm text-gray-500 dark:text-gray-400">
-                    — or use email —
-                  </div>
-
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  />
-
-                  <input
-                    type="password"
-                    placeholder="Password"
-                    className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  />
-
-                  {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-                  <button
-                    onClick={handleEmailAuth}
-                    disabled={loading}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded-md transition"
-                  >
-                    {loading ? "Processing..." : isSignUp ? "Sign Up with Email" : "Sign In with Email"}
-                  </button>
-
-                  <p className="text-sm text-center text-gray-600 dark:text-gray-300">
-                    {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-                    <button
-                      className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
-                      onClick={() => setIsSignUp(!isSignUp)}
-                    >
-                      {isSignUp ? "Sign In" : "Sign Up"}
-                    </button>
-                  </p>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
+            <button
+              onClick={handleReset}
+              className="text-gray-600 underline disabled:opacity-50"
+              disabled={busy}
+            >
+              Forgot password?
+            </button>
           </div>
         </div>
-      </Dialog>
-    </Transition>
+
+        {/* Error / Info */}
+        {error && (
+          <p
+            className={`mt-4 rounded-lg p-3 text-sm ${
+              error.toLowerCase().includes("sent")
+                ? "bg-teal-50 text-teal-700"
+                : "bg-red-50 text-red-700"
+            }`}
+          >
+            {error}
+          </p>
+        )}
+
+        {/* Footer */}
+        <p className="mt-4 text-center text-xs text-gray-500">
+          By continuing, you agree to RewMoAI’s Terms and Privacy Policy.
+        </p>
+      </div>
+    </div>
   );
 }

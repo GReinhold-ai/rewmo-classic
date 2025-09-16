@@ -40,9 +40,7 @@ export default function Navbar() {
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!trainRef.current) return;
-      if (!trainRef.current.contains(e.target as Node)) {
-        setTrainOpen(false);
-      }
+      if (!trainRef.current.contains(e.target as Node)) setTrainOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -188,13 +186,21 @@ export default function Navbar() {
             <NavLink href="/rewards">Rewards</NavLink>
             <NavLink href="/about">About</NavLink>
 
+            {/* Go Premium CTA */}
+            <Link
+              href="/account/upgrade"
+              className="ml-1 inline-flex items-center rounded-full bg-[#FF9151] px-3 py-1.5 text-sm font-bold text-[#003B49] hover:bg-[#FFA36C]"
+            >
+              Go Premium
+            </Link>
+
             {/* Right side auth */}
             {user ? (
               <div className="ml-2 flex items-center gap-2">
                 <span className="px-2 py-1 text-xs rounded bg-white/10 text-white/80">
                   {user.email || "Signed in"}
                 </span>
-                <NavLink href="/dashboard" className="bg-emerald-500/20 hover:bg-emerald-500/30">
+                <NavLink href="/account" className="bg-emerald-500/20 hover:bg-emerald-500/30">
                   Account
                 </NavLink>
                 <button
@@ -219,7 +225,7 @@ export default function Navbar() {
           {/* Mobile toggle */}
           <button
             type="button"
-            className="md:hidden inline-flex items-center justify-center rounded-md px-3 py-2 text-white/90 hover:text-white hover:bg_WHITE/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            className="md:hidden inline-flex items-center justify-center rounded-md px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             aria-label="Open menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((s) => !s)}
@@ -235,14 +241,19 @@ export default function Navbar() {
         </div>
 
         {/* Mobile menu */}
-        <div className={clsx("md:hidden overflow-hidden transition-[max-height,opacity] duration-300", mobileOpen ? "max-h[65vh] opacity-100" : "max-h-0 opacity-0")}>
+        <div
+          className={clsx(
+            "md:hidden overflow-hidden transition-[max-height,opacity] duration-300",
+            mobileOpen ? "max-h-[65vh] opacity-100" : "max-h-0 opacity-0"
+          )}
+        >
           <div className="flex flex-col gap-1 pb-3">
             <NavLink href="/features" onClick={() => setMobileOpen(false)}>Features</NavLink>
             <NavLink href="/shopping" onClick={() => setMobileOpen(false)}>Shopping</NavLink>
 
             <details className="group">
               <summary className="list-none">
-                <div className="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text_white/90 hover:text-white hover:bg-white/10 transition cursor-pointer">
+                <div className="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition cursor-pointer">
                   <span>Training</span>
                   <ChevronDown className="transition group-open:rotate-180" />
                 </div>
@@ -258,12 +269,17 @@ export default function Navbar() {
             <NavLink href="/rewards" onClick={() => setMobileOpen(false)}>Rewards</NavLink>
             <NavLink href="/about" onClick={() => setMobileOpen(false)}>About</NavLink>
 
+            {/* Mobile Go Premium CTA */}
+            <NavLink href="/account/upgrade" onClick={() => setMobileOpen(false)} className="bg-[#FF9151] text-[#003B49] font-bold">
+              Go Premium
+            </NavLink>
+
             {user ? (
               <div className="mt-1 flex flex-col gap-1">
                 <span className="px-3 py-1 text-xs rounded bg-white/10 text-white/80 ml-1">
                   {user.email || "Signed in"}
                 </span>
-                <NavLink href="/dashboard" onClick={() => setMobileOpen(false)} className="bg-emerald-500/20 hover:bg-emerald-500/30">
+                <NavLink href="/account" onClick={() => setMobileOpen(false)} className="bg-emerald-500/20 hover:bg-emerald-500/30">
                   Account
                 </NavLink>
                 <button

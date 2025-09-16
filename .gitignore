@@ -65,3 +65,9 @@ seed.err.log
 seed.out.log
 '@
 Set-Content -LiteralPath .gitignore -Value $gitignore -Encoding utf8
+
+# Secrets
+.env*
+rewmo-service-account.json
+public/training/rewmo-service-account.json
+

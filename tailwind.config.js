@@ -1,3 +1,4 @@
+// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -5,8 +6,11 @@ module.exports = {
     "./src/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
-  theme: {
-    extend: {},
-  },
+  safelist: [
+    "[text-align:justify]",
+    "[text-justify:inter-word]",
+    "[hyphens:auto]",
+  ],
+  theme: { extend: {} },
   plugins: [],
 };
