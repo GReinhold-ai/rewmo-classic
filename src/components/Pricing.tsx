@@ -1,110 +1,172 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/AuthProvider";
 
-type Props = {
-  proPriceId?: string;       // STRIPE_PRICE_PRO
-  businessPriceId?: string;  // STRIPE_PRICE_BUSINESS
+type PlanKey = "FREE" | "PRO" | "BUSINESS";
+
+const PRICE_PRO = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO ?? "";
+const PRICE_BUSINESS = process.env.NEXT_PUBLIC_STRIPE_PRICE_BUSINESS ?? "";
+const PUBLISHABLE = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+
+type Plan = {
+  name: string;
+  price: string;       // display only
+  blurb: string;
+  features: string[];
+  ctaLabel: string;
+  sku?: string;        // Stripe price id (price_...)
+  quantity?: number;   // seats (Business = 5)
 };
 
-export default function Pricing({
-  proPriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO!,
-  businessPriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_BUSINESS!,
-}: Props) {
-  const { currentUser } = useAuth();
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+const PLANS: Record<PlanKey, Plan> = {
+  FREE: {
+    name: "Free",
+    price: "$0",
+    blurb: "Great for getting started.",
+    features: ["Amazon rewards", "LeanAI Module 1 (preview)", "Community updates"],
+    ctaLabel: "You're on Free",
+  },
+  PRO: {
+    name: "Pro",
+    price: "$10/mo",
+    blurb: "Unlock more shopping rewards & training.",
+    features: [
+      "Walmart & Delta rewards",
+      "Full Lean/TQM modules",
+      "Finance mini-courses",
+      "Priority support",
+    ],
+    ctaLabel: "Upgrade to Pro",
+    sku: PRICE_PRO,
+    quantity: 1,
+  },
+  BUSINESS: {
+    name: "Business",
+    price: "$125/mo",
+    blurb: "For small teams and businesses (5 seats).",
+    features: [
+      "All Pro benefits",
+      "Business/office rewards",
+      "Team seats & analytics (soon)",
+      "Priority onboarding",
+    ],
+    ctaLabel: "Upgrade to Business",
+    sku: PRICE_BUSINESS,
+    quantity: 5, // 5 licenses
+  },
+};
 
-  const email = currentUser?.email || "";
-  const uid = currentUser?.uid || "";
+export default function Pricing() {
+  const { currentUser, signInWithGoogle } = useAuth();
+  const [loadingSku, setLoadingSku] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ kind: "info" | "error"; text: string } | null>(null);
 
-  const testMode = useMemo(() => {
-    const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
-    return pk.startsWith("pk_test_");
-  }, []);
+  const testMode = useMemo(() => PUBLISHABLE.startsWith("pk_test_"), []);
 
-  async function upgrade(priceId: string) {
-    if (!priceId) return;
-    if (!uid || !email) {
-      setErr("Please sign in to upgrade.");
+  async function startCheckout(planKey: PlanKey) {
+    const plan = PLANS[planKey];
+    if (!plan.sku) return;
+
+    if (!currentUser?.uid || !currentUser.email) {
+      setMsg({ kind: "info", text: "Please sign in to upgrade." });
+      try {
+        await signInWithGoogle?.();
+      } catch {/* ignore */}
       return;
     }
 
     try {
-      setErr(null);
-      setBusyId(priceId);
+      setMsg(null);
+      setLoadingSku(plan.sku);
       const r = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, uid, email }),
+        body: JSON.stringify({
+          priceId: plan.sku,
+          quantity: plan.quantity ?? 1, // seats
+          uid: currentUser.uid,
+          email: currentUser.email,
+          metadata: { product: "RewmoAI", plan: planKey },
+        }),
       });
       const data = await r.json();
-      if (!r.ok) throw new Error(data?.error || "Unable to start checkout.");
-      if (data?.url) window.location.href = data.url;
+      if (!r.ok || !data?.url) throw new Error(data?.error || "Unable to start checkout.");
+      window.location.href = data.url;
     } catch (e: any) {
-      setErr(e?.message || "Network error. Please try again.");
-    } finally {
-      setBusyId(null);
+      setMsg({ kind: "error", text: e?.message || "Network error. Please try again." });
+      setLoadingSku(null);
     }
   }
 
   return (
-    <div className="space-y-3">
+    <div className="grid gap-6 md:grid-cols-3">
       {testMode && (
-        <div className="rounded-md bg-yellow-500/10 text-yellow-200 border border-yellow-500/30 px-3 py-2 text-xs">
+        <div className="md:col-span-3 rounded-md bg-yellow-500/10 text-yellow-200 border border-yellow-500/30 px-3 py-2 text-xs">
           Stripe <b>TEST MODE</b> — use card <code>4242 4242 4242 4242</code>, any future date, any CVC.
         </div>
       )}
 
-      {err && (
-        <div className="rounded-md bg-red-500/10 text-red-200 border border-red-500/30 px-3 py-2 text-sm">
-          {err}
+      {msg && (
+        <div
+          className={
+            "md:col-span-3 rounded-md px-3 py-2 text-sm border " +
+            (msg.kind === "error"
+              ? "bg-red-500/10 text-red-200 border-red-500/30"
+              : "bg-white/10 text-white/90 border-white/20")
+          }
+        >
+          {msg.text}
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* PRO */}
-        <div className="rounded-xl border border-white/15 bg-white/5 p-6">
-          <h3 className="text-xl font-bold text-[#FF9151]">Pro</h3>
-          <p className="mt-2 text-white/80 text-sm copy-justify">
-            Perfect for individuals. Unlock advanced training, faster rewards processing, and priority support.
-            7-day money-back guarantee.
-          </p>
-          <div className="mt-4 text-3xl font-extrabold">$9<span className="text-lg align-top">/mo</span></div>
-          <button
-            onClick={() => upgrade(proPriceId)}
-            disabled={!proPriceId || busyId === proPriceId}
-            className="mt-4 rounded-lg bg-[#FF9151] text-[#003B49] px-5 py-2 font-semibold hover:bg-[#FFA36C] disabled:opacity-50"
-          >
-            {busyId === proPriceId ? "Redirecting…" : "Upgrade to Pro"}
-          </button>
-          <ul className="mt-4 space-y-1 text-sm text-white/80">
-            <li>• Premium lessons & tools</li>
-            <li>• Referral boost multipliers</li>
-            <li>• Priority email support</li>
-          </ul>
-        </div>
+      {(Object.keys(PLANS) as PlanKey[]).map((key) => {
+        const p = PLANS[key];
+        return (
+          <div key={key} className="rounded-2xl border p-6 bg-white/5 border-white/10">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-xl font-bold">{p.name}</h2>
+              <div className="text-[#FF9151] font-black">
+                {key === "BUSINESS" ? `${p.price} • 5 seats` : p.price}
+              </div>
+            </div>
+            <p className="opacity-80 mt-1">{p.blurb}</p>
 
-        {/* BUSINESS */}
-        <div className="rounded-xl border border-white/15 bg-white/5 p-6">
-          <h3 className="text-xl font-bold text-teal-300">Business</h3>
-          <p className="mt-2 text-white/80 text-sm copy-justify">
-            For teams & small business. Everything in Pro plus team referrals, shared reporting, and priority onboarding.
-          </p>
-          <div className="mt-4 text-3xl font-extrabold">$29<span className="text-lg align-top">/mo</span></div>
-          <button
-            onClick={() => upgrade(businessPriceId)}
-            disabled={!businessPriceId || busyId === businessPriceId}
-            className="mt-4 rounded-lg bg-teal-400 text-[#003B49] px-5 py-2 font-semibold hover:bg-teal-300 disabled:opacity-50"
-          >
-            {busyId === businessPriceId ? "Redirecting…" : "Upgrade to Business"}
-          </button>
-          <ul className="mt-4 space-y-1 text-sm text-white/80">
-            <li>• Team referral pooling</li>
-            <li>• Shared analytics</li>
-            <li>• Priority onboarding</li>
-          </ul>
-        </div>
-      </div>
+            <ul className="mt-4 space-y-2 text-sm">
+              {p.features.map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#15C5C1]" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+
+            {key === "FREE" ? (
+              <div className="mt-6">
+                <span className="inline-block rounded-lg border border-white/20 px-4 py-2 opacity-70">
+                  {p.ctaLabel}
+                </span>
+              </div>
+            ) : (
+              <div className="mt-6">
+                <button
+                  onClick={() => startCheckout(key)}
+                  disabled={!p.sku || (!!loadingSku && loadingSku !== p.sku)}
+                  className="rounded-lg bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold px-5 py-2 disabled:opacity-60"
+                  title={!p.sku ? "Missing Stripe price id in env config" : undefined}
+                >
+                  {loadingSku === p.sku ? "Redirecting…" : p.ctaLabel}
+                </button>
+                {!p.sku && (
+                  <p className="mt-2 text-xs text-red-200">
+                    Missing Stripe price id. Set{" "}
+                    {key === "PRO" ? "NEXT_PUBLIC_STRIPE_PRICE_PRO" : "NEXT_PUBLIC_STRIPE_PRICE_BUSINESS"} in
+                    <code className="ml-1">.env / Vercel env</code>, then redeploy.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

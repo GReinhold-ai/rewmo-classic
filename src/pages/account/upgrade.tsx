@@ -1,8 +1,8 @@
-import { useRouter } from "next/router";
+// src/pages/account/upgrade.tsx
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import { useAuth } from "@/lib/AuthProvider";
-import { getSavedRef } from "@/lib/referral";
 
 type PlanKey = "FREE" | "PRO" | "BUSINESS";
 
@@ -10,26 +10,28 @@ const PRICE_PRO = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "";
 const PRICE_BUSINESS = process.env.NEXT_PUBLIC_STRIPE_PRICE_BUSINESS || "";
 const PUBLISHABLE = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
-type Plan = {
+type PlanDef = {
   name: string;
-  price: string;
+  labelPrice: string;
   blurb: string;
   features: string[];
-  ctaLabel: string;
-  sku?: string; // Stripe price id
+  priceId?: string;     // Stripe Price ID
+  quantity?: number;    // seats (defaults to 1)
+  cta: string;
+  footnote?: string;
 };
 
-const BASE_PLANS: Record<PlanKey, Plan> = {
+const PLANS: Record<PlanKey, PlanDef> = {
   FREE: {
     name: "Free",
-    price: "$0",
+    labelPrice: "$0",
     blurb: "Great for getting started.",
     features: ["Amazon rewards", "LeanAI Module 1 (preview)", "Community updates"],
-    ctaLabel: "You're on Free",
+    cta: "You're on Free",
   },
   PRO: {
     name: "Pro",
-    price: "$9/mo",
+    labelPrice: "$10/mo",
     blurb: "Unlock more shopping rewards & training.",
     features: [
       "Walmart & Delta rewards",
@@ -37,12 +39,13 @@ const BASE_PLANS: Record<PlanKey, Plan> = {
       "Finance mini-courses",
       "Priority support",
     ],
-    ctaLabel: "Upgrade to Pro",
-    sku: PRICE_PRO,
+    priceId: PRICE_PRO,
+    quantity: 1,
+    cta: "Upgrade to Pro",
   },
   BUSINESS: {
     name: "Business",
-    price: "$29/mo",
+    labelPrice: "$125/mo",
     blurb: "For small teams and businesses.",
     features: [
       "All Pro benefits",
@@ -50,59 +53,32 @@ const BASE_PLANS: Record<PlanKey, Plan> = {
       "Team seats & analytics (soon)",
       "Priority onboarding",
     ],
-    ctaLabel: "Upgrade to Business",
-    sku: PRICE_BUSINESS,
+    priceId: PRICE_BUSINESS,
+    quantity: 5, // 5 licenses
+    cta: "Upgrade to Business",
+    footnote: "Includes 5 seats (additional seats coming soon).",
   },
 };
-
-// Read UTM params from the current URL (only on client)
-function getUtmFromUrl(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const url = new URL(window.location.href);
-  const keys = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
-  const out: Record<string, string> = {};
-  for (const k of keys) {
-    const v = url.searchParams.get(k);
-    if (v) out[k] = v;
-  }
-  return out;
-}
 
 export default function UpgradePage() {
   const router = useRouter();
   const { currentUser, signInWithGoogle } = useAuth();
 
-  const [loadingSku, setLoadingSku] = useState<string | null>(null);
-  const [msg, setMsg] = useState<{ kind: "info" | "error" | "ok"; text: string } | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ kind: "info" | "error"; text: string } | null>(null);
 
-  // Preselect PRO or BUSINESS via ?plan=PRO|BUSINESS
-  const preselect = useMemo<PlanKey>(() => {
-    const q = String(router.query.plan || "").toUpperCase();
-    if (q === "PRO") return "PRO";
-    if (q === "BUSINESS") return "BUSINESS";
-    return "PRO";
-  }, [router.query.plan]);
+  const isTestMode = useMemo(() => PUBLISHABLE.startsWith("pk_test_"), []);
 
-  const testMode = useMemo(() => PUBLISHABLE.startsWith("pk_test_"), []);
-
-  // Cache referral + utm so we can send with the checkout request
-  const [referralCode, setReferralCode] = useState<string | null>(null);
-  const [utm, setUtm] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    setReferralCode(getSavedRef());
-    setUtm(getUtmFromUrl());
-  }, []);
-
-  async function handleCheckout(plan: PlanKey) {
-    const planDef = BASE_PLANS[plan];
-    if (!planDef.sku) {
+  async function handleCheckout(planKey: PlanKey) {
+    const plan = PLANS[planKey];
+    if (!plan.priceId) {
       setMsg({
         kind: "error",
-        text:
-          plan === "PRO"
-            ? "Missing NEXT_PUBLIC_STRIPE_PRICE_PRO in .env.local"
-            : "Missing NEXT_PUBLIC_STRIPE_PRICE_BUSINESS in .env.local",
+        text: `Missing Stripe Price ID for ${plan.name}. Set ${
+          planKey === "PRO"
+            ? "NEXT_PUBLIC_STRIPE_PRICE_PRO"
+            : "NEXT_PUBLIC_STRIPE_PRICE_BUSINESS"
+        } in your environment and redeploy.`,
       });
       return;
     }
@@ -111,7 +87,6 @@ export default function UpgradePage() {
       setMsg({ kind: "info", text: "Please sign in to upgrade." });
       try {
         await signInWithGoogle?.();
-        // after sign-in we land back here, so do nothing else
       } catch {
         /* ignore */
       }
@@ -120,71 +95,51 @@ export default function UpgradePage() {
 
     try {
       setMsg(null);
-      setLoadingSku(planDef.sku);
+      setLoading(plan.priceId);
 
-      // success/cancel are optional – Stripe will use defaults if not provided,
-      // but it’s nicer to be explicit.
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-
-      const successUrl = `${origin}/account?upgraded=1`;
-      const cancelUrl = `${origin}/account/upgrade?plan=${plan}`;
-
-      // NOTE: /api/checkout should accept these fields (we added them earlier)
       const r = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId: planDef.sku,
+          priceId: plan.priceId,
+          quantity: plan.quantity ?? 1,            // <-- seats
           uid: currentUser.uid,
           email: currentUser.email,
-          referralCode: referralCode || undefined,
-          utm,
-          source: "upgrade_page",
-          mode: "subscription",
-          successUrl,
-          cancelUrl,
+          metadata: { product: "RewmoAI", plan: planKey },
         }),
       });
 
       const data = await r.json();
-      if (!r.ok || !data?.url) throw new Error(data?.error || "Unable to start checkout.");
-      window.location.href = data.url;
+      if (!r.ok || !data?.url) {
+        throw new Error(data?.error || "Unable to start checkout.");
+      }
+      window.location.href = data.url as string;
     } catch (e: any) {
       setMsg({ kind: "error", text: e?.message || "Network error. Please try again." });
-      setLoadingSku(null);
+      setLoading(null);
     }
   }
 
   return (
     <main className="min-h-screen bg-[#003B49] text-white">
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <h1 className="text-3xl font-black mb-2">Choose your plan</h1>
-        <p className="opacity-80 mb-6">
+      <div className="mx-auto max-w-5xl px-6 py-12">
+        <h1 className="mb-2 text-3xl font-black">Choose your plan</h1>
+        <p className="mb-6 opacity-80">
           Unlock more shopping rewards and full training access. Cancel anytime.
         </p>
 
-        {currentUser?.email && (
-          <p className="mb-4 text-xs text-[#B6E7EB]">
-            Signed in as <span className="font-semibold">{currentUser.email}</span>
-          </p>
-        )}
-
-        {testMode && (
-          <div className="mb-4 rounded-md bg-yellow-500/10 text-yellow-200 border border-yellow-500/30 px-3 py-2 text-xs">
-            Stripe <b>TEST MODE</b> — use card <code>4242 4242 4242 4242</code>, any future date, any
-            CVC.
+        {isTestMode && (
+          <div className="mb-4 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-200">
+            Stripe <b>TEST MODE</b> — use card <code>4242 4242 4242 4242</code>, any future date, any CVC.
           </div>
         )}
         {msg && (
           <div
             className={
-              "mb-4 rounded-md px-3 py-2 text-sm border " +
+              "mb-4 rounded-md border px-3 py-2 text-sm " +
               (msg.kind === "error"
-                ? "bg-red-500/10 text-red-200 border-red-500/30"
-                : msg.kind === "ok"
-                ? "bg-emerald-500/10 text-emerald-200 border-emerald-500/30"
-                : "bg-white/10 text-white/90 border-white/20")
+                ? "border-red-500/30 bg-red-500/10 text-red-200"
+                : "border-white/20 bg-white/10 text-white/90")
             }
           >
             {msg.text}
@@ -192,22 +147,23 @@ export default function UpgradePage() {
         )}
 
         <div className="grid gap-6 md:grid-cols-3">
-          {(["FREE", "PRO", "BUSINESS"] as PlanKey[]).map((key) => {
-            const p = BASE_PLANS[key];
-            const highlighted = key === preselect;
+          {(Object.keys(PLANS) as PlanKey[]).map((key) => {
+            const p = PLANS[key];
+            const isPaid = key !== "FREE";
+            const isLoading = loading === p.priceId;
 
             return (
               <div
                 key={key}
-                className={`rounded-2xl border p-6 bg-white/5 ${
-                  highlighted ? "border-[#15C5C1]" : "border-white/10"
+                className={`rounded-2xl border bg-white/5 p-6 ${
+                  isPaid ? "border-white/10" : "border-white/10"
                 }`}
               >
                 <div className="flex items-baseline justify-between">
                   <h2 className="text-xl font-bold">{p.name}</h2>
-                  <div className="text-[#FF9151] font-black">{p.price}</div>
+                  <div className="font-black text-[#FF9151]">{p.labelPrice}</div>
                 </div>
-                <p className="opacity-80 mt-1 copy-justify">{p.blurb}</p>
+                <p className="mt-1 opacity-80">{p.blurb}</p>
 
                 <ul className="mt-4 space-y-2 text-sm">
                   {p.features.map((f) => (
@@ -221,32 +177,33 @@ export default function UpgradePage() {
                 {key === "FREE" ? (
                   <div className="mt-6">
                     <span className="inline-block rounded-lg border border-white/20 px-4 py-2 opacity-70">
-                      {p.ctaLabel}
+                      {p.cta}
                     </span>
                   </div>
                 ) : (
                   <div className="mt-6">
                     <button
                       onClick={() => handleCheckout(key)}
-                      disabled={!!loadingSku && loadingSku !== p.sku}
-                      className="rounded-lg bg-[#FF9151] hover:bg-[#FFA36C] text-[#003B49] font-bold px-5 py-2 disabled:opacity-60"
+                      disabled={!!loading && !isLoading}
+                      className="rounded-lg bg-[#FF9151] px-5 py-2 font-bold text-[#003B49] hover:bg-[#FFA36C] disabled:opacity-60"
                     >
-                      {loadingSku === p.sku ? "Redirecting…" : p.ctaLabel}
+                      {isLoading ? "Redirecting…" : p.cta}
                     </button>
-                    {!p.sku && (
+                    {!p.priceId && (
                       <p className="mt-2 text-xs text-red-200">
-                        Missing Stripe price id for {key}. Set{" "}
-                        {key === "PRO"
-                          ? "NEXT_PUBLIC_STRIPE_PRICE_PRO"
-                          : "NEXT_PUBLIC_STRIPE_PRICE_BUSINESS"}{" "}
-                        in <code className="ml-1">.env.local</code>.
+                        Missing Stripe Price ID for {p.name}. Add it in your environment and redeploy.
+                      </p>
+                    )}
+                    {p.footnote && (
+                      <p className="mt-2 text-xs opacity-70">
+                        {p.footnote}
                       </p>
                     )}
                   </div>
                 )}
 
                 {key === "BUSINESS" && (
-                  <p className="text-xs opacity-60 mt-3">
+                  <p className="mt-3 text-xs opacity-60">
                     Need help?{" "}
                     <Link href="/contact" className="underline">
                       Contact sales
@@ -259,7 +216,7 @@ export default function UpgradePage() {
           })}
         </div>
 
-        <p className="text-xs opacity-60 mt-8">
+        <p className="mt-8 text-xs opacity-60">
           By subscribing, you agree to our{" "}
           <Link href="/terms" className="underline">
             Terms
@@ -272,7 +229,7 @@ export default function UpgradePage() {
         </p>
 
         <div className="mt-8">
-          <Link href="/account" className="underline text-[#15C5C1]">
+          <Link href="/account" className="text-[#15C5C1] underline">
             ← Back to Account
           </Link>
         </div>
