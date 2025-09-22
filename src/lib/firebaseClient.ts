@@ -49,22 +49,28 @@ async function ensureUserDoc(cred: UserCredential) {
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
-    // Only attach a referredBy value on first creation
+    // Only attach referredBy on first creation
     const referredBy =
       typeof window !== "undefined" ? localStorage.getItem(REF_KEY) || null : null;
 
-    await setDoc(ref, {
-      uid: user.uid,
-      email: user.email ?? null,
-      displayName: user.displayName ?? null,
-      photoURL: user.photoURL ?? null,
-      createdAt: serverTimestamp(),
-      lastLoginAt: serverTimestamp(),
-      referralCode: user.uid, // default referral code
-      referredBy,             // may be null
-      referralCount: 0,
-      rewards: 0,
-    });
+    await setDoc(
+      ref,
+      {
+        uid: user.uid,
+        email: user.email ?? null,
+        displayName: user.displayName ?? null,
+        photoURL: user.photoURL ?? null,
+        createdAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp(),
+        // Added fields for Lean Lab + referrals
+        tier: "FREE",             // default tier
+        referralCode: user.uid,   // default personal referral code
+        referredBy,               // may be null
+        referralCount: 0,
+        rewards: 0,
+      },
+      { merge: true }
+    );
   } else {
     // Update last login timestamp on subsequent logins
     await setDoc(

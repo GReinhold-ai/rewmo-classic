@@ -1,14 +1,15 @@
+// src/components/Navbar.tsx
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import Logo from "@/components/Logo";
 import clsx from "clsx";
+import Logo from "@/components/Logo";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
 
 function ChevronDown({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 20 20" fill="currentColor" className={clsx("h-4 w-4", className)} aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="currentColor" className={clsx("h-4 w-4 transition-transform", className)} aria-hidden="true">
       <path
         fillRule="evenodd"
         d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.112l3.71-2.88a.75.75 0 1 1 .92 1.18l-4.2 3.26a.75.75 0 0 1-.92 0l-4.2-3.26a.75.75 0 0 1-.02-1.06z"
@@ -18,38 +19,45 @@ function ChevronDown({ className = "" }: { className?: string }) {
   );
 }
 
+const NAV_LINK =
+  "inline-flex items-center px-3 py-2 rounded-md text-[15px] md:text-base " +
+  "font-semibold tracking-wide text-[#EAF5F6]/95 hover:text-white " +
+  "hover:bg-[#0A3A40] focus:outline-none focus-visible:ring-2 " +
+  "focus-visible:ring-[#15C5C1] focus-visible:ring-offset-2 " +
+  "focus-visible:ring-offset-[#001F24]";
+
 export default function Navbar() {
   const router = useRouter();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [trainOpen, setTrainOpen] = useState(false);
+  const [labOpen, setLabOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  const trainRef = useRef<HTMLDivElement | null>(null);
+  const labRef = useRef<HTMLDivElement | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Subscribe to Firebase auth
+  // Auth subscription
   useEffect(() => {
     setMounted(true);
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
     return () => unsub();
   }, []);
 
-  // Close dropdowns on outside click / ESC / route change
+  // Close menus on outside click / esc / route change
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (!trainRef.current) return;
-      if (!trainRef.current.contains(e.target as Node)) setTrainOpen(false);
+      if (!labRef.current) return;
+      if (!labRef.current.contains(e.target as Node)) setLabOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setTrainOpen(false);
+        setLabOpen(false);
         setMobileOpen(false);
       }
     }
     const handleRoute = () => {
-      setTrainOpen(false);
+      setLabOpen(false);
       setMobileOpen(false);
     };
     router.events.on("routeChangeStart", handleRoute);
@@ -63,14 +71,14 @@ export default function Navbar() {
     };
   }, [router.events]);
 
-  // Stable hover open/close to prevent flicker
-  const openTrainSoon = () => {
+  // Stable hover timing
+  const openLabSoon = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => setTrainOpen(true), 80);
+    hoverTimer.current = setTimeout(() => setLabOpen(true), 80);
   };
-  const closeTrainSoon = () => {
+  const closeLabSoon = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => setTrainOpen(false), 140);
+    hoverTimer.current = setTimeout(() => setLabOpen(false), 140);
   };
 
   const NavLink = ({
@@ -84,14 +92,7 @@ export default function Navbar() {
     onClick?: () => void;
     className?: string;
   }) => (
-    <Link
-      href={href}
-      className={clsx(
-        "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition",
-        className
-      )}
-      onClick={onClick}
-    >
+    <Link href={href} className={clsx(NAV_LINK, className)} onClick={onClick}>
       {children}
     </Link>
   );
@@ -99,7 +100,7 @@ export default function Navbar() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      setTrainOpen(false);
+      setLabOpen(false);
       setMobileOpen(false);
       router.push("/");
     } catch (err) {
@@ -110,9 +111,9 @@ export default function Navbar() {
   // Avoid hydration mismatch
   if (!mounted) {
     return (
-      <header className="sticky top-0 z-50 bg-[#003B49]/95 backdrop-blur supports-[backdrop-filter]:bg-[#003B49]/80">
+      <header className="sticky top-0 z-50 bg-[#003B49]/95 backdrop-blur supports-[backdrop-filter]:bg-[#003B49]/80 border-b border-[#0A3A40]">
         <nav className="mx-auto max-w-6xl px-4">
-          <div className="flex h-14 items-center justify-between">
+          <div className="flex h-16 items-center justify-between">
             <Link href="/" aria-label="RewmoAI home" className="shrink-0">
               <Logo size={36} withWordmark />
             </Link>
@@ -123,9 +124,9 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-[#003B49]/95 backdrop-blur supports-[backdrop-filter]:bg-[#003B49]/80">
+    <header className="sticky top-0 z-50 bg-[#003B49]/95 backdrop-blur supports-[backdrop-filter]:bg-[#003B49]/80 border-b border-[#0A3A40]">
       <nav className="mx-auto max-w-6xl px-4">
-        <div className="flex h-14 items-center justify-between">
+        <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" aria-label="RewmoAI home" className="shrink-0">
             <Logo size={36} withWordmark />
@@ -136,49 +137,61 @@ export default function Navbar() {
             <NavLink href="/features">Features</NavLink>
             <NavLink href="/shopping">Shopping</NavLink>
 
-            {/* Training dropdown */}
+            {/* Lean Lab dropdown (replaces Training) */}
             <div
-              ref={trainRef}
+              ref={labRef}
               className="relative"
-              onMouseEnter={openTrainSoon}
-              onMouseLeave={closeTrainSoon}
+              onMouseEnter={openLabSoon}
+              onMouseLeave={closeLabSoon}
             >
               <button
                 type="button"
                 aria-haspopup="menu"
-                aria-expanded={trainOpen}
+                aria-expanded={labOpen}
                 className={clsx(
-                  "inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                  "inline-flex items-center gap-1 px-3 py-2 rounded-md text-[15px] md:text-base font-semibold tracking-wide",
+                  "text-[#EAF5F6]/95 hover:text-white hover:bg-[#0A3A40]",
+                  "transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#15C5C1] focus-visible:ring-offset-2 focus-visible:ring-offset-[#001F24]"
                 )}
-                onClick={() => setTrainOpen((s) => !s)}
-                onFocus={openTrainSoon}
+                onClick={() => setLabOpen((s) => !s)}
+                onFocus={openLabSoon}
               >
-                Training
-                <ChevronDown className={clsx(trainOpen && "rotate-180 transition")} />
+                Lean Lab
+                <ChevronDown className={clsx(labOpen && "rotate-180")} />
               </button>
+
               <div
                 role="menu"
-                aria-label="Training"
+                aria-label="Lean Lab"
                 className={clsx(
-                  "absolute left-0 mt-2 w-52 rounded-xl border border-white/10 bg-[#0b4a57] shadow-lg ring-1 ring-black/5 py-1",
-                  trainOpen ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-1 opacity-0",
+                  "absolute left-0 mt-2 w-60 rounded-xl border border-[#0A3A40] bg-[#07333B] shadow-lg ring-1 ring-black/5 py-1",
+                  labOpen ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-1 opacity-0",
                   "transition"
                 )}
-                onMouseEnter={openTrainSoon}
-                onMouseLeave={closeTrainSoon}
+                onMouseEnter={openLabSoon}
+                onMouseLeave={closeLabSoon}
               >
-                <Link role="menuitem" href="/learn/genai" className="block px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
-                  GenAI
+                <Link
+                  role="menuitem"
+                  href="/lean-lab"
+                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
+                >
+                  Open LeanAI Lab
                 </Link>
-                <Link role="menuitem" href="/learn/rpm" className="block px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
-                  R-PM (Lean Lab)
+                <div className="my-1 border-t border-[#0A3A40]" />
+                <Link
+                  role="menuitem"
+                  href="/training/rpm"
+                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
+                >
+                  Intro Track (Free)
                 </Link>
-                <Link role="menuitem" href="/learn/finance" className="block px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
-                  Finance
-                </Link>
-                <div className="my-1 border-t border-white/10" />
-                <Link role="menuitem" href="/training" className="block px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
-                  All Training
+                <Link
+                  role="menuitem"
+                  href="/leanai/fundamentals"
+                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
+                >
+                  R-PM Fundamentals — Module 1
                 </Link>
               </div>
             </div>
@@ -189,7 +202,8 @@ export default function Navbar() {
             {/* Go Premium CTA */}
             <Link
               href="/account/upgrade"
-              className="ml-1 inline-flex items-center rounded-full bg-[#FF9151] px-3 py-1.5 text-sm font-bold text-[#003B49] hover:bg-[#FFA36C]"
+              className="ml-1 inline-flex items-center rounded-full px-3 py-1.5 text-sm font-extrabold"
+              style={{ backgroundColor: "#FF9151", color: "#062025", border: "2px solid #FF9151" }}
             >
               Go Premium
             </Link>
@@ -197,7 +211,7 @@ export default function Navbar() {
             {/* Right side auth */}
             {user ? (
               <div className="ml-2 flex items-center gap-2">
-                <span className="px-2 py-1 text-xs rounded bg-white/10 text-white/80">
+                <span className="px-2 py-1 text-xs rounded bg-[#07333B] text-[#EAF5F6]/80">
                   {user.email || "Signed in"}
                 </span>
                 <NavLink href="/account" className="bg-emerald-500/20 hover:bg-emerald-500/30">
@@ -205,7 +219,8 @@ export default function Navbar() {
                 </NavLink>
                 <button
                   onClick={handleSignOut}
-                  className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition"
+                  className="inline-flex items-center px-3 py-2 rounded-md text-sm font-semibold text-white transition"
+                  style={{ backgroundColor: "#F07C41" }}
                 >
                   Sign out
                 </button>
@@ -215,7 +230,7 @@ export default function Navbar() {
                 <NavLink href="/account" className="bg-emerald-500/20 hover:bg-emerald-500/30">
                   Account
                 </NavLink>
-                <NavLink href="/login" className="bg-orange-500 text-white hover:bg-orange-600">
+                <NavLink href="/login" className="text-white" style={{ backgroundColor: "#F07C41" }}>
                   Sign in
                 </NavLink>
               </div>
@@ -225,7 +240,7 @@ export default function Navbar() {
           {/* Mobile toggle */}
           <button
             type="button"
-            className="md:hidden inline-flex items-center justify-center rounded-md px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            className="md:hidden inline-flex items-center justify-center rounded-md px-3 py-2 text-[#EAF5F6]/90 hover:text-white hover:bg-[#07333B] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#15C5C1] focus-visible:ring-offset-2 focus-visible:ring-offset-[#001F24]"
             aria-label="Open menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((s) => !s)}
@@ -248,53 +263,86 @@ export default function Navbar() {
           )}
         >
           <div className="flex flex-col gap-1 pb-3">
-            <NavLink href="/features" onClick={() => setMobileOpen(false)}>Features</NavLink>
-            <NavLink href="/shopping" onClick={() => setMobileOpen(false)}>Shopping</NavLink>
+            <NavLink href="/features" onClick={() => setMobileOpen(false)}>
+              Features
+            </NavLink>
+            <NavLink href="/shopping" onClick={() => setMobileOpen(false)}>
+              Shopping
+            </NavLink>
 
+            {/* Lean Lab group replacing "Training" */}
             <details className="group">
               <summary className="list-none">
-                <div className="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition cursor-pointer">
-                  <span>Training</span>
-                  <ChevronDown className="transition group-open:rotate-180" />
+                <div className="flex items-center justify-between px-3 py-2 rounded-md text-[15px] font-bold text-[#EAF5F6] hover:text-white hover:bg-[#07333B] transition cursor-pointer">
+                  <span>Lean Lab</span>
+                  <ChevronDown className="group-open:rotate-180" />
                 </div>
               </summary>
               <div className="pl-2">
-                <NavLink href="/learn/genai" onClick={() => setMobileOpen(false)}>GenAI</NavLink>
-                <NavLink href="/learn/rpm" onClick={() => setMobileOpen(false)}>R-PM (Lean Lab)</NavLink>
-                <NavLink href="/learn/finance" onClick={() => setMobileOpen(false)}>Finance</NavLink>
-                <NavLink href="/training" onClick={() => setMobileOpen(false)}>All Training</NavLink>
+                <NavLink href="/lean-lab" onClick={() => setMobileOpen(false)}>
+                  Open LeanAI Lab
+                </NavLink>
+                <NavLink href="/training/rpm" onClick={() => setMobileOpen(false)}>
+                  Intro Track (Free)
+                </NavLink>
+                <NavLink href="/leanai/fundamentals" onClick={() => setMobileOpen(false)}>
+                  R-PM Fundamentals — Module 1
+                </NavLink>
               </div>
             </details>
 
-            <NavLink href="/rewards" onClick={() => setMobileOpen(false)}>Rewards</NavLink>
-            <NavLink href="/about" onClick={() => setMobileOpen(false)}>About</NavLink>
+            <NavLink href="/rewards" onClick={() => setMobileOpen(false)}>
+              Rewards
+            </NavLink>
+            <NavLink href="/about" onClick={() => setMobileOpen(false)}>
+              About
+            </NavLink>
 
             {/* Mobile Go Premium CTA */}
-            <NavLink href="/account/upgrade" onClick={() => setMobileOpen(false)} className="bg-[#FF9151] text-[#003B49] font-bold">
+            <NavLink
+              href="/account/upgrade"
+              onClick={() => setMobileOpen(false)}
+              className="font-extrabold text-[#062025]"
+              style={{ backgroundColor: "#FF9151", borderColor: "#FF9151" }}
+            >
               Go Premium
             </NavLink>
 
             {user ? (
               <div className="mt-1 flex flex-col gap-1">
-                <span className="px-3 py-1 text-xs rounded bg-white/10 text-white/80 ml-1">
+                <span className="px-3 py-1 text-xs rounded bg-[#07333B] text-[#EAF5F6]/80 ml-1">
                   {user.email || "Signed in"}
                 </span>
-                <NavLink href="/account" onClick={() => setMobileOpen(false)} className="bg-emerald-500/20 hover:bg-emerald-500/30">
+                <NavLink
+                  href="/account"
+                  onClick={() => setMobileOpen(false)}
+                  className="bg-emerald-500/20 hover:bg-emerald-500/30"
+                >
                   Account
                 </NavLink>
                 <button
                   onClick={handleSignOut}
-                  className="mx-3 mt-1 inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition"
+                  className="mx-3 mt-1 inline-flex items-center px-3 py-2 rounded-md text-sm font-semibold text-white transition"
+                  style={{ backgroundColor: "#F07C41" }}
                 >
                   Sign out
                 </button>
               </div>
             ) : (
               <div className="mt-1 flex flex-col gap-1">
-                <NavLink href="/account" onClick={() => setMobileOpen(false)} className="bg-emerald-500/20 hover:bg-emerald-500/30">
+                <NavLink
+                  href="/account"
+                  onClick={() => setMobileOpen(false)}
+                  className="bg-emerald-500/20 hover:bg-emerald-500/30"
+                >
                   Account
                 </NavLink>
-                <NavLink href="/login" onClick={() => setMobileOpen(false)} className="bg-orange-500 text-white hover:bg-orange-600">
+                <NavLink
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="text-white"
+                  style={{ backgroundColor: "#F07C41" }}
+                >
                   Sign in
                 </NavLink>
               </div>

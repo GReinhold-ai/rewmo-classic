@@ -1,46 +1,67 @@
+// src/pages/api/checkout.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { stripe } from "@/lib/stripe";
 
-/**
- * Body: { priceId: string, email?: string, referralCode?: string }
- * Returns: { url }
- */
+function cleanQuantity(q?: number): number {
+  const n = Math.floor(Number(q));
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(n, 100); // optional cap
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
   try {
-    const { priceId, email, referralCode } = (typeof req.body === "string" ? JSON.parse(req.body) : req.body) || {};
+    const { priceId, quantity = 1, uid, email, metadata } = (req.body ?? {}) as {
+      priceId?: string;
+      quantity?: number;
+      uid?: string;
+      email?: string;
+      metadata?: Record<string, string>;
+    };
+
     if (!priceId) return res.status(400).json({ error: "Missing priceId" });
+    if (!email || !uid) return res.status(400).json({ error: "Missing user info" });
 
-    // Determine mode by inspecting the price
-    const price = await stripe.prices.retrieve(priceId);
-    const isRecurring = !!price.recurring;
-    const mode: "subscription" | "payment" = isRecurring ? "subscription" : "payment";
+    const qty = cleanQuantity(quantity);
 
-    const origin =
-      (req.headers["x-forwarded-proto"] && req.headers["x-forwarded-host"])
-        ? `${req.headers["x-forwarded-proto"]}://${req.headers["x-forwarded-host"]}`
-        : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-
-    const successUrl = `${origin}/account?status=success`;
-    const cancelUrl = `${origin}/account/upgrade?status=cancel`;
+    const base = process.env.SITE_URL || "http://localhost:3000";
+    const successUrl = new URL("/account?success=1", base).toString();
+    const cancelUrl = new URL("/account/upgrade?canceled=1", base).toString();
 
     const session = await stripe.checkout.sessions.create({
-      mode,
-      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "subscription",
+      // Recommended: Let Stripe enable Link, Apple Pay, etc.
+      automatic_payment_methods: { enabled: true },
+
+      customer_email: email,
+      line_items: [{ price: priceId, quantity: qty }],
+      allow_promotion_codes: true,
+
       success_url: successUrl,
       cancel_url: cancelUrl,
-      customer_email: email || undefined,
-      allow_promotion_codes: true,
-      billing_address_collection: "auto",
+
+      // A small string OK; keep it lightweight
+      client_reference_id: uid,
+
+      // Carry context into the resulting subscription & the session object
+      subscription_data: {
+        metadata: {
+          uid,
+          email,
+          ...(metadata || {}),
+        },
+      },
       metadata: {
-        referralCode: referralCode || "",
+        uid,
+        email,
+        ...(metadata || {}),
       },
     });
 
     return res.status(200).json({ url: session.url });
   } catch (e: any) {
-    console.error("checkout error", e);
-    return res.status(500).json({ error: e?.message || "Checkout failed" });
+    console.error("[checkout] error:", e?.message || e);
+    return res.status(500).json({ error: "Unable to create checkout session" });
   }
 }

@@ -1,3 +1,4 @@
+// src/lib/firebaseAdmin.ts
 import * as admin from "firebase-admin";
 
 /**
@@ -6,16 +7,14 @@ import * as admin from "firebase-admin";
  * 2) FB_ADMIN_* plain envs (PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY)
  * 3) GOOGLE_APPLICATION_CREDENTIALS / application default credentials
  *
- * Notes:
- * - PRIVATE_KEY often needs \n -> real newlines.
- * - Module is hot-reload safe.
+ * Also supports STORAGE via FIREBASE_STORAGE_BUCKET.
+ * Module is hot-reload safe.
  */
 
 let adminApp: admin.app.App | null = null;
 
 function coercePrivateKey(pk?: string | null) {
   if (!pk) return pk as any;
-  // Handle env-inlined keys like "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
   return pk.replace(/\\n/g, "\n");
 }
 
@@ -32,28 +31,21 @@ function decodeBase64Json(b64?: string | null) {
 }
 
 function buildCredential(): admin.credential.Credential {
-  // 1) Base64 service account JSON (supports both variable names)
   const b64 =
     process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 ||
     process.env.FIREBASE_SERVICE_ACCOUNT;
   const svcFromB64 = decodeBase64Json(b64);
-  if (svcFromB64) {
-    return admin.credential.cert(svcFromB64);
-  }
+  if (svcFromB64) return admin.credential.cert(svcFromB64);
 
-  // 2) Plain envs (FB_ADMIN_*)
-  const projectId = process.env.FB_ADMIN_PROJECT_ID;
-  const clientEmail = process.env.FB_ADMIN_CLIENT_EMAIL;
-  const privateKey = coercePrivateKey(process.env.FB_ADMIN_PRIVATE_KEY);
+  const projectId = process.env.FB_ADMIN_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FB_ADMIN_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = coercePrivateKey(
+    process.env.FB_ADMIN_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY
+  );
   if (projectId && clientEmail && privateKey) {
-    return admin.credential.cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    });
+    return admin.credential.cert({ projectId, clientEmail, privateKey });
   }
 
-  // 3) GOOGLE_APPLICATION_CREDENTIALS / ADC
   try {
     return admin.credential.applicationDefault();
   } catch (err: any) {
@@ -75,7 +67,12 @@ export function getAdminApp(): admin.app.App {
     return adminApp;
   }
   const credential = buildCredential();
-  adminApp = admin.initializeApp({ credential });
+  const storageBucket =
+    process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+  adminApp = admin.initializeApp({
+    credential,
+    ...(storageBucket ? { storageBucket } : {}),
+  });
   return adminApp;
 }
 
@@ -85,6 +82,11 @@ export function getAdminDb(): admin.firestore.Firestore {
 
 export function getAdminAuth(): admin.auth.Auth {
   return getAdminApp().auth();
+}
+
+export function getAdminStorage(): admin.storage.Storage {
+  // firebase-admin v11+: getStorage() off admin, not off app
+  return admin.storage();
 }
 
 // Back-compat alias for older imports expecting { getDb }

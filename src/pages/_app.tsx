@@ -4,15 +4,15 @@ import type { AppProps } from "next/app";
 import Head from "next/head";
 
 import { AuthProvider } from "@/lib/AuthProvider";
-import Navbar from "@/components/Navbar";
-import { ToastProvider } from "@/components/ToastProvider"; // ⬅️ named import
+import SiteHeader from "@/components/SiteHeader"; // ⬅️ new header (replaces Navbar)
+import { ToastProvider } from "@/components/ToastProvider";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <AuthProvider>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#003B49" />
+        <meta name="theme-color" content="#001F24" />
         <title>RewmoAI</title>
         <meta
           name="description"
@@ -20,8 +20,10 @@ export default function App({ Component, pageProps }: AppProps) {
         />
       </Head>
 
-      <Navbar />
+      {/* High-contrast, sticky header with 'Lean Lab' link */}
+      <SiteHeader />
 
+      {/* Page content sits below the sticky header */}
       <ToastProvider>
         <main className="pt-16 md:pt-20">
           <Component {...pageProps} />

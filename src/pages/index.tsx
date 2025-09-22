@@ -152,38 +152,51 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Training block */}
-        <section className="mt-6 w-full max-w-3xl">
-          <div className="mx-auto rounded-2xl border border-white/10 bg-white/5 p-6 text-center md:text-left">
-            <h3 className="text-lg font-semibold">Training</h3>
-            <p className="mt-1 text-sm text-white/80">
-              Hands-on learning tracks with short modules.
-            </p>
+        {/* ---------- LeanAI Lab (single, consolidated training box) ---------- */}
+        <section className="mt-8 w-full max-w-3xl">
+          <div className="mx-auto rounded-2xl border border-[#15C5C1]/60 bg-[#072b33] p-6 md:p-8 shadow">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black text-[#FF9151]">
+                  LeanAI Lab
+                </h2>
+                <p className="text-[#B6E7EB] mt-2 max-w-3xl">
+                  Learn the RewmoAI Process Management system. Start free with the{" "}
+                  <span className="text-[#15C5C1] font-semibold">Intro track</span>, then
+                  unlock advanced modules like{" "}
+                  <span className="text-[#FFA36C] font-semibold">
+                    R-PM Fundamentals — Module 1
+                  </span>.
+                </p>
+              </div>
+              <Link
+                href="/lean-lab"
+                className="inline-block px-6 py-3 rounded-xl bg-[#15C5C1] text-[#003B49] font-bold border-2 border-[#15C5C1] hover:bg-[#0fb5b1]"
+              >
+                Open LeanAI Lab
+              </Link>
+            </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-2">
+            {/* Quick links (kept inside the same box) */}
+            <div className="mt-6 grid sm:grid-cols-2 gap-3">
               <Link
-                href="/learn/genai"
-                className="rounded-full bg-teal-600/90 px-3 py-1 text-sm font-semibold text-white hover:bg-teal-500"
+                href="/training/rpm" // Intro (free)
+                className="block px-5 py-4 rounded-xl bg-[#003B49] border border-[#15C5C1] text-[#15C5C1] font-semibold hover:bg-[#0a2e35]"
               >
-                GenAI
+                Intro Track (Free)
               </Link>
               <Link
-                href="/learn/rpm"
-                className="rounded-full bg-slate-600/90 px-3 py-1 text-sm font-semibold text-white hover:bg-slate-500"
+                href="/leanai/fundamentals" // Paid module
+                className="block px-5 py-4 rounded-xl bg-[#003B49] border border-[#FF9151] text-[#FFA36C] font-semibold hover:bg-[#143f49]"
               >
-                R-Process Management
-              </Link>
-              <Link
-                href="/learn/finance"
-                className="rounded-full bg-amber-500/90 px-3 py-1 text-sm font-semibold text-white hover:bg-amber-400"
-              >
-                Finance
+                R-PM Fundamentals — Module 1
               </Link>
             </div>
           </div>
         </section>
+        {/* ---------- /LeanAI Lab box ---------- */}
 
-        {/* Two-up feature tiles */}
+        {/* Two-up feature tiles (unchanged) */}
         <div className="grid md:grid-cols-2 gap-6 mt-10 max-w-4xl w-full">
           <div className="border border-orange-400/60 p-4 rounded-2xl bg-white/[0.03]">
             <h2 className="text-[#FF9151] font-bold">Personal Shopping Rewards</h2>
@@ -212,23 +225,6 @@ export default function HomePage() {
               Shop for your business →
             </Link>
           </div>
-        </div>
-
-        {/* Lean Lab promo */}
-        <div className="mt-10 p-4 border border-teal-400/60 rounded-2xl max-w-xl w-full bg-white/[0.03]">
-          <h2 className="text-teal-300 font-bold">
-            Lean Lab – RewmoAI Process Management
-          </h2>
-          <p className="text-sm mt-2 text-white/90">
-            <strong>NEW:</strong> AI-powered process improvement tools for individuals and businesses.
-            Map your routines, eliminate waste, and unlock continuous improvement.
-          </p>
-          <Link
-            href="/lean-lab"
-            className="mt-2 inline-block text-teal-300 underline underline-offset-2"
-          >
-            Learn about Lean Lab →
-          </Link>
         </div>
       </main>
 
