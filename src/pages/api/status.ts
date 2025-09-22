@@ -1,8 +1,8 @@
+// src/pages/api/status.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { getApps, initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
-import { getMembershipSnapshot } from "@/lib/server/membership";
+import { getUserEntitlements } from "@/lib/server/membership";
 
 const {
   UNICORN_ORIGIN = "",
@@ -11,26 +11,30 @@ const {
   FB_ADMIN_PRIVATE_KEY,
 } = process.env;
 
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: FB_ADMIN_PROJECT_ID,
-      clientEmail: FB_ADMIN_CLIENT_EMAIL,
-      privateKey: (FB_ADMIN_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
-    }),
-  });
+// --- Initialize Firebase Admin (safe for dev hot-reload) ---
+if (!getApps().length && FB_ADMIN_PROJECT_ID && FB_ADMIN_CLIENT_EMAIL && FB_ADMIN_PRIVATE_KEY) {
+  try {
+    initializeApp({
+      credential: cert({
+        projectId: FB_ADMIN_PROJECT_ID,
+        clientEmail: FB_ADMIN_CLIENT_EMAIL,
+        privateKey: FB_ADMIN_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      }),
+    });
+  } catch {
+    // ignore re-init errors in dev
+  }
 }
 const adminAuth = getAuth();
-const db = getFirestore();
 
-/* ---- CORS helpers ---- */
+// --- CORS helpers ---
 function normalizeOrigin(s: string) {
   return s.trim().replace(/\/+$/, "");
 }
 const ALLOWED = new Set(
   UNICORN_ORIGIN.split(",").map(s => s.trim()).filter(Boolean).map(normalizeOrigin)
 );
-// Allow shorthand localhost entries by adding http/https variants
+// allow shorthand like "localhost:3000"
 for (const o of Array.from(ALLOWED)) {
   if (!/^http/.test(o)) {
     ALLOWED.add(`http://${o}`);
@@ -75,11 +79,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const decoded = await adminAuth.verifyIdToken(token);
-    const email = decoded.email;
-    if (!email) return res.status(400).json({ error: "No email on token" });
+    const { uid, email = null } = decoded;
 
-    const snap = await getMembershipSnapshot(db, email);
-    return res.status(200).json(snap);
+    // NEW: use the entitlement helper you have now
+    const entitlements = await getUserEntitlements(uid);
+
+    return res.status(200).json({
+      ok: true,
+      uid,
+      email,
+      entitlements,
+    });
   } catch (err: any) {
     console.error("[status] error:", err?.message || err);
     return res.status(500).json({ error: "Server error" });
