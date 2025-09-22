@@ -1,5 +1,5 @@
 // src/components/Navbar.tsx
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import clsx from "clsx";
@@ -9,7 +9,12 @@ import { auth } from "@/lib/firebaseClient";
 
 function ChevronDown({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 20 20" fill="currentColor" className={clsx("h-4 w-4 transition-transform", className)} aria-hidden="true">
+    <svg
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      className={clsx("h-4 w-4 transition-transform", className)}
+      aria-hidden="true"
+    >
       <path
         fillRule="evenodd"
         d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.112l3.71-2.88a.75.75 0 1 1 .92 1.18l-4.2 3.26a.75.75 0 0 1-.92 0l-4.2-3.26a.75.75 0 0 1-.02-1.06z"
@@ -86,13 +91,15 @@ export default function Navbar() {
     children,
     onClick,
     className = "",
+    style,
   }: {
     href: string;
     children: ReactNode;
     onClick?: () => void;
     className?: string;
+    style?: CSSProperties;
   }) => (
-    <Link href={href} className={clsx(NAV_LINK, className)} onClick={onClick}>
+    <Link href={href} className={clsx(NAV_LINK, className)} style={style} onClick={onClick}>
       {children}
     </Link>
   );
