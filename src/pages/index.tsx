@@ -42,8 +42,10 @@ export default function HomePage() {
         setMsg(j?.error || "Something went wrong. Please try again.");
       }
     } catch (err: any) {
+      // Better error handling - don't show scary messages to users
+      console.error('Waitlist API error:', err);
       setOk(false);
-      setMsg(err?.message || "Network error. Please try again.");
+      setMsg("We're experiencing technical difficulties. Please try again later or contact support.");
     } finally {
       setLoading(false);
     }
@@ -132,7 +134,7 @@ export default function HomePage() {
           )}
 
           <p className="mx-auto mt-2 w-full max-w-md text-xs text-white/60">
-            By joining, you agree to receive early-access updates. We’ll never sell your email.
+            By joining, you agree to receive early-access updates. We'll never sell your email.
           </p>
           {/* ======= /EMAIL CAPTURE FORM ======= */}
         </div>
