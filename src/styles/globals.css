@@ -71,3 +71,12 @@ a { color: inherit; text-decoration: none; }
     hyphens: auto;
   }
 }
+/* Navigation visibility fix */
+header nav a:not(.bg-\[#FF9151\]) {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+header nav a:not(.bg-\[#FF9151\]):hover {
+  color: #FF9151 !important;
+}
