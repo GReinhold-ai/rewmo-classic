@@ -20,7 +20,7 @@ export default function ShoppingPage() {
   const [activeTab, setActiveTab] = useState<"personal" | "business">("personal");
   
   // Get user's tier from Firestore (you'll need to fetch this)
-  const userTier: MembershipTier = "FREE"; // Replace with actual user tier from Firestore
+  const userTier = "FREE" as MembershipTier;
   
   // Filter retailers based on selected options
   const filteredRetailers = useMemo(() => {
