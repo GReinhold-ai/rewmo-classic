@@ -1,10 +1,9 @@
 // src/lib/AuthProvider.tsx
-// FIXED: Prevents double-mounting from consuming redirect result
+// FIXED: Uses popup instead of redirect for Vercel compatibility
 import React, { createContext, useContext, useEffect, useMemo, useState, useRef } from "react";
 import {
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -27,13 +26,9 @@ export type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// CRITICAL: Global flag to prevent double-checking redirect result
-let redirectResultChecked = false;
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [redirectChecked, setRedirectChecked] = useState(false);
   const initializingRef = useRef(false);
 
   // 🧠 UNIFIED: Create/Update Firestore user document
@@ -125,19 +120,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 🔐 Google Sign-In with REDIRECT
+  // 🔐 Google Sign-In with POPUP (Vercel compatible)
   const signInWithGoogle = async (): Promise<void> => {
     try {
-      console.log('🔐 [AuthProvider] Starting Google sign-in (redirect)...');
+      console.log('🔐 [AuthProvider] Starting Google sign-in (popup)...');
       
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ 
         prompt: "select_account"
       });
       
-      await signInWithRedirect(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      
+      console.log('✅ [AuthProvider] Google sign-in successful!', {
+        uid: result.user.uid,
+        email: result.user.email,
+        displayName: result.user.displayName
+      });
+      
+      await ensureUserDocument(result.user);
+      
+      // Check if this is a new user for referral tracking
+      const userRef = doc(db, "users", result.user.uid);
+      const docSnap = await getDoc(userRef);
+      
+      if (docSnap.exists() && !docSnap.data().referredBy) {
+        await handleReferralTracking(result.user);
+      }
       
     } catch (error: any) {
+      // Handle popup closed by user
+      if (error.code === 'auth/popup-closed-by-user') {
+        console.log('ℹ️ [AuthProvider] User closed the sign-in popup');
+        return;
+      }
+      // Handle popup blocked
+      if (error.code === 'auth/popup-blocked') {
+        console.error('❌ [AuthProvider] Popup was blocked. Please allow popups for this site.');
+        throw new Error('Sign-in popup was blocked. Please allow popups and try again.');
+      }
       console.error('❌ [AuthProvider] Google sign-in failed:', error.code, error.message);
       throw error;
     }
@@ -177,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 👁️ Auth State Listener + Handle Redirect Result
+  // 👁️ Auth State Listener
   useEffect(() => {
     // Prevent double initialization (React Strict Mode)
     if (initializingRef.current) {
@@ -187,76 +208,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     initializingRef.current = true;
     console.log('🔥 [AuthProvider] Initializing...');
-    
-    let unsubscribeAuth: (() => void) | null = null;
 
-    const checkRedirectAndSetupAuth = async () => {
-      // CRITICAL: Only check redirect result ONCE globally
-      if (!redirectResultChecked) {
-        redirectResultChecked = true;
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (user) => {
+        console.log('🔄 [AuthProvider] Auth state changed:', user ? `${user.email} (${user.uid})` : 'signed out');
         
-        try {
-          console.log('🔍 [AuthProvider] Checking for redirect result...');
-          const result = await getRedirectResult(auth);
-          
-          if (result) {
-            console.log('✅ [AuthProvider] Redirect sign-in successful!', {
-              uid: result.user.uid,
-              email: result.user.email,
-              displayName: result.user.displayName
-            });
-            
-            await ensureUserDocument(result.user);
-            
-            const userRef = doc(db, "users", result.user.uid);
-            const docSnap = await getDoc(userRef);
-            
-            if (docSnap.exists() && !docSnap.data().referredBy) {
-              await handleReferralTracking(result.user);
-            }
-          } else {
-            console.log('ℹ️ [AuthProvider] No redirect result');
-          }
-        } catch (error: any) {
-          if (error.code !== 'auth/invalid-api-key') {
-            console.error('❌ [AuthProvider] Redirect check error:', error);
-          }
+        if (user) {
+          await ensureUserDocument(user);
+          setCurrentUser(user);
+        } else {
+          setCurrentUser(null);
         }
-      } else {
-        console.log('ℹ️ [AuthProvider] Redirect already checked globally, skipping');
+        
+        setLoading(false);
+      },
+      (error) => {
+        console.error('❌ [AuthProvider] Auth listener error:', error);
+        setLoading(false);
       }
-      
-      setRedirectChecked(true);
-
-      // Set up auth state listener
-      unsubscribeAuth = onAuthStateChanged(
-        auth,
-        async (user) => {
-          console.log('🔄 [AuthProvider] Auth state changed:', user ? `${user.email} (${user.uid})` : 'signed out');
-          
-          if (user) {
-            await ensureUserDocument(user);
-            setCurrentUser(user);
-          } else {
-            setCurrentUser(null);
-          }
-          
-          setLoading(false);
-        },
-        (error) => {
-          console.error('❌ [AuthProvider] Auth listener error:', error);
-          setLoading(false);
-        }
-      );
-    };
-
-    checkRedirectAndSetupAuth();
+    );
 
     return () => {
-      if (unsubscribeAuth) {
-        console.log('🔥 [AuthProvider] Cleaning up...');
-        unsubscribeAuth();
-      }
+      console.log('🔥 [AuthProvider] Cleaning up...');
+      unsubscribe();
       initializingRef.current = false;
     };
   }, []);
@@ -290,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [currentUser]
   );
 
-  if (loading || !redirectChecked) {
+  if (loading) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -301,9 +276,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }}>
         <div style={{ textAlign: 'center', color: 'white' }}>
           <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>Loading...</h2>
-          <p style={{ color: '#99f6e4' }}>
-            {!redirectChecked ? 'Checking authentication...' : 'Setting up your session...'}
-          </p>
+          <p style={{ color: '#99f6e4' }}>Setting up your session...</p>
         </div>
       </div>
     );
