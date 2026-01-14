@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { setDoc, doc } from "firebase/firestore";
 import { db } from "../lib/firebaseClient";
-import { useAuth } from "../lib/AuthProvider.tsx.backup";
+import { useAuth } from "../lib/AuthProvider";
 
 const questions = [
   { name: "investmentExperience", label: "How would you rate your investment experience?", options: ["Beginner", "Intermediate", "Advanced"] },
