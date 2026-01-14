@@ -14,8 +14,10 @@ const {
   FUNDAMENTALS_ENTITLEMENT = "leanai.fundamentals",
 } = process.env;
 
+// (No apiVersion passed = use account default; avoids mismatches)
 const stripe = new Stripe(STRIPE_SECRET_KEY);
 
+// Read raw body so Stripe can verify the signature
 async function readRawBody(req: NextApiRequest): Promise<Buffer> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
@@ -67,42 +69,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // Priority 1: email from customer_details (always present when available)
-        let email: string | undefined = session.customer_details?.email ?? undefined;
+        // Try to discover the purchaser's email in a safe, typed way
+        let email: string | undefined =
+          session.customer_details?.email ??
+          (typeof session.metadata?.email === "string" ? session.metadata.email : undefined);
 
-        // Priority 2: if we have a customer ID, retrieve and narrow the type
+        // If the session has an embedded customer object (not just an ID), narrow and read it
+        if (!email && session.customer && typeof session.customer !== "string") {
+          const cust = session.customer; // Stripe.Customer | Stripe.DeletedCustomer
+          if (!("deleted" in cust) && typeof cust.email === "string") {
+            email = cust.email;
+          }
+        }
+
+        // If the session only has a customer ID, retrieve it
         if (!email && typeof session.customer === "string") {
           try {
-            const customer = await stripe.customers.retrieve(session.customer);
-            if (!("deleted" in customer) && customer.email) {
-              email = customer.email;
+            const cust = await stripe.customers.retrieve(session.customer);
+            if (!("deleted" in cust) && typeof cust.email === "string") {
+              email = cust.email;
             }
           } catch (e) {
-            // don't fail webhook just because customer lookup failed
             console.warn("[stripe:webhook] customer retrieve failed:", (e as any)?.message || e);
           }
         }
 
-        // Priority 3: optional metadata fallback
-        if (!email && session.metadata?.email) {
-          email = String(session.metadata.email);
-        }
-
         if (!email) {
-          console.warn("[stripe:webhook] checkout.session.completed but no email found on session", {
-            sessionId: session.id,
-          });
+          console.warn(
+            "[stripe:webhook] checkout.session.completed but no email found",
+            { sessionId: session.id }
+          );
           break;
         }
 
+        // TEMP LOG #1 — prove we found the email
+        console.log("[stripe:webhook] resolved email:", email);
+
         const uid = await findUidByEmail(email);
         if (!uid) {
-          console.warn("[stripe:webhook] No user doc found for email; cannot grant entitlement", { email });
+          console.warn("[stripe:webhook] No user doc for email; cannot grant entitlement", { email });
           break;
         }
 
         await grantEntitlement(uid, FUNDAMENTALS_ENTITLEMENT);
-        console.log("[stripe:webhook] Granted entitlement", {
+
+        // TEMP LOG #2 — prove we granted the entitlement
+        console.log("[stripe:webhook] granted entitlement", {
           uid,
           entitlement: FUNDAMENTALS_ENTITLEMENT,
           sessionId: session.id,
@@ -112,17 +124,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       case "invoice.payment_succeeded": {
-        // Optional: handle subscription renewals if you sell recurring plans
+        // Optional: handle renewals
         break;
       }
 
       case "customer.subscription.deleted": {
-        // Optional: revoke on cancel/expire (import revokeEntitlement and implement)
+        // Optional: revoke on cancel/expire
         break;
       }
 
       default:
-        // Ignore other event types
+        // Ignore other events for now
         break;
     }
 

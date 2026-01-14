@@ -1,36 +1,25 @@
-// File: pages/api/admin/users.ts
-
-import { NextApiRequest, NextApiResponse } from 'next';
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
-const db = getFirestore();
+// File: src/pages/api/admin/users.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { getAdminDb } from "../_firebaseAdmin"; // server-only helper (firebase-admin)
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
   try {
-    const usersRef = collection(db, 'users');
-    const snapshot = await getDocs(usersRef);
+    const db = getAdminDb();
+    const snap = await db.collection("users").limit(200).get();
 
-    const users = snapshot.docs.map(doc => ({
-      id: doc.id,
-      email: doc.data().email || doc.id // Fallback to ID if email not stored
-    }));
+    const users = snap.docs.map(d => {
+      const data = d.data() as { email?: string };
+      return { id: d.id, email: data.email ?? d.id };
+    });
 
-    res.status(200).json({ users });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    return res.status(200).json({ users });
+  } catch (err: any) {
+    console.error("[api/admin/users] error:", err?.message || err);
+    return res.status(500).json({ error: "Failed to fetch users" });
   }
 }

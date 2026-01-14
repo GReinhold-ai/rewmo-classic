@@ -50,7 +50,7 @@ export const retailers: Retailer[] = [
     name: "Amazon",
     description: "Everything you need, delivered fast. Earn points on millions of products.",
     logo: "/logos/amazon.png",
-    affiliateLink: "https://www.amazon.com/?tag=YOUR_AFFILIATE_ID",
+    affiliateLink: "https://www.amazon.com/?tag=rewmoai-20",
     category: ["general"],
     pointsMultiplier: 1,
     requiredTier: "FREE",

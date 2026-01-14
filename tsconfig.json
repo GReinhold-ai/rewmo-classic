@@ -20,6 +20,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "src/pages/api/training/[id].tsx.bak"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "src/pages/api/training/[id].tsx.bak", "src/lib/AuthProvider.tsx.backup"],
   "exclude": ["node_modules"]
 }

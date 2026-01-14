@@ -2,7 +2,7 @@ import { useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../../lib/firebaseClient";
 import Layout from "../../components/Layout";
-import { useAuth } from "../../lib/AuthProvider"; // Import useAuth hook
+import { useAuth } from "../../lib/AuthProvider.tsx.backup"; // Import useAuth hook
 import React from "react";
 
 export default function FeedbackPage() {

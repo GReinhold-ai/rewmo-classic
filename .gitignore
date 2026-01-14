@@ -71,3 +71,7 @@ Set-Content -LiteralPath .gitignore -Value $gitignore -Encoding utf8
 rewmo-service-account.json
 public/training/rewmo-service-account.json
 
+s e r v i c e A c c o u n t K e y . j s o n 
+serviceAccountKey.json
+ 
+ 
