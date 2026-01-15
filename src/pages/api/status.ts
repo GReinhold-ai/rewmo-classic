@@ -5,27 +5,27 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getUserEntitlements } from "@/lib/server/membership";
 
-const {
-  UNICORN_ORIGIN = "",
-  FB_ADMIN_PROJECT_ID,
-  FB_ADMIN_CLIENT_EMAIL,
-  FB_ADMIN_PRIVATE_KEY,
-} = process.env;
+const { UNICORN_ORIGIN = "" } = process.env;
 
-// --- Initialize Firebase Admin (safe for dev hot-reload) ---
-if (!getApps().length && FB_ADMIN_PROJECT_ID && FB_ADMIN_CLIENT_EMAIL && FB_ADMIN_PRIVATE_KEY) {
-  try {
-    initializeApp({
-      credential: cert({
-        projectId: FB_ADMIN_PROJECT_ID,
-        clientEmail: FB_ADMIN_CLIENT_EMAIL,
-        privateKey: FB_ADMIN_PRIVATE_KEY.replace(/\\n/g, "\n"),
-      }),
-    });
-  } catch {
-    // ignore re-init errors in dev
+// --- Initialize Firebase Admin using base64-encoded service account ---
+if (!getApps().length) {
+  const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT;
+  
+  if (serviceAccountBase64) {
+    try {
+      const serviceAccount = JSON.parse(
+        Buffer.from(serviceAccountBase64, "base64").toString("utf-8")
+      );
+      
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+    } catch (e) {
+      console.error("[status] Failed to parse service account:", e);
+    }
   }
 }
+
 const adminAuth = getAuth();
 const db = getFirestore();
 
@@ -86,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get entitlements
     const entitlements = await getUserEntitlements(uid);
 
-    // ✅ NEW: Fetch user document from Firestore to get tier and subscription status
+    // Fetch user document from Firestore to get tier and subscription status
     let planTier = "FREE";
     let subscriptionStatus = "none";
     let currentPeriodEnd = null;
@@ -95,20 +95,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const userDoc = await db.collection("users").doc(uid).get();
       if (userDoc.exists) {
         const userData = userDoc.data();
-        
-        // Check tier field first, then membership.plan as fallback
         planTier = userData?.tier || userData?.membership?.plan || "FREE";
-        
-        // Check subscriptionStatus field first, then membership.active as fallback
-        subscriptionStatus = userData?.subscriptionStatus || 
+        subscriptionStatus = userData?.subscriptionStatus ||
           (userData?.membership?.active ? "active" : "none");
-        
-        // Get period end if available
         currentPeriodEnd = userData?.currentPeriodEnd || userData?.membership?.currentPeriodEnd || null;
       }
     } catch (dbErr: any) {
       console.error("[status] Firestore error:", dbErr?.message || dbErr);
-      // Continue with defaults if Firestore fails
     }
 
     return res.status(200).json({
@@ -116,9 +109,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       uid,
       email,
       entitlements,
-      planTier,           // ✅ Now included
-      subscriptionStatus, // ✅ Now included
-      currentPeriodEnd,   // ✅ Now included
+      planTier,
+      subscriptionStatus,
+      currentPeriodEnd,
     });
   } catch (err: any) {
     console.error("[status] error:", err?.message || err);
