@@ -5,12 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
-import { getDownloadURL, getStorage, ref } from "firebase/storage";
-import { auth, db, app } from "@/lib/firebaseClient";
+import { auth, db } from "@/lib/firebaseClient";
 
 const ENTITLEMENT_KEY = "leanai.fundamentals";
-// Update if you change where the PPTX lives in Storage:
-const STORAGE_PATH = "R-PM Fundamentals Module 1.pptx";
+const FILE_NAME = "R-PM Fundamentals Module 1.pptx";
 
 export default function FundamentalsPage() {
   const router = useRouter();
@@ -60,20 +58,39 @@ export default function FundamentalsPage() {
     return () => unsub();
   }, [uid]);
 
-  // When access is available, resolve a signed URL for the asset from Storage
+  // When access is available, get signed URL from our API (bypasses CORS)
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
-      if (!hasAccess) {
+      if (!hasAccess || !uid) {
         setDownloadUrl(null);
         return;
       }
       try {
-        const storage = getStorage(app);
-        const fileRef = ref(storage, STORAGE_PATH);
-        const url = await getDownloadURL(fileRef);
-        if (!cancelled) setDownloadUrl(url);
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) {
+          throw new Error("Not authenticated");
+        }
+        
+        const response = await fetch(
+          `/api/get-training-url?file=${encodeURIComponent(FILE_NAME)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data?.error || "Failed to get URL");
+        }
+        
+        const data = await response.json();
+        if (!cancelled && data.url) {
+          setDownloadUrl(data.url);
+        }
       } catch (e: any) {
         console.error("[fundamentals] getDownloadURL failed:", e?.message || e);
         if (!cancelled) {
@@ -87,7 +104,7 @@ export default function FundamentalsPage() {
     return () => {
       cancelled = true;
     };
-  }, [hasAccess]);
+  }, [hasAccess, uid]);
 
   // Start Stripe Checkout for this module
   const startCheckout = async () => {
@@ -117,7 +134,6 @@ export default function FundamentalsPage() {
         setStartingCheckout(false);
       }
     } catch (e: any) {
-      // This isn't a useless catch: we surface the error to the UI
       setError(e?.message || "Network error starting checkout.");
       setStartingCheckout(false);
     }
@@ -194,7 +210,7 @@ export default function FundamentalsPage() {
                 {startingCheckout ? "Starting checkout…" : "Unlock access"}
               </button>
               <p className="mt-2 text-xs text-white/60">
-                You’ll be redirected to Stripe. After payment you’ll return here automatically.
+                You'll be redirected to Stripe. After payment you'll return here automatically.
               </p>
             </div>
           )}
@@ -208,7 +224,7 @@ export default function FundamentalsPage() {
               </p>
 
               {downloadUrl ? (
-                <a
+                
                   href={downloadUrl}
                   target="_blank"
                   rel="noreferrer"
