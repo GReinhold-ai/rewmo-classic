@@ -10,7 +10,7 @@ import { auth, db, app } from "@/lib/firebaseClient";
 
 const ENTITLEMENT_KEY = "leanai.fundamentals";
 // Update if you change where the PPTX lives in Storage:
-const STORAGE_PATH = "leanai/advanced/R-PM Fundamentals Module 1.pptx";
+const STORAGE_PATH = "R-PM Fundamentals Module 1.pptx";
 
 export default function FundamentalsPage() {
   const router = useRouter();
