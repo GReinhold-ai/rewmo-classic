@@ -4,18 +4,24 @@ import { getApps, initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
 
-const { FB_ADMIN_PROJECT_ID, FB_ADMIN_CLIENT_EMAIL, FB_ADMIN_PRIVATE_KEY } = process.env;
-
-// Initialize Firebase Admin
-if (!getApps().length && FB_ADMIN_PROJECT_ID && FB_ADMIN_CLIENT_EMAIL && FB_ADMIN_PRIVATE_KEY) {
-  initializeApp({
-    credential: cert({
-      projectId: FB_ADMIN_PROJECT_ID,
-      clientEmail: FB_ADMIN_CLIENT_EMAIL,
-      privateKey: FB_ADMIN_PRIVATE_KEY.replace(/\\n/g, "\n"),
-    }),
-    storageBucket: "rewmoai.firebasestorage.app",
-  });
+// Initialize Firebase Admin using base64-encoded service account
+if (!getApps().length) {
+  const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT;
+  
+  if (serviceAccountBase64) {
+    try {
+      const serviceAccount = JSON.parse(
+        Buffer.from(serviceAccountBase64, "base64").toString("utf-8")
+      );
+      
+      initializeApp({
+        credential: cert(serviceAccount),
+        storageBucket: "rewmoai.firebasestorage.app",
+      });
+    } catch (e) {
+      console.error("[get-training-url] Failed to parse service account:", e);
+    }
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -23,7 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Verify auth token
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
   
@@ -43,10 +48,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const bucket = getStorage().bucket();
     const file = bucket.file(fileName);
     
-    // Generate a signed URL valid for 1 hour
     const [url] = await file.getSignedUrl({
       action: "read",
-      expires: Date.now() + 60 * 60 * 1000, // 1 hour
+      expires: Date.now() + 60 * 60 * 1000,
     });
 
     return res.status(200).json({ url });
