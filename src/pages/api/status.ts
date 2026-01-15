@@ -62,15 +62,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method === "OPTIONS") {
-    if (!isAllowedOrigin(origin)) return res.status(400).end();
+    if (origin && !isAllowedOrigin(origin)) return res.status(400).end();
     return res.status(204).end();
   }
   if (req.method === "HEAD") {
-    if (!isAllowedOrigin(origin)) return res.status(403).end();
+    if (origin && !isAllowedOrigin(origin)) return res.status(403).end();
     return res.status(200).end();
   }
   if (req.method !== "GET") return res.status(405).json({ error: "Method Not Allowed" });
-  if (!isAllowedOrigin(origin)) return res.status(403).json({ error: "Origin not allowed" });
+  if (origin && !isAllowedOrigin(origin)) return res.status(403).json({ error: "Origin not allowed" });
 
   try {
     const authz = req.headers.authorization || "";
