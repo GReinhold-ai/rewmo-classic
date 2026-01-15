@@ -2,6 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getApps, initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 import { getUserEntitlements } from "@/lib/server/membership";
 
 const {
@@ -26,6 +27,7 @@ if (!getApps().length && FB_ADMIN_PROJECT_ID && FB_ADMIN_CLIENT_EMAIL && FB_ADMI
   }
 }
 const adminAuth = getAuth();
+const db = getFirestore();
 
 // --- CORS helpers ---
 function normalizeOrigin(s: string) {
@@ -81,14 +83,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const decoded = await adminAuth.verifyIdToken(token);
     const { uid, email = null } = decoded;
 
-    // NEW: use the entitlement helper you have now
+    // Get entitlements
     const entitlements = await getUserEntitlements(uid);
+
+    // ✅ NEW: Fetch user document from Firestore to get tier and subscription status
+    let planTier = "FREE";
+    let subscriptionStatus = "none";
+    let currentPeriodEnd = null;
+
+    try {
+      const userDoc = await db.collection("users").doc(uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        
+        // Check tier field first, then membership.plan as fallback
+        planTier = userData?.tier || userData?.membership?.plan || "FREE";
+        
+        // Check subscriptionStatus field first, then membership.active as fallback
+        subscriptionStatus = userData?.subscriptionStatus || 
+          (userData?.membership?.active ? "active" : "none");
+        
+        // Get period end if available
+        currentPeriodEnd = userData?.currentPeriodEnd || userData?.membership?.currentPeriodEnd || null;
+      }
+    } catch (dbErr: any) {
+      console.error("[status] Firestore error:", dbErr?.message || dbErr);
+      // Continue with defaults if Firestore fails
+    }
 
     return res.status(200).json({
       ok: true,
       uid,
       email,
       entitlements,
+      planTier,           // ✅ Now included
+      subscriptionStatus, // ✅ Now included
+      currentPeriodEnd,   // ✅ Now included
     });
   } catch (err: any) {
     console.error("[status] error:", err?.message || err);
