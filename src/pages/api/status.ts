@@ -1,33 +1,48 @@
 // src/pages/api/status.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getApps, initializeApp, cert } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { getApps, initializeApp, cert, App } from "firebase-admin/app";
+import { getAuth, Auth } from "firebase-admin/auth";
+import { getFirestore, Firestore } from "firebase-admin/firestore";
 import { getUserEntitlements } from "@/lib/server/membership";
 
 const { UNICORN_ORIGIN = "" } = process.env;
 
-// --- Initialize Firebase Admin using base64-encoded service account ---
-if (!getApps().length) {
+// --- Initialize Firebase Admin ---
+let adminAuth: Auth;
+let db: Firestore;
+
+function ensureFirebaseInit() {
+  if (getApps().length > 0) {
+    adminAuth = getAuth();
+    db = getFirestore();
+    return true;
+  }
+
   const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT;
   
-  if (serviceAccountBase64) {
-    try {
-      const serviceAccount = JSON.parse(
-        Buffer.from(serviceAccountBase64, "base64").toString("utf-8")
-      );
-      
-      initializeApp({
-        credential: cert(serviceAccount),
-      });
-    } catch (e) {
-      console.error("[status] Failed to parse service account:", e);
-    }
+  if (!serviceAccountBase64) {
+    console.error("[status] FIREBASE_SERVICE_ACCOUNT env var is missing!");
+    return false;
+  }
+
+  try {
+    const serviceAccount = JSON.parse(
+      Buffer.from(serviceAccountBase64, "base64").toString("utf-8")
+    );
+    
+    initializeApp({
+      credential: cert(serviceAccount),
+    });
+    
+    adminAuth = getAuth();
+    db = getFirestore();
+    console.log("[status] Firebase Admin initialized successfully");
+    return true;
+  } catch (e) {
+    console.error("[status] Failed to initialize Firebase Admin:", e);
+    return false;
   }
 }
-
-const adminAuth = getAuth();
-const db = getFirestore();
 
 // --- CORS helpers ---
 function normalizeOrigin(s: string) {
@@ -36,7 +51,6 @@ function normalizeOrigin(s: string) {
 const ALLOWED = new Set(
   UNICORN_ORIGIN.split(",").map(s => s.trim()).filter(Boolean).map(normalizeOrigin)
 );
-// allow shorthand like "localhost:3000"
 for (const o of Array.from(ALLOWED)) {
   if (!/^http/.test(o)) {
     ALLOWED.add(`http://${o}`);
@@ -72,6 +86,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "GET") return res.status(405).json({ error: "Method Not Allowed" });
   if (origin && !isAllowedOrigin(origin)) return res.status(403).json({ error: "Origin not allowed" });
 
+  // Ensure Firebase is initialized
+  if (!ensureFirebaseInit()) {
+    return res.status(500).json({ error: "Firebase not configured" });
+  }
+
   try {
     const authz = req.headers.authorization || "";
     const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
@@ -83,10 +102,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const decoded = await adminAuth.verifyIdToken(token);
     const { uid, email = null } = decoded;
 
-    // Get entitlements
     const entitlements = await getUserEntitlements(uid);
 
-    // Fetch user document from Firestore to get tier and subscription status
     let planTier = "FREE";
     let subscriptionStatus = "none";
     let currentPeriodEnd = null;
