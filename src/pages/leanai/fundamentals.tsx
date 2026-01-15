@@ -225,6 +225,7 @@ export default function FundamentalsPage() {
 
               {downloadUrl ? (
                 
+                  <a
                   href={downloadUrl}
                   target="_blank"
                   rel="noreferrer"
