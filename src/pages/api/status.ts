@@ -1,48 +1,9 @@
 // src/pages/api/status.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getApps, initializeApp, cert, App } from "firebase-admin/app";
-import { getAuth, Auth } from "firebase-admin/auth";
-import { getFirestore, Firestore } from "firebase-admin/firestore";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { getUserEntitlements } from "@/lib/server/membership";
 
 const { UNICORN_ORIGIN = "" } = process.env;
-
-// --- Initialize Firebase Admin ---
-let adminAuth: Auth;
-let db: Firestore;
-
-function ensureFirebaseInit() {
-  if (getApps().length > 0) {
-    adminAuth = getAuth();
-    db = getFirestore();
-    return true;
-  }
-
-  const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT;
-  
-  if (!serviceAccountBase64) {
-    console.error("[status] FIREBASE_SERVICE_ACCOUNT env var is missing!");
-    return false;
-  }
-
-  try {
-    const serviceAccount = JSON.parse(
-      Buffer.from(serviceAccountBase64, "base64").toString("utf-8")
-    );
-    
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
-    
-    adminAuth = getAuth();
-    db = getFirestore();
-    console.log("[status] Firebase Admin initialized successfully");
-    return true;
-  } catch (e) {
-    console.error("[status] Failed to initialize Firebase Admin:", e);
-    return false;
-  }
-}
 
 // --- CORS helpers ---
 function normalizeOrigin(s: string) {
@@ -86,11 +47,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "GET") return res.status(405).json({ error: "Method Not Allowed" });
   if (origin && !isAllowedOrigin(origin)) return res.status(403).json({ error: "Origin not allowed" });
 
-  // Ensure Firebase is initialized
-  if (!ensureFirebaseInit()) {
-    return res.status(500).json({ error: "Firebase not configured" });
-  }
-
   try {
     const authz = req.headers.authorization || "";
     const token = authz.startsWith("Bearer ") ? authz.slice(7) : null;
@@ -98,6 +54,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.setHeader('WWW-Authenticate', 'Bearer realm="status", error="invalid_token"');
       return res.status(401).json({ error: "Sign-in required" });
     }
+
+    // Use shared Firebase Admin module
+    const adminAuth = getAdminAuth();
+    const db = getAdminDb();
 
     const decoded = await adminAuth.verifyIdToken(token);
     const { uid, email = null } = decoded;
