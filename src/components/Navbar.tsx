@@ -262,14 +262,15 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile menu - FIXED: Added explicit background color */}
         <div
           className={clsx(
             "md:hidden overflow-hidden transition-[max-height,opacity] duration-300",
-            mobileOpen ? "max-h-[65vh] opacity-100" : "max-h-0 opacity-0"
+            "bg-[#003B49] rounded-b-xl", // Added background color
+            mobileOpen ? "max-h-[80vh] opacity-100 pb-4" : "max-h-0 opacity-0"
           )}
         >
-          <div className="flex flex-col gap-1 pb-3">
+          <div className="flex flex-col gap-1 pt-2 bg-[#003B49]">
             <NavLink href="/features" onClick={() => setMobileOpen(false)}>
               Features
             </NavLink>
@@ -285,7 +286,7 @@ export default function Navbar() {
                   <ChevronDown className="group-open:rotate-180" />
                 </div>
               </summary>
-              <div className="pl-2">
+              <div className="pl-2 bg-[#072b33] rounded-lg mx-2 mt-1">
                 <NavLink href="/lean-lab" onClick={() => setMobileOpen(false)}>
                   Open LeanAI Lab
                 </NavLink>
@@ -305,49 +306,53 @@ export default function Navbar() {
               About
             </NavLink>
 
+            {/* Divider */}
+            <div className="my-2 mx-3 border-t border-[#15C5C1]/30" />
+
             {/* Mobile Go Premium CTA */}
             <NavLink
               href="/account/upgrade"
               onClick={() => setMobileOpen(false)}
-              className="font-extrabold text-[#062025]"
+              className="font-extrabold text-[#062025] mx-2"
               style={{ backgroundColor: "#FF9151", borderColor: "#FF9151" }}
             >
-              Go Premium
+              ⭐ Go Premium
             </NavLink>
 
             {user ? (
-              <div className="mt-1 flex flex-col gap-1">
-                <span className="px-3 py-1 text-xs rounded bg-[#07333B] text-[#EAF5F6]/80 ml-1">
-                  {user.email || "Signed in"}
-                </span>
+              <div className="mt-2 flex flex-col gap-2 px-2">
+                <div className="px-3 py-2 text-sm rounded-lg bg-[#072b33] text-[#EAF5F6]/80">
+                  <span className="text-[#15C5C1] font-medium">Signed in:</span>{" "}
+                  {user.email || "User"}
+                </div>
                 <NavLink
                   href="/account"
                   onClick={() => setMobileOpen(false)}
                   className="bg-emerald-500/20 hover:bg-emerald-500/30"
                 >
-                  Account
+                  👤 Account
                 </NavLink>
                 <button
                   onClick={handleSignOut}
-                  className="mx-3 mt-1 inline-flex items-center px-3 py-2 rounded-md text-sm font-semibold text-white transition"
+                  className="inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-semibold text-white transition"
                   style={{ backgroundColor: "#F07C41" }}
                 >
                   Sign out
                 </button>
               </div>
             ) : (
-              <div className="mt-1 flex flex-col gap-1">
+              <div className="mt-2 flex flex-col gap-2 px-2">
                 <NavLink
                   href="/account"
                   onClick={() => setMobileOpen(false)}
                   className="bg-emerald-500/20 hover:bg-emerald-500/30"
                 >
-                  Account
+                  👤 Account
                 </NavLink>
                 <NavLink
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="text-white"
+                  className="text-white justify-center"
                   style={{ backgroundColor: "#F07C41" }}
                 >
                   Sign in

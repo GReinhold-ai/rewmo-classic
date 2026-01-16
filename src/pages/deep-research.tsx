@@ -4,15 +4,15 @@ import Link from "next/link";
 const benchmarkProcesses = [
   {
     title: "Expense Analysis",
-    prompt: "Analyze my past 6 months’ business expenses. Where can I save more? Give a breakdown by category."
+    prompt: "Analyze my past 6 months' business expenses. Where can I save more? Give a breakdown by category."
   },
   {
     title: "Profitability Benchmarking",
-    prompt: "Compare my business’s profit margins to industry averages for small retail stores."
+    prompt: "Compare my business's profit margins to industry averages for small retail stores."
   },
   {
     title: "Cash Flow Projection",
-    prompt: "Help me create a 12-month cash flow projection based on last year’s income and expenses."
+    prompt: "Help me create a 12-month cash flow projection based on last year's income and expenses."
   },
   {
     title: "Personal Savings Rate",
@@ -32,11 +32,22 @@ export default function DeepResearchPage() {
 
       <div className="bg-[#072b33] border border-[#15C5C1] rounded-2xl shadow-lg p-6 max-w-2xl mb-8 w-full">
         <h2 className="text-2xl font-bold text-[#FF9151] mb-2">How to Use OpenAI (ChatGPT) for Financial Research</h2>
-        <p className="text-[#B6E7EB] mb-4">
-          <b>Step 1:</b> Choose a process below.<br/>
-          <b>Step 2:</b> Click to copy a prompt and paste it into <a href="https://chat.openai.com/" target="_blank" rel="noopener noreferrer" className="underline text-[#15C5C1]">ChatGPT</a> or any AI research tool.<br/>
-          <b>Step 3:</b> Customize details and get smart, instant answers!
-        </p>
+        <div className="text-[#B6E7EB] mb-4 space-y-2">
+          <p><b className="text-white">Step 1:</b> Choose a process below.</p>
+          <p>
+            <b className="text-white">Step 2:</b> Click to copy a prompt and paste it into{" "}
+            <a 
+              href="https://chat.openai.com/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#FF9151] text-[#003B49] font-bold rounded-md hover:bg-[#FFA36C] transition"
+            >
+              ChatGPT ↗
+            </a>{" "}
+            or any AI research tool.
+          </p>
+          <p><b className="text-white">Step 3:</b> Customize details and get smart, instant answers!</p>
+        </div>
         <div className="bg-[#15C5C114] rounded-lg p-4 mb-2 text-[#15C5C1] font-semibold">
           <span>Example Prompt:</span>
           <div className="bg-[#003B49] text-[#B6E7EB] rounded p-2 mt-2 font-mono text-sm">
