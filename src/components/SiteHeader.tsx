@@ -5,15 +5,16 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 
 /** Palette tuned for contrast on dark bg */
-const BG = "#001F24";            // darker than #003B49 for stronger contrast
+const BG = "#003B49";            // Lighter teal - better visibility
+const BG_DARK = "#072b33";       // For mobile menu background
 const FG = "#EAF5F6";
 const ACCENT = "#15C5C1";
 const CTA = "#FF9151";
 
 const links = [
-  { href: "/lean-lab", label: "Lean Lab" },     // <- renamed from Training
+  { href: "/lean-lab", label: "Lean Lab" },
   { href: "/shopping", label: "Shopping" },
-  { href: "/reward-rules", label: "Rewards" },
+  { href: "/rewards", label: "Rewards" },
   { href: "/about", label: "About" },
 ];
 
@@ -98,13 +99,13 @@ export default function SiteHeader() {
         </button>
       </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer - FIXED: Better background and text colors */}
       {open && (
         <div
           className="md:hidden border-t"
-          style={{ backgroundColor: BG, borderColor: "#0A3A40" }}
+          style={{ backgroundColor: BG_DARK, borderColor: "#15C5C1" }}
         >
-          <ul className="px-4 py-3 space-y-2">
+          <ul className="px-4 py-4 space-y-2">
             {links.map(({ href, label }) => {
               const active = pathname === href || (href !== "/" && pathname.startsWith(href));
               return (
@@ -113,10 +114,10 @@ export default function SiteHeader() {
                     href={href}
                     onClick={() => setOpen(false)}
                     className={[
-                      "block w-full px-3 py-2 rounded-lg text-base font-semibold transition",
+                      "block w-full px-4 py-3 rounded-xl text-base font-semibold transition",
                       active
-                        ? "bg-[#07333B] text-white"
-                        : "text-[#CFEAEC] hover:text-white hover:bg-[#07333B]"
+                        ? "bg-[#15C5C1] text-[#003B49]"
+                        : "text-white bg-[#003B49] hover:bg-[#004d5c]"
                     ].join(" ")}
                   >
                     {label}
@@ -124,15 +125,14 @@ export default function SiteHeader() {
                 </li>
               );
             })}
-            <li className="pt-1">
+            <li className="pt-2">
               <Link
                 href="/account"
                 onClick={() => setOpen(false)}
-                className="block w-full text-center px-3 py-2 rounded-lg text-base font-bold"
+                className="block w-full text-center px-4 py-3 rounded-xl text-base font-bold transition hover:opacity-90"
                 style={{
                   backgroundColor: CTA,
-                  color: "#062025",
-                  border: "2px solid " + CTA,
+                  color: "#003B49",
                 }}
               >
                 Account
