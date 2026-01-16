@@ -18,7 +18,13 @@ import {
   AMAZON_CATEGORIES,
   AMAZON_TAG,
 } from "@/lib/amazonLinks";
-import { generateSubId } from "@/lib/affiliate";
+
+// Generate a unique sub-ID for tracking (client-side version)
+function generateSubId(memberId: string): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${memberId.substring(0, 8)}_${timestamp}_${random}`;
+}
 
 export default function ShoppingPage() {
   const { currentUser } = useAuth();
