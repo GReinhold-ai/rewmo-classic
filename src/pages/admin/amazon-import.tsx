@@ -1,6 +1,6 @@
 // src/pages/admin/amazon-import.tsx
 // Admin page to import Amazon Associates earnings reports
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { collection, getDocs, query, where } from "firebase/firestore";
