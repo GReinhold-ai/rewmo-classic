@@ -235,7 +235,7 @@ export default function AmazonImportPage() {
           earnings,
           date,
           status: existingId ? "duplicate" : memberId ? "matched" : "unmatched",
-          existingId,
+          existingId: existingId || undefined,
         });
       }
 
