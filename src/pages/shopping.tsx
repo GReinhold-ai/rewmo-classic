@@ -7,7 +7,8 @@ import {
   retailers, 
   filterRetailers, 
   type RetailerCategory,
-  type MembershipTier 
+  type MembershipTier,
+  type Retailer
 } from "@/data/retailers";
 
 export default function ShoppingPage() {
@@ -18,6 +19,7 @@ export default function ShoppingPage() {
   const [showBuyAmerican, setShowBuyAmerican] = useState(false);
   const [showSustainable, setShowSustainable] = useState(false);
   const [activeTab, setActiveTab] = useState<"personal" | "business">("personal");
+  const [clickingRetailer, setClickingRetailer] = useState<string | null>(null);
   
   // Get user's tier from Firestore (you'll need to fetch this)
   const userTier = "FREE" as MembershipTier;
@@ -52,23 +54,55 @@ export default function ShoppingPage() {
     return filtered;
   }, [activeCategory, showBuyAmerican, showSustainable, activeTab, userTier]);
   
-  // Track affiliate click
-  const handleAffiliateClick = async (retailerId: string) => {
-    if (!currentUser) return;
-    
-    try {
-      await fetch("/api/log-shopping-click", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: currentUser.uid,
-          retailerId,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-    } catch (error) {
-      console.error("Failed to log shopping click:", error);
+  // Track affiliate click and get tracked URL
+  const handleAffiliateClick = async (retailerId: string, originalUrl: string): Promise<string> => {
+    if (!currentUser) {
+      // Not logged in, just return original URL
+      return originalUrl;
     }
+
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch("/api/affiliate/log-click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ retailerId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.url; // Return the tracked URL with subId
+      }
+    } catch (error) {
+      console.error("Failed to log affiliate click:", error);
+    }
+
+    // Fallback to original URL
+    return originalUrl;
+  };
+
+  // Handle shop button click
+  const handleShopClick = async (retailer: Retailer) => {
+    setClickingRetailer(retailer.id);
+    try {
+      const trackedUrl = await handleAffiliateClick(retailer.id, retailer.affiliateLink);
+      window.open(trackedUrl, "_blank", "noopener,noreferrer");
+    } finally {
+      setClickingRetailer(null);
+    }
+  };
+
+  // Check if user has access to retailer
+  const hasAccessToRetailer = (retailer: Retailer): boolean => {
+    const tierHierarchy: Record<MembershipTier, number> = {
+      FREE: 0,
+      PRO: 1,
+      BUSINESS: 2,
+    };
+    return tierHierarchy[userTier] >= tierHierarchy[retailer.requiredTier];
   };
   
   return (
@@ -87,6 +121,16 @@ export default function ShoppingPage() {
           <p className="text-white/90 text-lg">
             Earn points when you shop. {userTier === "FREE" && "Upgrade to Pro to unlock more stores!"}
           </p>
+          
+          {/* Affiliate Earnings Link */}
+          {currentUser && (
+            <Link 
+              href="/account/earnings"
+              className="inline-block mt-4 text-[#15C5C1] hover:text-[#1DE5E0] underline"
+            >
+              View Your Affiliate Earnings →
+            </Link>
+          )}
         </div>
         
         {/* Tabs: Personal vs Business */}
@@ -285,18 +329,24 @@ export default function ShoppingPage() {
                 )}
                 
                 {/* CTA Button */}
-                {userTier === retailer.requiredTier || 
-                 (userTier === "PRO" && retailer.requiredTier === "FREE") ||
-                 (userTier === "BUSINESS" && (retailer.requiredTier === "FREE" || retailer.requiredTier === "PRO")) ? (
-                  <a
-                    href={retailer.affiliateLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => handleAffiliateClick(retailer.id)}
-                    className="block w-full text-center bg-[#FF9151] text-[#003B49] px-4 py-3 rounded-lg font-bold hover:bg-[#FFA36C] transition"
+                {hasAccessToRetailer(retailer) ? (
+                  <button
+                    onClick={() => handleShopClick(retailer)}
+                    disabled={clickingRetailer === retailer.id}
+                    className="block w-full text-center bg-[#FF9151] text-[#003B49] px-4 py-3 rounded-lg font-bold hover:bg-[#FFA36C] transition disabled:opacity-50 disabled:cursor-wait"
                   >
-                    Shop & Earn →
-                  </a>
+                    {clickingRetailer === retailer.id ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Opening...
+                      </span>
+                    ) : (
+                      "Shop & Earn →"
+                    )}
+                  </button>
                 ) : (
                   <Link
                     href="/account/upgrade"
@@ -321,9 +371,30 @@ export default function ShoppingPage() {
             <li>3. Earn reward points automatically (tracked within 48 hours)</li>
             <li>4. Redeem points for cash, gift cards, or donations</li>
           </ol>
+          
+          {/* 50/50 Revenue Share Info */}
+          <div className="mt-6 p-4 bg-[#15C5C1]/10 border border-[#15C5C1]/30 rounded-lg">
+            <h4 className="font-bold text-[#15C5C1] mb-2">💰 Earn Real Cash!</h4>
+            <p className="text-white/80 text-sm">
+              When you shop through our links, we earn a small commission from the retailer. 
+              <strong className="text-[#FF9151]"> We share 50% of that commission with you!</strong> 
+              {" "}Check your earnings in your account dashboard.
+            </p>
+          </div>
+          
           <p className="mt-4 text-sm text-white/60">
             Note: Points are calculated based on your purchase total. Some exclusions may apply.
           </p>
+        </div>
+
+        {/* Affiliate Disclosure */}
+        <div className="mt-8 text-center">
+          <Link 
+            href="/affiliate-disclosure" 
+            className="text-white/40 hover:text-white/60 text-xs underline"
+          >
+            Affiliate Disclosure
+          </Link>
         </div>
       </main>
     </div>
