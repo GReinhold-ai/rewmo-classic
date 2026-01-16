@@ -43,10 +43,30 @@ export default function AdminAffiliateDashboard() {
   const [networkBreakdown, setNetworkBreakdown] = useState<NetworkBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d" | "all">("30d");
+  const [authReady, setAuthReady] = useState(false);
+
+  // Wait for auth to initialize
+  useEffect(() => {
+    const { onAuthStateChanged } = require("firebase/auth");
+    const { auth } = require("@/lib/firebaseClient");
+    
+    const unsubscribe = onAuthStateChanged(auth, (user: any) => {
+      if (user) {
+        setAuthReady(true);
+      } else {
+        // Redirect to login if not authenticated
+        window.location.href = "/account";
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [dateRange]);
+    if (authReady) {
+      fetchDashboardData();
+    }
+  }, [dateRange, authReady]);
 
   const getDateFilter = () => {
     const now = new Date();
@@ -229,7 +249,7 @@ export default function AdminAffiliateDashboard() {
     window.URL.revokeObjectURL(url);
   };
 
-  if (loading) {
+  if (loading || !authReady) {
     return (
       <main className="max-w-7xl mx-auto py-10 px-4 bg-white text-gray-900 min-h-screen">
         <div className="text-center py-20">

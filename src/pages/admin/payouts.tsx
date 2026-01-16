@@ -34,6 +34,7 @@ export default function AdminPayoutsPage() {
   const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   // Payout modal
   const [showPayoutModal, setShowPayoutModal] = useState(false);
@@ -47,9 +48,27 @@ export default function AdminPayoutsPage() {
   const [minBalance, setMinBalance] = useState(2500); // $25 minimum
   const [sortBy, setSortBy] = useState<"balance" | "name" | "earnings">("balance");
 
+  // Wait for auth to initialize
   useEffect(() => {
-    fetchData();
+    const { onAuthStateChanged } = require("firebase/auth");
+    const { auth } = require("@/lib/firebaseClient");
+    
+    const unsubscribe = onAuthStateChanged(auth, (user: any) => {
+      if (user) {
+        setAuthReady(true);
+      } else {
+        window.location.href = "/account";
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (authReady) {
+      fetchData();
+    }
+  }, [authReady]);
 
   const fetchData = async () => {
     try {

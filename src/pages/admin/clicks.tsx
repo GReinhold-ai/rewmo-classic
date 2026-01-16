@@ -1,300 +1,180 @@
-// src/pages/admin/payouts.tsx
+// src/pages/admin/clicks.tsx
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import { collection, getDocs, doc, updateDoc, writeBatch, serverTimestamp, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 
-interface MemberBalance {
-  id: string;
-  email?: string;
-  displayName?: string;
-  affiliatePendingBalance: number;
-  affiliatePaidBalance: number;
-  affiliateTotalEarnings: number;
-  approvedBalance: number; // Calculated: approved but not yet paid
-  pendingCommissionsCount: number;
-  approvedCommissionsCount: number;
-  lastActivity?: Date;
-}
-
-interface PayoutRecord {
+interface AffiliateClick {
   id: string;
   memberId: string;
-  memberEmail?: string;
-  amount: number;
-  method: "paypal" | "bank" | "check" | "other";
-  reference?: string;
-  notes?: string;
-  createdAt: Date;
+  retailerId: string;
+  network: "amazon" | "impact" | "awin";
+  subId: string;
+  clickedAt: Date;
+  userAgent?: string;
+  converted?: boolean;
 }
 
-export default function AdminPayoutsPage() {
-  const [members, setMembers] = useState<MemberBalance[]>([]);
-  const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
+export default function AdminClicksPage() {
+  const [clicks, setClicks] = useState<AffiliateClick[]>([]);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState<string | null>(null);
-
-  // Payout modal
-  const [showPayoutModal, setShowPayoutModal] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<MemberBalance | null>(null);
-  const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutMethod, setPayoutMethod] = useState<"paypal" | "bank" | "check" | "other">("paypal");
-  const [payoutReference, setPayoutReference] = useState("");
-  const [payoutNotes, setPayoutNotes] = useState("");
+  const [authReady, setAuthReady] = useState(false);
 
   // Filters
-  const [minBalance, setMinBalance] = useState(2500); // $25 minimum
-  const [sortBy, setSortBy] = useState<"balance" | "name" | "earnings">("balance");
+  const [networkFilter, setNetworkFilter] = useState<"all" | "amazon" | "impact" | "awin">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d" | "all">("30d");
 
+  // Wait for auth to initialize
   useEffect(() => {
-    fetchData();
+    const { onAuthStateChanged } = require("firebase/auth");
+    const { auth } = require("@/lib/firebaseClient");
+    
+    const unsubscribe = onAuthStateChanged(auth, (user: any) => {
+      if (user) {
+        setAuthReady(true);
+      } else {
+        window.location.href = "/account";
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const fetchData = async () => {
+  useEffect(() => {
+    if (authReady) {
+      fetchClicks();
+    }
+  }, [authReady]);
+
+  const fetchClicks = async () => {
     try {
       setLoading(true);
+      const clicksRef = collection(db, "affiliateClicks");
+      const snapshot = await getDocs(clicksRef);
 
-      // Fetch all users
-      const usersRef = collection(db, "users");
-      const usersSnap = await getDocs(usersRef);
-
-      // Fetch all commissions to calculate approved balance
-      const commissionsRef = collection(db, "affiliateCommissions");
-      const commissionsSnap = await getDocs(commissionsRef);
-
-      const commissionsByMember: Record<string, { pending: number; approved: number; pendingCount: number; approvedCount: number }> = {};
-
-      commissionsSnap.docs.forEach((docSnap) => {
-        const data = docSnap.data();
-        const memberId = data.memberId;
-        if (!memberId || memberId === "unknown") return;
-
-        if (!commissionsByMember[memberId]) {
-          commissionsByMember[memberId] = { pending: 0, approved: 0, pendingCount: 0, approvedCount: 0 };
-        }
-
-        if (data.status === "pending") {
-          commissionsByMember[memberId].pending += data.memberShare || 0;
-          commissionsByMember[memberId].pendingCount++;
-        } else if (data.status === "approved") {
-          commissionsByMember[memberId].approved += data.memberShare || 0;
-          commissionsByMember[memberId].approvedCount++;
-        }
-      });
-
-      // Build member balances
-      const membersData: MemberBalance[] = [];
-
-      usersSnap.docs.forEach((docSnap) => {
-        const data = docSnap.data();
-        const pendingBalance = data.affiliatePendingBalance || 0;
-        const paidBalance = data.affiliatePaidBalance || 0;
-        const totalEarnings = data.affiliateTotalEarnings || 0;
-
-        // Only include members with affiliate activity
-        if (totalEarnings > 0 || commissionsByMember[docSnap.id]) {
-          const commissions = commissionsByMember[docSnap.id] || { pending: 0, approved: 0, pendingCount: 0, approvedCount: 0 };
-
-          membersData.push({
-            id: docSnap.id,
-            email: data.email,
-            displayName: data.displayName,
-            affiliatePendingBalance: pendingBalance,
-            affiliatePaidBalance: paidBalance,
-            affiliateTotalEarnings: totalEarnings,
-            approvedBalance: commissions.approved,
-            pendingCommissionsCount: commissions.pendingCount,
-            approvedCommissionsCount: commissions.approvedCount,
-            lastActivity: data.lastLogin?.toDate?.(),
-          });
-        }
-      });
-
-      setMembers(membersData);
-
-      // Fetch payout history
-      const payoutsRef = collection(db, "affiliatePayouts");
-      const payoutsSnap = await getDocs(payoutsRef);
-      const payoutsData: PayoutRecord[] = payoutsSnap.docs.map((docSnap) => {
+      const clicksData: AffiliateClick[] = snapshot.docs.map((docSnap) => {
         const data = docSnap.data();
         return {
           id: docSnap.id,
-          memberId: data.memberId,
-          memberEmail: data.memberEmail,
-          amount: data.amount || 0,
-          method: data.method || "other",
-          reference: data.reference,
-          notes: data.notes,
-          createdAt: data.createdAt?.toDate?.() || new Date(),
+          memberId: data.memberId || "unknown",
+          retailerId: data.retailerId || "unknown",
+          network: data.network || "unknown",
+          subId: data.subId || "",
+          clickedAt: data.clickedAt?.toDate?.() || new Date(),
+          userAgent: data.userAgent,
+          converted: data.converted || false,
         };
       });
 
-      payoutsData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      setPayoutHistory(payoutsData);
+      // Sort by clickedAt descending
+      clicksData.sort((a, b) => b.clickedAt.getTime() - a.clickedAt.getTime());
+      setClicks(clicksData);
     } catch (error) {
-      console.error("Error fetching data:", error);
-      alert("Error loading data: " + (error as Error).message);
+      console.error("Error fetching clicks:", error);
+      alert("Error loading clicks: " + (error as Error).message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Sort and filter members
-  const filteredMembers = members
-    .filter((m) => m.approvedBalance >= minBalance)
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "balance":
-          return b.approvedBalance - a.approvedBalance;
-        case "earnings":
-          return b.affiliateTotalEarnings - a.affiliateTotalEarnings;
-        case "name":
-          return (a.displayName || a.email || "").localeCompare(b.displayName || b.email || "");
-        default:
-          return 0;
-      }
-    });
-
-  // Open payout modal
-  const openPayoutModal = (member: MemberBalance) => {
-    setSelectedMember(member);
-    setPayoutAmount((member.approvedBalance / 100).toFixed(2));
-    setPayoutMethod("paypal");
-    setPayoutReference("");
-    setPayoutNotes("");
-    setShowPayoutModal(true);
-  };
-
-  // Process payout
-  const processPayout = async () => {
-    if (!selectedMember) return;
-
-    const amountCents = Math.round(parseFloat(payoutAmount) * 100);
-    if (isNaN(amountCents) || amountCents <= 0) {
-      alert("Please enter a valid amount");
-      return;
-    }
-
-    if (amountCents > selectedMember.approvedBalance) {
-      alert("Amount exceeds approved balance");
-      return;
-    }
-
-    if (!confirm(`Process payout of $${payoutAmount} to ${selectedMember.email || selectedMember.id}?`)) {
-      return;
-    }
-
-    try {
-      setProcessing(selectedMember.id);
-
-      const batch = writeBatch(db);
-
-      // 1. Create payout record
-      const payoutRef = doc(collection(db, "affiliatePayouts"));
-      batch.set(payoutRef, {
-        memberId: selectedMember.id,
-        memberEmail: selectedMember.email,
-        amount: amountCents,
-        method: payoutMethod,
-        reference: payoutReference || null,
-        notes: payoutNotes || null,
-        createdAt: serverTimestamp(),
-      });
-
-      // 2. Update user balance
-      const userRef = doc(db, "users", selectedMember.id);
-      batch.update(userRef, {
-        affiliatePaidBalance: (selectedMember.affiliatePaidBalance || 0) + amountCents,
-      });
-
-      // 3. Mark approved commissions as paid
-      const commissionsRef = collection(db, "affiliateCommissions");
-      const approvedQuery = query(
-        commissionsRef,
-        where("memberId", "==", selectedMember.id),
-        where("status", "==", "approved")
-      );
-      const approvedSnap = await getDocs(approvedQuery);
-
-      let remaining = amountCents;
-      for (const docSnap of approvedSnap.docs) {
-        if (remaining <= 0) break;
-        const data = docSnap.data();
-        const memberShare = data.memberShare || 0;
-
-        if (memberShare <= remaining) {
-          batch.update(docSnap.ref, {
-            status: "paid",
-            paidAt: serverTimestamp(),
-          });
-          remaining -= memberShare;
-        }
-      }
-
-      await batch.commit();
-
-      // Update local state
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === selectedMember.id
-            ? {
-                ...m,
-                approvedBalance: m.approvedBalance - amountCents,
-                affiliatePaidBalance: m.affiliatePaidBalance + amountCents,
-              }
-            : m
-        )
-      );
-
-      setPayoutHistory((prev) => [
-        {
-          id: payoutRef.id,
-          memberId: selectedMember.id,
-          memberEmail: selectedMember.email,
-          amount: amountCents,
-          method: payoutMethod,
-          reference: payoutReference,
-          notes: payoutNotes,
-          createdAt: new Date(),
-        },
-        ...prev,
-      ]);
-
-      setShowPayoutModal(false);
-      alert("Payout processed successfully!");
-    } catch (error) {
-      console.error("Error processing payout:", error);
-      alert("Error: " + (error as Error).message);
-    } finally {
-      setProcessing(null);
+  const getDateFilter = () => {
+    const now = new Date();
+    switch (dateRange) {
+      case "7d":
+        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case "30d":
+        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case "90d":
+        return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      default:
+        return null;
     }
   };
 
-  const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  // Filter clicks
+  const filteredClicks = clicks.filter((c) => {
+    const dateFilter = getDateFilter();
+    if (dateFilter && c.clickedAt < dateFilter) return false;
+    if (networkFilter !== "all" && c.network !== networkFilter) return false;
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      return (
+        c.memberId.toLowerCase().includes(search) ||
+        c.retailerId.toLowerCase().includes(search) ||
+        c.subId.toLowerCase().includes(search)
+      );
+    }
+    return true;
+  });
+
   const formatDate = (date: Date) =>
     date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
-  // Summary stats
-  const stats = {
-    totalMembers: members.length,
-    membersReadyForPayout: filteredMembers.length,
-    totalApprovedOwed: members.reduce((sum, m) => sum + m.approvedBalance, 0),
-    totalPendingOwed: members.reduce((sum, m) => sum + m.affiliatePendingBalance, 0),
-    totalPaid: members.reduce((sum, m) => sum + m.affiliatePaidBalance, 0),
+  const getNetworkBadge = (network: string) => {
+    switch (network) {
+      case "amazon":
+        return (
+          <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+            🛒 Amazon
+          </span>
+        );
+      case "impact":
+        return (
+          <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+            💫 Impact
+          </span>
+        );
+      case "awin":
+        return (
+          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+            🔗 Awin
+          </span>
+        );
+      default:
+        return (
+          <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-semibold">
+            {network}
+          </span>
+        );
+    }
   };
 
-  // Export members for payout
-  const exportPayoutCSV = () => {
-    const header = "Member ID,Email,Name,Approved Balance,Pending Balance,Total Paid,Total Earnings\n";
-    const rows = filteredMembers
+  // Calculate stats
+  const stats = {
+    total: filteredClicks.length,
+    amazon: filteredClicks.filter((c) => c.network === "amazon").length,
+    impact: filteredClicks.filter((c) => c.network === "impact").length,
+    awin: filteredClicks.filter((c) => c.network === "awin").length,
+    converted: filteredClicks.filter((c) => c.converted).length,
+    uniqueMembers: new Set(filteredClicks.map((c) => c.memberId)).size,
+    uniqueRetailers: new Set(filteredClicks.map((c) => c.retailerId)).size,
+  };
+
+  // Top retailers
+  const retailerCounts = filteredClicks.reduce((acc, c) => {
+    acc[c.retailerId] = (acc[c.retailerId] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const topRetailers = Object.entries(retailerCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5);
+
+  // Export CSV
+  const exportCSV = () => {
+    const header = "Click ID,Member ID,Retailer,Network,Sub ID,Clicked At,Converted\n";
+    const rows = filteredClicks
       .map(
-        (m) =>
-          `${m.id},${m.email || ""},${m.displayName || ""},${formatCurrency(m.approvedBalance)},${formatCurrency(m.affiliatePendingBalance)},${formatCurrency(m.affiliatePaidBalance)},${formatCurrency(m.affiliateTotalEarnings)}`
+        (c) =>
+          `${c.id},${c.memberId},${c.retailerId},${c.network},${c.subId},"${formatDate(c.clickedAt)}",${c.converted}`
       )
       .join("\n");
 
@@ -302,7 +182,7 @@ export default function AdminPayoutsPage() {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `rewmoai-payouts-due-${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `rewmoai-clicks-${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
   };
@@ -310,7 +190,7 @@ export default function AdminPayoutsPage() {
   return (
     <main className="max-w-7xl mx-auto py-10 px-4 bg-white text-gray-900 min-h-screen">
       <Head>
-        <title>Payouts Management | RewmoAI Admin</title>
+        <title>Click Tracking | RewmoAI Admin</title>
       </Head>
 
       {/* Header */}
@@ -322,22 +202,20 @@ export default function AdminPayoutsPage() {
           >
             ← Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-bold text-orange-600">
-            Payout Management
-          </h1>
+          <h1 className="text-3xl font-bold text-orange-600">Click Tracking</h1>
           <p className="text-gray-600">
-            Process payouts to members with approved commissions
+            View all affiliate link clicks and conversion tracking
           </p>
         </div>
         <div className="flex gap-3 mt-4 md:mt-0">
           <button
-            onClick={fetchData}
+            onClick={fetchClicks}
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
           >
             🔄 Refresh
           </button>
           <button
-            onClick={exportPayoutCSV}
+            onClick={exportCSV}
             className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
           >
             📥 Export CSV
@@ -345,296 +223,162 @@ export default function AdminPayoutsPage() {
         </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-6">
         <div className="bg-gray-50 border rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-gray-800">{stats.totalMembers}</p>
-          <p className="text-sm text-gray-500">Total Members</p>
+          <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+          <p className="text-sm text-gray-500">Total Clicks</p>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-green-700">{stats.membersReadyForPayout}</p>
-          <p className="text-sm text-green-600">Ready for Payout</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-blue-700">{formatCurrency(stats.totalApprovedOwed)}</p>
-          <p className="text-sm text-blue-600">Approved Owed</p>
-        </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-yellow-700">{formatCurrency(stats.totalPendingOwed)}</p>
-          <p className="text-sm text-yellow-600">Pending</p>
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+          <p className="text-2xl font-bold text-orange-700">{stats.amazon}</p>
+          <p className="text-sm text-orange-600">Amazon</p>
         </div>
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-purple-700">{formatCurrency(stats.totalPaid)}</p>
-          <p className="text-sm text-purple-600">Total Paid Out</p>
+          <p className="text-2xl font-bold text-purple-700">{stats.impact}</p>
+          <p className="text-sm text-purple-600">Impact</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+          <p className="text-2xl font-bold text-blue-700">{stats.awin}</p>
+          <p className="text-sm text-blue-600">Awin</p>
+        </div>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+          <p className="text-2xl font-bold text-green-700">{stats.converted}</p>
+          <p className="text-sm text-green-600">Converted</p>
+        </div>
+        <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4 text-center">
+          <p className="text-2xl font-bold text-cyan-700">{stats.uniqueMembers}</p>
+          <p className="text-sm text-cyan-600">Members</p>
+        </div>
+        <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 text-center">
+          <p className="text-2xl font-bold text-pink-700">{stats.uniqueRetailers}</p>
+          <p className="text-sm text-pink-600">Retailers</p>
         </div>
       </div>
+
+      {/* Top Retailers */}
+      {topRetailers.length > 0 && (
+        <div className="bg-gray-50 border rounded-xl p-4 mb-6">
+          <h3 className="font-bold text-gray-800 mb-3">🏆 Top Retailers</h3>
+          <div className="flex flex-wrap gap-3">
+            {topRetailers.map(([retailer, count]) => (
+              <div
+                key={retailer}
+                className="bg-white border rounded-lg px-4 py-2 flex items-center gap-2"
+              >
+                <span className="font-medium text-gray-800">{retailer}</span>
+                <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                  {count}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-gray-50 border rounded-xl p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4 items-end">
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">Minimum Balance</label>
-            <select
-              value={minBalance}
-              onChange={(e) => setMinBalance(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-            >
-              <option value={0}>All balances</option>
-              <option value={1000}>$10+</option>
-              <option value={2500}>$25+ (default)</option>
-              <option value={5000}>$50+</option>
-              <option value={10000}>$100+</option>
-            </select>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search by member ID, retailer, or sub ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            />
           </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">Sort By</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="balance">Highest Balance</option>
-              <option value="earnings">Highest Earnings</option>
-              <option value="name">Name A-Z</option>
-            </select>
-          </div>
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value as any)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+          >
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+            <option value="all">All time</option>
+          </select>
+          <select
+            value={networkFilter}
+            onChange={(e) => setNetworkFilter(e.target.value as any)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+          >
+            <option value="all">All Networks</option>
+            <option value="amazon">Amazon</option>
+            <option value="impact">Impact</option>
+            <option value="awin">Awin</option>
+          </select>
         </div>
       </div>
 
-      {/* Members Ready for Payout */}
-      <div className="bg-white border rounded-xl overflow-hidden mb-8">
-        <div className="bg-gray-50 px-4 py-3 border-b">
-          <h2 className="text-lg font-bold text-gray-800">💳 Members Ready for Payout</h2>
+      {/* Clicks Table */}
+      {loading ? (
+        <div className="text-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading clicks...</p>
         </div>
-
-        {loading ? (
-          <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-            <p className="text-gray-500">Loading...</p>
-          </div>
-        ) : filteredMembers.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            No members with approved balance above {formatCurrency(minBalance)}
-          </div>
-        ) : (
+      ) : (
+        <div className="bg-white border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left text-gray-600 border-b">
+                  <th className="py-3 px-4">Date/Time</th>
+                  <th className="py-3 px-4">Network</th>
+                  <th className="py-3 px-4">Retailer</th>
                   <th className="py-3 px-4">Member</th>
-                  <th className="py-3 px-4 text-right">Approved Balance</th>
-                  <th className="py-3 px-4 text-right">Pending</th>
-                  <th className="py-3 px-4 text-right">Total Paid</th>
-                  <th className="py-3 px-4 text-center">Commissions</th>
-                  <th className="py-3 px-4">Action</th>
+                  <th className="py-3 px-4">Sub ID</th>
+                  <th className="py-3 px-4">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredMembers.map((member) => (
-                  <tr key={member.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <div>
-                        <div className="font-medium text-gray-800">
-                          {member.displayName || member.email || "Unknown"}
-                        </div>
-                        <div className="text-xs text-gray-400 font-mono">
-                          {member.id.substring(0, 12)}...
-                        </div>
-                        {member.email && !member.displayName && (
-                          <div className="text-xs text-gray-500">{member.email}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <span className="text-lg font-bold text-green-600">
-                        {formatCurrency(member.approvedBalance)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right text-yellow-600">
-                      {formatCurrency(member.affiliatePendingBalance)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-600">
-                      {formatCurrency(member.affiliatePaidBalance)}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="text-xs">
-                        <span className="text-green-600">{member.approvedCommissionsCount} approved</span>
-                        {" / "}
-                        <span className="text-yellow-600">{member.pendingCommissionsCount} pending</span>
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => openPayoutModal(member)}
-                        disabled={member.approvedBalance < 100}
-                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        💸 Pay Out
-                      </button>
+                {filteredClicks.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-12 text-gray-400">
+                      No clicks found
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredClicks.slice(0, 100).map((click) => (
+                    <tr key={click.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4 text-gray-600 text-xs">
+                        {formatDate(click.clickedAt)}
+                      </td>
+                      <td className="py-3 px-4">{getNetworkBadge(click.network)}</td>
+                      <td className="py-3 px-4 font-medium text-gray-800">
+                        {click.retailerId}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-mono text-xs text-gray-600">
+                          {click.memberId.substring(0, 12)}...
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-mono text-xs text-gray-400">
+                          {click.subId.length > 20
+                            ? `${click.subId.substring(0, 20)}...`
+                            : click.subId}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {click.converted ? (
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">
+                            ✓ Converted
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
-
-      {/* Recent Payouts */}
-      <div className="bg-white border rounded-xl overflow-hidden">
-        <div className="bg-gray-50 px-4 py-3 border-b">
-          <h2 className="text-lg font-bold text-gray-800">📜 Payout History</h2>
-        </div>
-
-        {payoutHistory.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            No payouts processed yet
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 text-left text-gray-600 border-b">
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Member</th>
-                  <th className="py-3 px-4 text-right">Amount</th>
-                  <th className="py-3 px-4">Method</th>
-                  <th className="py-3 px-4">Reference</th>
-                  <th className="py-3 px-4">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payoutHistory.slice(0, 20).map((payout) => (
-                  <tr key={payout.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4 text-gray-600">
-                      {formatDate(payout.createdAt)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="text-xs">
-                        <div className="font-mono text-gray-600">
-                          {payout.memberId.substring(0, 12)}...
-                        </div>
-                        {payout.memberEmail && (
-                          <div className="text-gray-400">{payout.memberEmail}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right font-bold text-green-600">
-                      {formatCurrency(payout.amount)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-1 bg-gray-100 rounded text-xs capitalize">
-                        {payout.method}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-gray-500 text-xs font-mono">
-                      {payout.reference || "-"}
-                    </td>
-                    <td className="py-3 px-4 text-gray-500 text-xs">
-                      {payout.notes || "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Payout Modal */}
-      {showPayoutModal && selectedMember && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-              Process Payout
-            </h3>
-
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-600">Paying:</p>
-              <p className="font-bold text-gray-800">
-                {selectedMember.displayName || selectedMember.email || selectedMember.id}
-              </p>
-              <p className="text-sm text-gray-500">{selectedMember.email}</p>
-              <p className="text-lg font-bold text-green-600 mt-2">
-                Available: {formatCurrency(selectedMember.approvedBalance)}
-              </p>
+          {filteredClicks.length > 100 && (
+            <div className="px-4 py-3 bg-gray-50 border-t text-center text-sm text-gray-500">
+              Showing 100 of {filteredClicks.length} clicks. Export CSV for full data.
             </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount ($)
-                </label>
-                <input
-                  type="number"
-                  value={payoutAmount}
-                  onChange={(e) => setPayoutAmount(e.target.value)}
-                  step="0.01"
-                  min="0.01"
-                  max={(selectedMember.approvedBalance / 100).toFixed(2)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Payment Method
-                </label>
-                <select
-                  value={payoutMethod}
-                  onChange={(e) => setPayoutMethod(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                >
-                  <option value="paypal">PayPal</option>
-                  <option value="bank">Bank Transfer</option>
-                  <option value="check">Check</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Reference (optional)
-                </label>
-                <input
-                  type="text"
-                  value={payoutReference}
-                  onChange={(e) => setPayoutReference(e.target.value)}
-                  placeholder="PayPal transaction ID, check #, etc."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes (optional)
-                </label>
-                <textarea
-                  value={payoutNotes}
-                  onChange={(e) => setPayoutNotes(e.target.value)}
-                  placeholder="Any additional notes..."
-                  rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowPayoutModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={processPayout}
-                disabled={processing !== null}
-                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50"
-              >
-                {processing ? "Processing..." : `Pay ${formatCurrency(parseFloat(payoutAmount || "0") * 100)}`}
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </main>

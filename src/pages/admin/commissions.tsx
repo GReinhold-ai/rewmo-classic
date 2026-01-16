@@ -26,6 +26,7 @@ export default function AdminCommissionsPage() {
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "paid">("all");
@@ -35,9 +36,27 @@ export default function AdminCommissionsPage() {
   // Selection for bulk actions
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Wait for auth to initialize
   useEffect(() => {
-    fetchCommissions();
+    const { onAuthStateChanged } = require("firebase/auth");
+    const { auth } = require("@/lib/firebaseClient");
+    
+    const unsubscribe = onAuthStateChanged(auth, (user: any) => {
+      if (user) {
+        setAuthReady(true);
+      } else {
+        window.location.href = "/account";
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (authReady) {
+      fetchCommissions();
+    }
+  }, [authReady]);
 
   const fetchCommissions = async () => {
     try {

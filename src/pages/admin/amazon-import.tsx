@@ -36,6 +36,34 @@ export default function AmazonImportPage() {
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [importResult, setImportResult] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  // Wait for auth to initialize
+  useEffect(() => {
+    const { onAuthStateChanged } = require("firebase/auth");
+    const { auth } = require("@/lib/firebaseClient");
+    
+    const unsubscribe = onAuthStateChanged(auth, (user: any) => {
+      if (user) {
+        setAuthReady(true);
+      } else {
+        window.location.href = "/account";
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (!authReady) {
+    return (
+      <main className="max-w-6xl mx-auto py-10 px-4 bg-white text-gray-900 min-h-screen">
+        <div className="text-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </main>
+    );
+  }
 
   // Parse CSV file
   const parseCSV = (text: string): any[] => {
