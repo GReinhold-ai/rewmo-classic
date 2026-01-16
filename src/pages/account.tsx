@@ -16,6 +16,11 @@ type SubStatus =
 
 type PlanTier = "FREE" | "PRO" | "BUSINESS" | "UNKNOWN";
 
+// Admin email addresses - add more as needed
+const ADMIN_EMAILS = [
+  "gary.reinhold@leafpays.com",
+];
+
 export default function AccountPage() {
   const router = useRouter();
   const { currentUser, signInWithGoogle, logout } = useAuth();
@@ -25,6 +30,9 @@ export default function AccountPage() {
   const [periodEnd, setPeriodEnd] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const signedIn = !!currentUser;
+
+  // Check if current user is admin
+  const isAdmin = currentUser?.email && ADMIN_EMAILS.includes(currentUser.email);
 
   // ✅ Use ID token → /api/status (no ?email=)
   useEffect(() => {
@@ -181,6 +189,72 @@ export default function AccountPage() {
             </Link>
           </div>
         </div>
+
+        {/* Member Earnings Section */}
+        {signedIn && (
+          <div className="mt-6 rounded-2xl border border-[#15C5C1]/40 bg-[#072b33] p-6">
+            <h2 className="text-xl font-bold text-[#15C5C1] mb-3">💰 Shopping Rewards</h2>
+            <p className="text-[#9bd1d6] text-sm mb-4">
+              Earn 50% of affiliate commissions when you shop through our links.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/shopping"
+                className="inline-flex items-center rounded-lg bg-[#FF9151] px-4 py-2 font-bold text-[#003B49] hover:bg-[#FFA36C]"
+              >
+                🛒 Start Shopping
+              </Link>
+              <Link
+                href="/account/earnings"
+                className="inline-flex items-center rounded-lg bg-white/10 px-4 py-2 font-semibold hover:bg-white/20"
+              >
+                📊 View Earnings
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Section - Only visible to admin users */}
+        {isAdmin && (
+          <div className="mt-6 rounded-2xl border border-[#FF9151]/40 bg-[#072b33] p-6">
+            <h2 className="text-xl font-bold text-[#FF9151] mb-3">🔧 Admin Dashboard</h2>
+            <p className="text-[#9bd1d6] text-sm mb-4">
+              Manage affiliate commissions, payouts, and view analytics.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/admin/affiliate"
+                className="inline-flex items-center rounded-lg bg-[#FF9151] px-4 py-2 font-bold text-[#003B49] hover:bg-[#FFA36C]"
+              >
+                📊 Affiliate Dashboard
+              </Link>
+              <Link
+                href="/admin/clicks"
+                className="inline-flex items-center rounded-lg bg-white/10 px-4 py-2 font-semibold hover:bg-white/20"
+              >
+                🖱️ Clicks
+              </Link>
+              <Link
+                href="/admin/commissions"
+                className="inline-flex items-center rounded-lg bg-white/10 px-4 py-2 font-semibold hover:bg-white/20"
+              >
+                💵 Commissions
+              </Link>
+              <Link
+                href="/admin/payouts"
+                className="inline-flex items-center rounded-lg bg-white/10 px-4 py-2 font-semibold hover:bg-white/20"
+              >
+                💳 Payouts
+              </Link>
+              <Link
+                href="/admin/amazon-import"
+                className="inline-flex items-center rounded-lg bg-white/10 px-4 py-2 font-semibold hover:bg-white/20"
+              >
+                📦 Amazon Import
+              </Link>
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 text-sm text-[#9bd1d6]">
           Need help?{" "}
