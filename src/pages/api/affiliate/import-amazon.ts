@@ -1,103 +1,109 @@
 // src/pages/api/affiliate/import-amazon.ts
-// Admin endpoint to import Amazon Associates earnings reports
+// API endpoint to import Amazon Associates commissions
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getAdminAuth } from "@/lib/firebaseAdmin";
-import { recordCommission, findMemberBySubId } from "@/lib/affiliate";
+import { getAdminDb } from "@/lib/firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
 
-// List of admin emails allowed to import
-const ADMIN_EMAILS = [
-  "gary.reinhold@leafpays.com",
-  // Add other admin emails here
-];
-
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "10mb", // Allow larger CSV files
-    },
-  },
-};
-
-interface AmazonEarning {
-  trackingId: string;      // The ascsubtag we passed
+interface ImportCommission {
+  memberId: string;
   orderId: string;
-  amount: number;
-  orderDate: string;
-  productCategory?: string;
+  subId?: string;
+  grossAmount: number; // In cents
+  orderDate?: string;
+  trackingId?: string;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    // Verify admin auth
-    const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const { commissions } = req.body as { commissions: ImportCommission[] };
 
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!commissions || !Array.isArray(commissions) || commissions.length === 0) {
+      return res.status(400).json({ error: "No commissions provided" });
     }
 
-    const adminAuth = getAdminAuth();
-    const decoded = await adminAuth.verifyIdToken(token);
+    const db = getAdminDb();
+    const results = {
+      imported: 0,
+      skipped: 0,
+      errors: [] as string[],
+    };
 
-    if (!decoded.email || !ADMIN_EMAILS.includes(decoded.email)) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
-    const { earnings } = req.body as { earnings: AmazonEarning[] };
-
-    if (!earnings || !Array.isArray(earnings)) {
-      return res.status(400).json({ error: "earnings array required" });
-    }
-
-    let imported = 0;
-    let skipped = 0;
-    let errors: string[] = [];
-
-    for (const earning of earnings) {
+    for (const commission of commissions) {
       try {
-        if (!earning.amount || earning.amount <= 0) {
-          skipped++;
+        // Validate required fields
+        if (!commission.memberId || !commission.orderId || !commission.grossAmount) {
+          results.errors.push(`Invalid commission data: ${JSON.stringify(commission)}`);
+          results.skipped++;
           continue;
         }
 
-        // Find member from tracking ID
-        let memberId = "unknown";
-        if (earning.trackingId) {
-          const foundMember = await findMemberBySubId(earning.trackingId);
-          if (foundMember) {
-            memberId = foundMember;
-          }
+        // Check for duplicate
+        const existingQuery = await db
+          .collection("affiliateCommissions")
+          .where("orderId", "==", commission.orderId)
+          .limit(1)
+          .get();
+
+        if (!existingQuery.empty) {
+          results.skipped++;
+          continue; // Skip duplicates silently
         }
 
-        await recordCommission({
-          memberId,
-          network: "amazon",
-          orderId: earning.orderId || `amazon_${Date.now()}_${imported}`,
-          subId: earning.trackingId || "",
-          grossAmount: earning.amount,
-          status: "approved", // Amazon reports are already approved
-        });
+        // Calculate 50/50 split
+        const grossAmount = commission.grossAmount;
+        const memberShare = Math.round(grossAmount * 0.5);
+        const rewmoShare = grossAmount - memberShare;
 
-        imported++;
-      } catch (err: any) {
-        errors.push(`Order ${earning.orderId}: ${err?.message}`);
+        // Create commission record
+        const commissionData = {
+          memberId: commission.memberId,
+          network: "amazon" as const,
+          orderId: commission.orderId,
+          subId: commission.subId || "",
+          trackingId: commission.trackingId || "",
+          grossAmount,
+          memberShare,
+          rewmoShare,
+          status: "pending" as const,
+          orderDate: commission.orderDate
+            ? new Date(commission.orderDate)
+            : null,
+          createdAt: FieldValue.serverTimestamp(),
+          importedAt: FieldValue.serverTimestamp(),
+          source: "csv-import",
+        };
+
+        const docRef = await db.collection("affiliateCommissions").add(commissionData);
+
+        // Update member's pending balance
+        if (commission.memberId && commission.memberId !== "unknown") {
+          await db
+            .collection("users")
+            .doc(commission.memberId)
+            .update({
+              affiliatePendingBalance: FieldValue.increment(memberShare),
+              affiliateTotalEarnings: FieldValue.increment(memberShare),
+            });
+        }
+
+        results.imported++;
+      } catch (error) {
+        results.errors.push(
+          `Error importing order ${commission.orderId}: ${(error as Error).message}`
+        );
       }
     }
 
-    console.log("[import-amazon] Import complete:", { imported, skipped, errors: errors.length });
-
-    return res.status(200).json({
-      success: true,
-      imported,
-      skipped,
-      errors: errors.length > 0 ? errors.slice(0, 10) : undefined, // First 10 errors
-    });
-  } catch (err: any) {
-    console.error("[import-amazon] error:", err?.message || err);
-    return res.status(500).json({ error: "Import failed" });
+    return res.status(200).json(results);
+  } catch (error) {
+    console.error("Import error:", error);
+    return res.status(500).json({ error: "Import failed: " + (error as Error).message });
   }
 }
