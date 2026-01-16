@@ -1,87 +1,78 @@
 // src/pages/api/affiliate/log-click.ts
+// API endpoint to log affiliate clicks
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getAdminAuth } from "@/lib/firebaseAdmin";
-import { logAffiliateClick, generateSubId, AffiliateNetwork } from "@/lib/affiliate";
+import { getAdminDb } from "@/lib/firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
 import { getRetailerById } from "@/data/retailers";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+type AffiliateNetwork = "amazon" | "impact" | "awin" | "direct";
+
+// Generate a unique sub-ID for tracking
+function generateSubId(memberId: string): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${memberId.substring(0, 8)}_${timestamp}_${random}`;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    // Verify auth token
-    const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const { memberId, retailerId, network: providedNetwork, subId: providedSubId } = req.body;
+
+    if (!memberId || !retailerId) {
+      return res.status(400).json({ error: "Missing memberId or retailerId" });
+    }
+
+    // Generate subId if not provided
+    const subId = providedSubId || generateSubId(memberId);
+
+    // Determine network
+    let network: AffiliateNetwork = providedNetwork || "direct";
     
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const adminAuth = getAdminAuth();
-    const decoded = await adminAuth.verifyIdToken(token);
-    const memberId = decoded.uid;
-
-    const { retailerId } = req.body;
-
-    if (!retailerId) {
-      return res.status(400).json({ error: "retailerId required" });
-    }
-
-    // Get retailer info
+    // If retailerId provided, try to get network from retailer data
     const retailer = getRetailerById(retailerId);
-    if (!retailer) {
-      return res.status(404).json({ error: "Retailer not found" });
+    if (retailer) {
+      // Use the retailer's network setting
+      if (retailer.network === "amazon") {
+        network = "amazon";
+      } else if (retailer.affiliateUrl?.includes("awin")) {
+        network = "awin";
+      } else if (retailer.affiliateUrl?.includes("impact") || retailer.affiliateUrl?.includes("pxf.io")) {
+        network = "impact";
+      } else {
+        network = "direct";
+      }
     }
 
-    // Determine network from affiliate link
-    let network: AffiliateNetwork = "impact"; // default
-    if (retailer.affiliateLink.includes("amazon.com")) {
-      network = "amazon";
-    } else if (retailer.affiliateLink.includes("awin")) {
-      network = "awin";
-    }
+    const db = getAdminDb();
 
-    // Generate unique sub-ID for tracking
-    const subId = generateSubId(memberId);
-
-    // Log the click
-    await logAffiliateClick({
+    // Create click record
+    const clickData = {
       memberId,
       retailerId,
       network,
       subId,
-      userAgent: req.headers["user-agent"],
-    });
+      clickedAt: FieldValue.serverTimestamp(),
+      userAgent: req.headers["user-agent"] || null,
+      converted: false,
+    };
 
-    // Build the tracked affiliate URL
-    let trackedUrl = retailer.affiliateLink;
-    
-    // Append sub-ID based on network
-    if (network === "amazon") {
-      // Amazon uses tag parameter, add sub-tag
-      trackedUrl = trackedUrl.includes("?") 
-        ? `${trackedUrl}&ascsubtag=${subId}`
-        : `${trackedUrl}?ascsubtag=${subId}`;
-    } else if (network === "impact") {
-      // Impact uses subId parameter
-      trackedUrl = trackedUrl.includes("?")
-        ? `${trackedUrl}&subId=${subId}`
-        : `${trackedUrl}?subId=${subId}`;
-    } else if (network === "awin") {
-      // Awin uses clickRef parameter
-      trackedUrl = trackedUrl.includes("?")
-        ? `${trackedUrl}&clickRef=${subId}`
-        : `${trackedUrl}?clickRef=${subId}`;
-    }
+    const docRef = await db.collection("affiliateClicks").add(clickData);
 
-    return res.status(200).json({ 
-      success: true, 
-      url: trackedUrl,
+    return res.status(200).json({
+      success: true,
+      clickId: docRef.id,
       subId,
+      network,
     });
-  } catch (err: any) {
-    console.error("[log-click] error:", err?.message || err);
+  } catch (error) {
+    console.error("Error logging click:", error);
     return res.status(500).json({ error: "Failed to log click" });
   }
 }
