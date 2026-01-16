@@ -27,7 +27,7 @@ interface EarningsData {
 }
 
 export default function EarningsPage() {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser } = useAuth();
   const router = useRouter();
   
   const [earnings, setEarnings] = useState<EarningsData | null>(null);
@@ -35,15 +35,14 @@ export default function EarningsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authLoading) return;
-    
+    // AuthProvider handles loading state - if we're here, auth is ready
     if (!currentUser) {
       router.push("/account");
       return;
     }
 
     fetchEarnings();
-  }, [currentUser, authLoading, router]);
+  }, [currentUser, router]);
 
   const fetchEarnings = async () => {
     if (!currentUser) return;
@@ -128,7 +127,7 @@ export default function EarningsPage() {
     }
   };
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#003B49] flex items-center justify-center">
         <div className="text-center">
