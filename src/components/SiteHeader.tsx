@@ -18,6 +18,11 @@ const links = [
   { href: "/about", label: "About" },
 ];
 
+// External link to AI Tools directory
+const externalLinks = [
+  { href: "https://aitools.rewmo.ai", label: "AI Tools", external: true },
+];
+
 export default function SiteHeader() {
   const { pathname } = useRouter();
   const [open, setOpen] = useState(false);
@@ -66,6 +71,16 @@ export default function SiteHeader() {
               </li>
             );
           })}
+          <li className="ml-2">
+            <a
+              href="https://aitools.rewmo.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 rounded-lg text-sm font-semibold text-[#15C5C1] hover:text-white hover:bg-[#07333B] transition outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#15C5C1] focus-visible:ring-offset-[#001F24]"
+            >
+              AI Tools ↗
+            </a>
+          </li>
           <li className="ml-2">
             <Link
               href="/account"
@@ -125,6 +140,17 @@ export default function SiteHeader() {
                 </li>
               );
             })}
+            <li className="pt-2">
+              <a
+                href="https://aitools.rewmo.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="block w-full px-4 py-3 rounded-xl text-base font-semibold text-[#15C5C1] bg-[#003B49] hover:bg-[#004d5c] transition"
+              >
+                🧰 AI Tools Directory ↗
+              </a>
+            </li>
             <li className="pt-2">
               <Link
                 href="/account"
