@@ -1,5 +1,5 @@
 // src/lib/AuthProvider.tsx
-// FIXED: Uses popup instead of redirect for Vercel compatibility
+// FIXED: Better iOS Safari handling for sessionStorage/popup issues
 import React, { createContext, useContext, useEffect, useMemo, useState, useRef } from "react";
 import {
   GoogleAuthProvider,
@@ -9,6 +9,8 @@ import {
   signOut,
   onAuthStateChanged,
   User,
+  browserLocalPersistence,
+  setPersistence,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseClient";
@@ -26,10 +28,40 @@ export type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Detect iOS Safari
+const isIOSSafari = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const ua = navigator.userAgent;
+  const iOS = /iPad|iPhone|iPod/.test(ua);
+  const webkit = /WebKit/.test(ua);
+  const notChrome = !/CriOS/.test(ua);
+  const notFirefox = !/FxiOS/.test(ua);
+  return iOS && webkit && notChrome && notFirefox;
+};
+
+// Detect if in standalone mode (added to home screen)
+const isStandalone = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return (window.navigator as any).standalone === true;
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const initializingRef = useRef(false);
+
+  // 🔧 Set persistence to LOCAL on mount (helps with iOS Safari)
+  useEffect(() => {
+    const setupPersistence = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        console.log('✅ [AuthProvider] Set auth persistence to LOCAL');
+      } catch (error) {
+        console.error('❌ [AuthProvider] Failed to set persistence:', error);
+      }
+    };
+    setupPersistence();
+  }, []);
 
   // 🧠 UNIFIED: Create/Update Firestore user document
   const ensureUserDocument = async (user: User): Promise<void> => {
@@ -120,15 +152,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 🔐 Google Sign-In with POPUP (Vercel compatible)
+  // 🔐 Google Sign-In with POPUP (with iOS Safari workarounds)
   const signInWithGoogle = async (): Promise<void> => {
     try {
       console.log('🔐 [AuthProvider] Starting Google sign-in (popup)...');
+      console.log('📱 [AuthProvider] iOS Safari:', isIOSSafari(), 'Standalone:', isStandalone());
+      
+      // Set persistence before sign in (helps with iOS)
+      await setPersistence(auth, browserLocalPersistence);
       
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ 
         prompt: "select_account"
       });
+      
+      // Add scopes
+      provider.addScope('email');
+      provider.addScope('profile');
       
       const result = await signInWithPopup(auth, provider);
       
@@ -154,11 +194,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('ℹ️ [AuthProvider] User closed the sign-in popup');
         return;
       }
+      
       // Handle popup blocked
       if (error.code === 'auth/popup-blocked') {
         console.error('❌ [AuthProvider] Popup was blocked. Please allow popups for this site.');
+        alert('Sign-in popup was blocked. Please allow popups for rewmo.ai and try again.');
         throw new Error('Sign-in popup was blocked. Please allow popups and try again.');
       }
+      
+      // Handle iOS Safari sessionStorage issue
+      if (error.message?.includes('missing initial state') || 
+          error.code === 'auth/missing-initial-state') {
+        console.error('❌ [AuthProvider] iOS Safari sessionStorage issue detected');
+        
+        // For iOS Safari in standalone mode, suggest opening in Safari
+        if (isStandalone()) {
+          alert('Please open rewmo.ai in Safari browser to sign in, then return to this app.');
+        } else {
+          alert('Sign-in failed. Please try again or use a different browser.');
+        }
+        throw new Error('Sign-in failed due to browser storage restrictions. Please try again.');
+      }
+      
+      // Handle cancelled by user (iOS specific)
+      if (error.code === 'auth/cancelled-popup-request') {
+        console.log('ℹ️ [AuthProvider] Sign-in cancelled');
+        return;
+      }
+      
       console.error('❌ [AuthProvider] Google sign-in failed:', error.code, error.message);
       throw error;
     }
@@ -167,6 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 📧 Email Sign-In
   const signInWithEmail = async (email: string, password: string): Promise<void> => {
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithEmailAndPassword(auth, email, password);
       await ensureUserDocument(result.user);
     } catch (error: any) {
@@ -178,6 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 🆕 Email Sign-Up
   const signUpWithEmail = async (email: string, password: string): Promise<void> => {
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const result = await createUserWithEmailAndPassword(auth, email, password);
       await ensureUserDocument(result.user);
       await handleReferralTracking(result.user);
