@@ -22,7 +22,7 @@ export default function LeanLabPage() {
               Intro to RewmoAI Process Management
             </h2>
             <p className="text-[#B6E7EB] text-lg mb-2">
-              Whether you’re running a business, managing a household, or just trying to do more with less—how you{" "}
+              Whether you're running a business, managing a household, or just trying to do more with less—how you{" "}
               <span className="text-[#FF9151] font-bold">manage your process</span> is the secret to bigger savings,
               less stress, and better results.
             </p>
@@ -69,13 +69,29 @@ export default function LeanLabPage() {
             {showModule2 ? "Hide" : "Show"} Module 2 & More
           </button>
 
-          {/* AI Training Modal button */}
-          <button
+          {/* AI Training - Direct Link (no modal) */}
+          <Link
+            href="/learn/genai"
             className="px-6 py-4 bg-gradient-to-r from-[#15C5C1] to-[#FF9151] border-2 border-[#FF9151] rounded-2xl text-[#003B49] font-bold text-lg shadow hover:opacity-90 transition"
-            onClick={() => setShowTraining(true)}
           >
-            🚀 AI Training Module
-          </button>
+            🚀 AI Training Courses
+          </Link>
+
+          {/* Finance Training - NEW */}
+          <Link
+            href="/learn/finance"
+            className="px-6 py-4 bg-[#072b33] border-2 border-[#15C5C1] rounded-2xl text-[#15C5C1] font-bold text-lg shadow hover:bg-[#02404d] hover:text-[#FF9151] transition"
+          >
+            💰 Finance Training
+          </Link>
+
+          {/* All Training Tracks */}
+          <Link
+            href="/training"
+            className="px-6 py-4 bg-[#072b33] border-2 border-white/30 rounded-2xl text-white/80 font-bold text-lg shadow hover:bg-[#02404d] hover:text-[#FF9151] transition"
+          >
+            📚 All Training Tracks
+          </Link>
         </section>
 
         {/* Module 1 Info (free teaser section) */}
@@ -116,42 +132,6 @@ export default function LeanLabPage() {
               </ul>
             </div>
           </section>
-        )}
-
-        {/* AI Training Module Modal */}
-        {showTraining && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <div className="bg-[#003B49] border-4 border-[#FF9151] rounded-2xl p-8 max-w-xl w-full text-center shadow-2xl relative">
-              <button
-                className="absolute top-4 right-4 text-[#FF9151] text-2xl font-bold"
-                onClick={() => setShowTraining(false)}
-                aria-label="Close"
-              >
-                ×
-              </button>
-              <h2 className="text-2xl font-black mb-3 text-[#FF9151] tracking-tight">
-                🚀 AI Training Lab (Beta)
-              </h2>
-              <p className="text-[#B6E7EB] mb-3">
-                Welcome to the RewmoAI Training Lab! Build AI literacy with a smart coach—practice tasks, take quizzes,
-                and track progress as you level up.
-              </p>
-              <div className="mb-4">
-                <span className="inline-block px-4 py-2 bg-[#15C5C1] rounded-full text-[#003B49] font-bold text-lg mb-2">
-                  Progress: <span className="font-mono">0%</span>
-                </span>
-              </div>
-              <p className="text-[#F7F6F2] text-sm mb-6">
-                Features coming soon: real-time chat, badges, streaks, and personalized learning paths.
-              </p>
-              <button
-                className="px-6 py-2 rounded-lg bg-[#FF9151] font-bold text-[#003B49] hover:bg-[#FFA36C] transition"
-                onClick={() => setShowTraining(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
         )}
       </main>
 
