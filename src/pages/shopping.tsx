@@ -1,11 +1,12 @@
 // src/pages/shopping.tsx
 // Shopping page with affiliate tracking for all retailers
-import { useState, useEffect } from "react";
+// FIXED: Opens links immediately to work on DuckDuckGo and other privacy browsers
+// UPDATED: Removed proprietary commission language
+import { useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthProvider";
 import {
-  retailers,
   getActiveRetailers,
   getFeaturedRetailers,
   getAllCategories,
@@ -24,6 +25,28 @@ function generateSubId(memberId: string): string {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substring(2, 8);
   return `${memberId.substring(0, 8)}_${timestamp}_${random}`;
+}
+
+// Log click in background (non-blocking)
+function logClickInBackground(data: {
+  memberId: string;
+  retailerId: string;
+  network: string;
+  subId: string;
+}) {
+  // Use sendBeacon for reliable background logging, fallback to fetch
+  const payload = JSON.stringify(data);
+  
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon("/api/affiliate/log-click", payload);
+  } else {
+    fetch("/api/affiliate/log-click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true, // Allows request to outlive the page
+    }).catch(() => {}); // Ignore errors - don't block user
+  }
 }
 
 export default function ShoppingPage() {
@@ -51,126 +74,100 @@ export default function ShoppingPage() {
     return true;
   });
 
-  // Log click and redirect
-  const handleRetailerClick = async (retailer: Retailer) => {
-    if (!currentUser) {
-      // If not logged in, just redirect without tracking
-      window.open(getRetailerUrl(retailer), "_blank");
-      return;
-    }
-
-    try {
-      // Generate subId for tracking
-      const subId = generateSubId(currentUser.uid);
-
-      // Log the click
-      await fetch("/api/affiliate/log-click", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          memberId: currentUser.uid,
-          retailerId: retailer.id,
-          network: retailer.network === "amazon" ? "amazon" : "direct",
-          subId,
-        }),
-      });
-
-      // Get the affiliate URL with tracking
-      const url = getRetailerUrlWithTracking(retailer, subId);
-
-      // Open in new tab
-      window.open(url, "_blank");
-    } catch (error) {
-      console.error("Error logging click:", error);
-      // Still redirect even if logging fails
-      window.open(getRetailerUrl(retailer), "_blank");
-    }
-  };
-
-  // Get retailer URL without tracking
-  const getRetailerUrl = (retailer: Retailer): string => {
+  // Get retailer URL with optional tracking
+  const getRetailerUrl = (retailer: Retailer, subId?: string): string => {
     if (retailer.network === "amazon") {
+      if (subId) {
+        const memberTag = `${AMAZON_TAG}-${subId.substring(0, 8)}`;
+        return `https://www.amazon.com?tag=${memberTag}`;
+      }
       return generateAmazonHomepageLink();
     }
-    return retailer.affiliateUrl || retailer.baseUrl;
-  };
-
-  // Get retailer URL with member tracking
-  const getRetailerUrlWithTracking = (retailer: Retailer, subId: string): string => {
-    if (retailer.network === "amazon") {
-      // For Amazon, append subId to the tag
-      const memberTag = `${AMAZON_TAG}-${subId.substring(0, 8)}`;
-      return `https://www.amazon.com?tag=${memberTag}`;
-    }
-
-    // For other retailers, add subId as a query param if possible
+    
+    // For other retailers
     const baseUrl = retailer.affiliateUrl || retailer.baseUrl;
-    try {
-      const url = new URL(baseUrl);
-      url.searchParams.set("subId", subId);
-      return url.toString();
-    } catch {
-      return baseUrl;
+    if (subId && baseUrl) {
+      try {
+        const url = new URL(baseUrl);
+        url.searchParams.set("subId", subId);
+        return url.toString();
+      } catch {
+        return baseUrl;
+      }
     }
+    return baseUrl;
   };
 
-  // Handle Amazon search
-  const handleAmazonSearch = async () => {
+  // Handle retailer click - FIXED: Opens immediately, logs in background
+  const handleRetailerClick = (retailer: Retailer) => {
+    let url: string;
+    
+    if (currentUser) {
+      // Generate tracking ID and URL
+      const subId = generateSubId(currentUser.uid);
+      url = getRetailerUrl(retailer, subId);
+      
+      // Log click in background (non-blocking)
+      logClickInBackground({
+        memberId: currentUser.uid,
+        retailerId: retailer.id,
+        network: retailer.network === "amazon" ? "amazon" : "direct",
+        subId,
+      });
+    } else {
+      // Not logged in - no tracking
+      url = getRetailerUrl(retailer);
+    }
+
+    // Open immediately - works on all browsers including DuckDuckGo
+    window.location.href = url;
+  };
+
+  // Handle Amazon search - FIXED: Opens immediately
+  const handleAmazonSearch = () => {
     if (!amazonSearch.trim()) return;
 
+    let url: string;
+
     if (currentUser) {
-      try {
-        const subId = generateSubId(currentUser.uid);
+      const subId = generateSubId(currentUser.uid);
+      const memberTag = `${AMAZON_TAG}-${subId.substring(0, 8)}`;
+      url = `https://www.amazon.com/s?k=${encodeURIComponent(amazonSearch)}&tag=${memberTag}`;
 
-        await fetch("/api/affiliate/log-click", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            memberId: currentUser.uid,
-            retailerId: "amazon-search",
-            network: "amazon",
-            subId,
-          }),
-        });
-
-        const memberTag = `${AMAZON_TAG}-${subId.substring(0, 8)}`;
-        const url = `https://www.amazon.com/s?k=${encodeURIComponent(amazonSearch)}&tag=${memberTag}`;
-        window.open(url, "_blank");
-      } catch (error) {
-        console.error("Error:", error);
-        window.open(generateAmazonSearchLink(amazonSearch), "_blank");
-      }
+      // Log in background
+      logClickInBackground({
+        memberId: currentUser.uid,
+        retailerId: "amazon-search",
+        network: "amazon",
+        subId,
+      });
     } else {
-      window.open(generateAmazonSearchLink(amazonSearch), "_blank");
+      url = generateAmazonSearchLink(amazonSearch);
     }
+
+    window.location.href = url;
   };
 
-  // Handle Amazon category click
-  const handleAmazonCategoryClick = async (category: keyof typeof AMAZON_CATEGORIES) => {
+  // Handle Amazon category click - FIXED: Opens immediately
+  const handleAmazonCategoryClick = (category: keyof typeof AMAZON_CATEGORIES) => {
+    let url: string;
+
     if (currentUser) {
-      try {
-        const subId = generateSubId(currentUser.uid);
+      const subId = generateSubId(currentUser.uid);
+      url = generateAmazonCategoryLink(category, currentUser.uid);
 
-        await fetch("/api/affiliate/log-click", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            memberId: currentUser.uid,
-            retailerId: `amazon-${category}`,
-            network: "amazon",
-            subId,
-          }),
-        });
-
-        const url = generateAmazonCategoryLink(category, currentUser.uid);
-        window.open(url, "_blank");
-      } catch (error) {
-        console.error("Error:", error);
-        window.open(generateAmazonCategoryLink(category), "_blank");
-      }
+      // Log in background
+      logClickInBackground({
+        memberId: currentUser.uid,
+        retailerId: `amazon-${category}`,
+        network: "amazon",
+        subId,
+      });
     } else {
-      window.open(generateAmazonCategoryLink(category), "_blank");
+      url = generateAmazonCategoryLink(category);
     }
+
+    window.location.href = url;
   };
 
   const getCategoryIcon = (category: string) => {
@@ -198,7 +195,7 @@ export default function ShoppingPage() {
         <title>Shopping Rewards | RewmoAI</title>
         <meta
           name="description"
-          content="Shop at your favorite stores and earn 50% of affiliate commissions"
+          content="Shop at your favorite stores and earn cashback rewards"
         />
       </Head>
 
@@ -209,7 +206,7 @@ export default function ShoppingPage() {
             Shop & Earn 💰
           </h1>
           <p className="text-white/70 max-w-2xl mx-auto">
-            Shop through our links and earn <span className="text-[#15C5C1] font-bold">50%</span> of the affiliate commission! 
+            Shop through our links and earn <span className="text-[#15C5C1] font-bold">cashback rewards</span> on your purchases!
             {!currentUser && (
               <span className="block mt-2">
                 <Link href="/account" className="text-[#FF9151] underline">
@@ -229,7 +226,7 @@ export default function ShoppingPage() {
               <div>
                 <p className="text-white font-medium">Tracking Active</p>
                 <p className="text-white/60 text-sm">
-                  Your purchases will be tracked for commission sharing
+                  Your purchases will be tracked for rewards
                 </p>
               </div>
             </div>
@@ -321,7 +318,7 @@ export default function ShoppingPage() {
                   </h3>
                   {retailer.commission && (
                     <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                      {retailer.commission}
+                      Up to {retailer.commission}
                     </span>
                   )}
                 </div>
@@ -388,7 +385,7 @@ export default function ShoppingPage() {
                 </h3>
                 {retailer.commission && (
                   <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                    {retailer.commission}
+                    Up to {retailer.commission}
                   </span>
                 )}
               </div>
@@ -442,16 +439,16 @@ export default function ShoppingPage() {
             </div>
             <div className="text-center">
               <div className="text-4xl mb-2">3️⃣</div>
-              <h3 className="font-bold text-white mb-1">We Earn Commission</h3>
+              <h3 className="font-bold text-white mb-1">Earn Rewards</h3>
               <p className="text-white/60 text-sm">
-                Retailers pay us a small percentage
+                We track your purchase automatically
               </p>
             </div>
             <div className="text-center">
               <div className="text-4xl mb-2">4️⃣</div>
-              <h3 className="font-bold text-white mb-1">You Get 50%!</h3>
+              <h3 className="font-bold text-white mb-1">Get Cashback!</h3>
               <p className="text-white/60 text-sm">
-                We share half of every commission with you
+                Rewards are credited to your account
               </p>
             </div>
           </div>
@@ -473,10 +470,10 @@ export default function ShoppingPage() {
             </div>
             <div>
               <p className="font-semibold text-white">
-                How long until I see my commission?
+                How long until I see my rewards?
               </p>
               <p className="text-white/60 text-sm">
-                Commissions typically appear within 24-72 hours. Amazon may take longer as we import reports manually.
+                Rewards typically appear within 24-72 hours after your purchase is confirmed.
               </p>
             </div>
             <div>
@@ -484,7 +481,7 @@ export default function ShoppingPage() {
                 What's the minimum payout?
               </p>
               <p className="text-white/60 text-sm">
-                Payouts are processed for approved commissions over $25.
+                Payouts are processed for approved rewards over $25.
               </p>
             </div>
           </div>
