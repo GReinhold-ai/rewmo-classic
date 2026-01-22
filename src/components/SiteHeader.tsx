@@ -16,6 +16,7 @@ const links = [
   { href: "/shopping", label: "Shopping" },
   { href: "/rewards", label: "Rewards" },
   { href: "/about", label: "About" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 // External link to AI Tools directory
