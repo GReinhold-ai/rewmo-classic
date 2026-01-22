@@ -36,11 +36,14 @@ export default function Navbar() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [labOpen, setLabOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const labRef = useRef<HTMLDivElement | null>(null);
+  const supportRef = useRef<HTMLDivElement | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const supportHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auth subscription
   useEffect(() => {
@@ -52,17 +55,19 @@ export default function Navbar() {
   // Close menus on outside click / esc / route change
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (!labRef.current) return;
-      if (!labRef.current.contains(e.target as Node)) setLabOpen(false);
+      if (labRef.current && !labRef.current.contains(e.target as Node)) setLabOpen(false);
+      if (supportRef.current && !supportRef.current.contains(e.target as Node)) setSupportOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setLabOpen(false);
+        setSupportOpen(false);
         setMobileOpen(false);
       }
     }
     const handleRoute = () => {
       setLabOpen(false);
+      setSupportOpen(false);
       setMobileOpen(false);
     };
     router.events.on("routeChangeStart", handleRoute);
@@ -76,7 +81,7 @@ export default function Navbar() {
     };
   }, [router.events]);
 
-  // Stable hover timing
+  // Stable hover timing for Lean Lab
   const openLabSoon = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
     hoverTimer.current = setTimeout(() => setLabOpen(true), 80);
@@ -84,6 +89,16 @@ export default function Navbar() {
   const closeLabSoon = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
     hoverTimer.current = setTimeout(() => setLabOpen(false), 140);
+  };
+
+  // Stable hover timing for Support dropdown
+  const openSupportSoon = () => {
+    if (supportHoverTimer.current) clearTimeout(supportHoverTimer.current);
+    supportHoverTimer.current = setTimeout(() => setSupportOpen(true), 80);
+  };
+  const closeSupportSoon = () => {
+    if (supportHoverTimer.current) clearTimeout(supportHoverTimer.current);
+    supportHoverTimer.current = setTimeout(() => setSupportOpen(false), 140);
   };
 
   const NavLink = ({
@@ -108,6 +123,7 @@ export default function Navbar() {
     try {
       await signOut(auth);
       setLabOpen(false);
+      setSupportOpen(false);
       setMobileOpen(false);
       router.push("/");
     } catch (err) {
@@ -204,7 +220,79 @@ export default function Navbar() {
             </div>
 
             <NavLink href="/rewards">Rewards</NavLink>
-            <NavLink href="/about">About</NavLink>
+
+            {/* Support dropdown with About, FAQ, Contact */}
+            <div
+              ref={supportRef}
+              className="relative"
+              onMouseEnter={openSupportSoon}
+              onMouseLeave={closeSupportSoon}
+            >
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={supportOpen}
+                className={clsx(
+                  "inline-flex items-center gap-1 px-3 py-2 rounded-md text-[15px] md:text-base font-semibold tracking-wide",
+                  "text-[#EAF5F6]/95 hover:text-white hover:bg-[#0A3A40]",
+                  "transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#15C5C1] focus-visible:ring-offset-2 focus-visible:ring-offset-[#001F24]"
+                )}
+                onClick={() => setSupportOpen((s) => !s)}
+                onFocus={openSupportSoon}
+              >
+                Support
+                <ChevronDown className={clsx(supportOpen && "rotate-180")} />
+              </button>
+
+              <div
+                role="menu"
+                aria-label="Support"
+                className={clsx(
+                  "absolute left-0 mt-2 w-48 rounded-xl border border-[#0A3A40] bg-[#07333B] shadow-lg ring-1 ring-black/5 py-1",
+                  supportOpen ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-1 opacity-0",
+                  "transition"
+                )}
+                onMouseEnter={openSupportSoon}
+                onMouseLeave={closeSupportSoon}
+              >
+                <Link
+                  role="menuitem"
+                  href="/about"
+                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
+                >
+                  About RewmoAI
+                </Link>
+                <Link
+                  role="menuitem"
+                  href="/faq"
+                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
+                >
+                  FAQ
+                </Link>
+                <Link
+                  role="menuitem"
+                  href="/contact"
+                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
+                >
+                  Contact Us
+                </Link>
+                <div className="my-1 border-t border-[#0A3A40]" />
+                <Link
+                  role="menuitem"
+                  href="/terms"
+                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
+                >
+                  Terms of Service
+                </Link>
+                <Link
+                  role="menuitem"
+                  href="/privacy"
+                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
+                >
+                  Privacy Policy
+                </Link>
+              </div>
+            </div>
 
             {/* Go Premium CTA */}
             <Link
@@ -302,9 +390,34 @@ export default function Navbar() {
             <NavLink href="/rewards" onClick={() => setMobileOpen(false)}>
               Rewards
             </NavLink>
-            <NavLink href="/about" onClick={() => setMobileOpen(false)}>
-              About
-            </NavLink>
+
+            {/* Support group with About, FAQ, Contact */}
+            <details className="group">
+              <summary className="list-none">
+                <div className="flex items-center justify-between px-3 py-2 rounded-md text-[15px] font-bold text-[#EAF5F6] hover:text-white hover:bg-[#07333B] transition cursor-pointer">
+                  <span>Support</span>
+                  <ChevronDown className="group-open:rotate-180" />
+                </div>
+              </summary>
+              <div className="pl-2 bg-[#072b33] rounded-lg mx-2 mt-1">
+                <NavLink href="/about" onClick={() => setMobileOpen(false)}>
+                  About RewmoAI
+                </NavLink>
+                <NavLink href="/faq" onClick={() => setMobileOpen(false)}>
+                  FAQ
+                </NavLink>
+                <NavLink href="/contact" onClick={() => setMobileOpen(false)}>
+                  Contact Us
+                </NavLink>
+                <div className="my-1 mx-3 border-t border-[#0A3A40]" />
+                <NavLink href="/terms" onClick={() => setMobileOpen(false)}>
+                  Terms of Service
+                </NavLink>
+                <NavLink href="/privacy" onClick={() => setMobileOpen(false)}>
+                  Privacy Policy
+                </NavLink>
+              </div>
+            </details>
 
             {/* Divider */}
             <div className="my-2 mx-3 border-t border-[#15C5C1]/30" />
