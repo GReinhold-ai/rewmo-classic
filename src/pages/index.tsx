@@ -139,19 +139,34 @@ export default function HomePage() {
           {/* ======= /EMAIL CAPTURE FORM ======= */}
         </div>
 
-        {/* Beta note */}
-        <div className="mt-8 border border-white/20 rounded-2xl p-4 max-w-xl w-full text-sm bg-white/[0.03]">
-          <p className="text-red-400 font-bold">🔴 Beta is LIVE!</p>
-          <p className="mt-1">
-            Your rewards and referrals are being tracked. Withdrawals open after launch.
-          </p>
-          <p className="mt-1">
-            All points follow the{" "}
-            <Link href="/reward-rules" className="underline underline-offset-2">
-              Reward Rules
-            </Link>
-            .
-          </p>
+        {/* 🚀 LAUNCH ANNOUNCEMENT - Replaced Beta box */}
+        <div className="mt-8 border border-[#15C5C1]/60 rounded-2xl p-5 max-w-xl w-full bg-gradient-to-br from-[#072b33] to-[#003B49] shadow-lg">
+          <div className="flex items-start gap-3">
+            <span className="text-3xl">🤖</span>
+            <div>
+              <p className="text-[#15C5C1] font-bold text-lg">
+                Introducing Your First AI Agent
+              </p>
+              <p className="text-white/90 mt-1">
+                RewmoAI is officially live! Start earning cashback rewards on shopping, 
+                access AI-powered training, and let our smart tools help you save more every day.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  href="/shopping"
+                  className="inline-block px-4 py-2 bg-[#FF9151] text-[#003B49] rounded-lg font-bold text-sm hover:bg-[#FFA36C] transition"
+                >
+                  Start Shopping →
+                </Link>
+                <Link
+                  href="/learn/genai"
+                  className="inline-block px-4 py-2 bg-[#15C5C1]/20 text-[#15C5C1] border border-[#15C5C1]/40 rounded-lg font-bold text-sm hover:bg-[#15C5C1]/30 transition"
+                >
+                  AI Training →
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ---------- LeanAI Lab (single, consolidated training box) ---------- */}
