@@ -61,7 +61,7 @@ export default function LeanLabPage() {
             {showModule1 ? "Hide" : "Show"} Module 1: Quality Approach
           </button>
 
-          {/* Module 2: Coming Soon (toggle) */}
+          {/* Module 2 & More (toggle) */}
           <button
             className="px-6 py-4 bg-[#072b33] border-2 border-[#FF9151] rounded-2xl text-[#FF9151] font-bold text-lg shadow hover:bg-[#02404d] hover:text-[#15C5C1] transition"
             onClick={() => setShowModule2((v) => !v)}
@@ -119,17 +119,75 @@ export default function LeanLabPage() {
           </section>
         )}
 
-        {/* Module 2 Coming Soon */}
+        {/* Module 2 & More - NOW WITH CONTENT */}
         {showModule2 && (
-          <section className="w-full max-w-3xl mb-10">
-            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#FF9151] px-8 py-8 text-center">
-              <h2 className="text-2xl font-bold mb-2 text-[#FFA36C]">Coming Soon</h2>
-              <ul className="text-[#B6E7EB] text-lg font-semibold mt-4 space-y-3">
-                <li>Module 2 – Quality Improvement Teams</li>
-                <li>Module 3 – System of Profound Knowledge</li>
-                <li>Module 4 – The Fourteen Points</li>
-                <li>Module 5 – Basic Process Improvement Tools</li>
-              </ul>
+          <section className="w-full max-w-3xl mb-10 space-y-6">
+            {/* Module 2: Quality Improvement Teams - AVAILABLE */}
+            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="bg-[#15C5C1] text-[#003B49] text-xs font-bold px-3 py-1 rounded-full">NEW</span>
+                <h2 className="text-2xl font-bold text-[#FF9151]">
+                  Module 2: Quality Improvement Teams
+                </h2>
+              </div>
+              <p className="text-lg text-[#15C5C1] mb-4 font-semibold">
+                Team Structure for Continuous Improvement
+              </p>
+              <p className="text-[#B6E7EB] mb-4">
+                Learn the roles and responsibilities of quality improvement teams. Understand the three-tier 
+                structure (Leadership Council → QMB → PAT), support roles, and how even solo entrepreneurs 
+                can apply these principles to systematically improve their processes.
+              </p>
+              <div className="text-[#B6E7EB] mb-4">
+                <p className="font-semibold text-[#15C5C1] mb-2">What you'll learn:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Purpose and structure of quality improvement teams</li>
+                  <li>Benefits of the team-based approach</li>
+                  <li>Roles: Leadership Council, QMB, and Process Action Team</li>
+                  <li>Support roles: Process Coordinator, Quality Advisor, Downward Link</li>
+                  <li>How to apply team concepts as a solo entrepreneur</li>
+                </ul>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/leanai/fundamentals"
+                  className="inline-block px-5 py-2 bg-[#15C5C1] text-[#003B49] font-bold rounded-xl hover:bg-[#FF9151] transition"
+                >
+                  📥 Download Module 2
+                </Link>
+                <span className="text-[#B6E7EB] text-sm self-center">19 slides with discussion notes</span>
+              </div>
+            </div>
+
+            {/* Coming Soon Modules */}
+            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#FF9151]/50 px-8 py-8">
+              <h2 className="text-xl font-bold mb-4 text-[#FFA36C]">Coming Soon</h2>
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* Module 3 */}
+                <div className="bg-[#02404d] rounded-xl p-4 border border-[#15C5C1]/30">
+                  <h3 className="text-[#FF9151] font-bold mb-2">Module 3</h3>
+                  <p className="text-[#15C5C1] font-semibold text-sm mb-1">System of Profound Knowledge</p>
+                  <p className="text-[#B6E7EB] text-xs">
+                    Dr. Deming's four pillars: Systems, Psychology, Variation, and Knowledge.
+                  </p>
+                </div>
+                {/* Module 4 */}
+                <div className="bg-[#02404d] rounded-xl p-4 border border-[#15C5C1]/30">
+                  <h3 className="text-[#FF9151] font-bold mb-2">Module 4</h3>
+                  <p className="text-[#15C5C1] font-semibold text-sm mb-1">The Fourteen Points</p>
+                  <p className="text-[#B6E7EB] text-xs">
+                    Deming's management principles adapted for small businesses and individuals.
+                  </p>
+                </div>
+                {/* Module 5 */}
+                <div className="bg-[#02404d] rounded-xl p-4 border border-[#15C5C1]/30">
+                  <h3 className="text-[#FF9151] font-bold mb-2">Module 5</h3>
+                  <p className="text-[#15C5C1] font-semibold text-sm mb-1">Process Improvement Tools</p>
+                  <p className="text-[#B6E7EB] text-xs">
+                    Hands-on tools for the Plan-Do-Check-Act (PDCA) cycle.
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
         )}
