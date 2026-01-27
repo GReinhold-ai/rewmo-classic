@@ -30,25 +30,25 @@ const MODULES = [
   {
     id: 3,
     title: "Module 3: System of Profound Knowledge",
-    fileName: "R-PM Fundamentals Module 3.pptx",
-    description: "Dr. Deming's four pillars: Systems, Psychology, Variation, and Knowledge.",
-    slides: null,
+    fileName: "R-PM_Fundamentals_Module_3.pptx",
+    description: "Dr. Deming's four pillars: Systems Thinking, Psychology, Variation, and Theory of Knowledge.",
+    slides: 26,
     available: true,
   },
   {
     id: 4,
-    title: "Module 4: The Fourteen Points",
-    fileName: "R-PM Fundamentals Module 4.pptx",
-    description: "Deming's management principles adapted for small businesses and individuals.",
-    slides: null,
+    title: "Module 4: The Fourteen Obligations",
+    fileName: "R-PM_Fundamentals_Module_4.pptx",
+    description: "Deming's management principles adapted for small businesses and solo entrepreneurs.",
+    slides: 23,
     available: true,
   },
   {
     id: 5,
     title: "Module 5: Process Improvement Tools",
-    fileName: "R-PM Fundamentals Module 5.pptx",
-    description: "Hands-on tools for the Plan-Do-Check-Act (PDCA) cycle.",
-    slides: null,
+    fileName: "R-PM_Fundamentals_Module_5.pptx",
+    description: "Hands-on tools: Flowcharts, Brainstorming, Pareto Charts, Control Charts, and more.",
+    slides: 30,
     available: true,
   },
 ];
@@ -247,11 +247,11 @@ export default function FundamentalsPage() {
             <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-5">
               <h2 className="text-xl font-semibold text-teal-300">Unlock R-PM Fundamentals</h2>
               <p className="mt-2 text-white/80">
-                Get access to all available R-PM Fundamentals modules plus future updates. 
+                Get access to all R-PM Fundamentals modules. 
                 Your access activates instantly after checkout.
               </p>
               <div className="mt-4 text-sm text-white/70">
-                <p className="font-semibold text-teal-300 mb-2">Included:</p>
+                <p className="font-semibold text-teal-300 mb-2">All 5 Modules Included:</p>
                 <ul className="space-y-1">
                   {MODULES.map(m => (
                     <li key={m.id} className="flex items-center gap-2">
@@ -287,7 +287,7 @@ export default function FundamentalsPage() {
               <div className="rounded-xl border border-teal-500/40 bg-teal-500/10 p-4 mb-6">
                 <h2 className="text-xl font-semibold text-teal-300">You have access ✅</h2>
                 <p className="mt-1 text-white/85 text-sm">
-                  Download your course modules below. New modules will appear here as they're released.
+                  Download your course modules below.
                 </p>
               </div>
 
@@ -306,7 +306,7 @@ export default function FundamentalsPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-lg font-bold text-[#FF9151]">{module.title}</h3>
-                          {module.available && module.id === 2 && (
+                          {module.available && module.id >= 3 && (
                             <span className="bg-teal-500 text-[#003B49] text-xs font-bold px-2 py-0.5 rounded-full">
                               NEW
                             </span>
@@ -314,7 +314,7 @@ export default function FundamentalsPage() {
                         </div>
                         <p className="text-white/70 text-sm">{module.description}</p>
                         {module.slides && (
-                          <p className="text-white/50 text-xs mt-1">{module.slides} slides with discussion notes</p>
+                          <p className="text-white/50 text-xs mt-1">{module.slides} slides</p>
                         )}
                       </div>
                       <div className="flex-shrink-0">
