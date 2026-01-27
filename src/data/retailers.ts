@@ -1,5 +1,8 @@
 // src/data/retailers.ts
 // Retailer data for affiliate shopping page
+// Updated: Added status field (active/pending/declined), Expedia, Orbitz
+
+export type AffiliateStatus = "active" | "pending" | "declined" | "not_applied";
 
 export interface Retailer {
   id: string;
@@ -15,10 +18,11 @@ export interface Retailer {
   cookieDays?: number;
   featured?: boolean;
   active: boolean;
+  status: AffiliateStatus; // Track approval status
 }
 
 export const retailers: Retailer[] = [
-  // ===== FEATURED - HIGH VOLUME =====
+  // ===== ACTIVE - APPROVED AFFILIATES =====
   
   {
     id: "amazon",
@@ -33,7 +37,42 @@ export const retailers: Retailer[] = [
     cookieDays: 1,
     featured: true,
     active: true,
+    status: "active", // ✅ Amazon Associates ACTIVE
   },
+
+  {
+    id: "expedia",
+    name: "Expedia",
+    logo: "/images/retailers/expedia.png",
+    description: "Book flights, hotels, car rentals & vacation packages",
+    category: ["travel", "hotels", "flights", "vacation"],
+    network: "cj",
+    baseUrl: "https://www.expedia.com",
+    affiliateUrl: "", // TODO: Get link from CJ dashboard
+    commission: "2-6%",
+    cookieDays: 7,
+    featured: true,
+    active: true,
+    status: "active", // ✅ CJ Affiliate ACTIVE
+  },
+
+  {
+    id: "orbitz",
+    name: "Orbitz",
+    logo: "/images/retailers/orbitz.png",
+    description: "Discount travel - flights, hotels & vacation deals",
+    category: ["travel", "hotels", "flights", "vacation"],
+    network: "cj",
+    baseUrl: "https://www.orbitz.com",
+    affiliateUrl: "", // TODO: Get link from CJ dashboard
+    commission: "2-6%",
+    cookieDays: 7,
+    featured: true,
+    active: true,
+    status: "active", // ✅ CJ Affiliate ACTIVE
+  },
+
+  // ===== PENDING APPROVAL =====
 
   {
     id: "walmart",
@@ -43,11 +82,12 @@ export const retailers: Retailer[] = [
     category: ["everything", "groceries", "electronics", "home"],
     network: "impact",
     baseUrl: "https://www.walmart.com",
-    affiliateUrl: "", // Add your Walmart affiliate link when approved
+    affiliateUrl: "",
     commission: "1-4%",
     cookieDays: 3,
     featured: true,
     active: true,
+    status: "pending", // ⏳ Walmart Impact - PENDING REVIEW
   },
 
   {
@@ -58,14 +98,15 @@ export const retailers: Retailer[] = [
     category: ["everything", "home", "fashion", "electronics"],
     network: "impact",
     baseUrl: "https://www.target.com",
-    affiliateUrl: "", // Add your Target affiliate link when approved
+    affiliateUrl: "",
     commission: "1-8%",
     cookieDays: 7,
     featured: true,
     active: true,
+    status: "not_applied", // 📝 Need to apply
   },
 
-  // ===== FASHION - HIGH COMMISSION =====
+  // ===== FASHION - VARIOUS STATUS =====
 
   {
     id: "landsend",
@@ -73,13 +114,14 @@ export const retailers: Retailer[] = [
     logo: "/images/retailers/landsend.png",
     description: "Quality clothing, outerwear & home products since 1963",
     category: ["fashion", "clothing", "outerwear", "home"],
-    network: "rakuten",
+    network: "cj",
     baseUrl: "https://www.landsend.com",
-    affiliateUrl: "", // Add via Rakuten when approved
-    commission: "5-7%",
+    affiliateUrl: "",
+    commission: "2%",
     cookieDays: 14,
-    featured: true,
+    featured: false,
     active: true,
+    status: "declined", // ❌ CJ - Declined (can reapply)
   },
 
   {
@@ -90,11 +132,12 @@ export const retailers: Retailer[] = [
     category: ["fashion", "clothing", "women", "accessories"],
     network: "cj",
     baseUrl: "https://www.talbots.com",
-    affiliateUrl: "", // Add via CJ Affiliate when approved
+    affiliateUrl: "",
     commission: "5-8%",
     cookieDays: 14,
-    featured: true,
+    featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   {
@@ -105,11 +148,12 @@ export const retailers: Retailer[] = [
     category: ["fashion", "luxury", "shoes", "beauty", "designer"],
     network: "rakuten",
     baseUrl: "https://www.nordstrom.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "2-11%",
     cookieDays: 14,
     featured: true,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
   },
 
   {
@@ -118,13 +162,46 @@ export const retailers: Retailer[] = [
     logo: "/images/retailers/macys.png",
     description: "Department store - fashion, beauty, home & more",
     category: ["fashion", "beauty", "home", "department"],
-    network: "rakuten",
+    network: "cj",
     baseUrl: "https://www.macys.com",
-    affiliateUrl: "", // Add via Rakuten when approved
-    commission: "2-10%",
+    affiliateUrl: "",
+    commission: "3%",
     cookieDays: 1,
     featured: false,
     active: true,
+    status: "declined", // ❌ CJ - Declined (can reapply)
+  },
+
+  {
+    id: "jcpenney",
+    name: "JCPenney",
+    logo: "/images/retailers/jcpenney.png",
+    description: "Department store - clothing, home, jewelry & more",
+    category: ["fashion", "home", "jewelry", "department"],
+    network: "cj",
+    baseUrl: "https://www.jcpenney.com",
+    affiliateUrl: "",
+    commission: "3%",
+    cookieDays: 7,
+    featured: false,
+    active: true,
+    status: "declined", // ❌ CJ - Declined (can reapply)
+  },
+
+  {
+    id: "michaelkors",
+    name: "Michael Kors",
+    logo: "/images/retailers/michaelkors.png",
+    description: "Designer handbags, watches, shoes & accessories",
+    category: ["fashion", "luxury", "handbags", "accessories"],
+    network: "cj",
+    baseUrl: "https://www.michaelkors.com",
+    affiliateUrl: "",
+    commission: "2%",
+    cookieDays: 14,
+    featured: false,
+    active: true,
+    status: "declined", // ❌ CJ - Declined (can reapply)
   },
 
   {
@@ -135,11 +212,12 @@ export const retailers: Retailer[] = [
     category: ["fashion", "clothing", "accessories"],
     network: "rakuten",
     baseUrl: "https://www.jcrew.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "4-7%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
   },
 
   {
@@ -150,11 +228,12 @@ export const retailers: Retailer[] = [
     category: ["fashion", "clothing", "women", "professional"],
     network: "rakuten",
     baseUrl: "https://www.anntaylor.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "5-8%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
   },
 
   {
@@ -165,11 +244,12 @@ export const retailers: Retailer[] = [
     category: ["fashion", "clothing", "women", "jewelry"],
     network: "cj",
     baseUrl: "https://www.chicos.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "5-8%",
     cookieDays: 7,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   {
@@ -180,11 +260,12 @@ export const retailers: Retailer[] = [
     category: ["fashion", "clothing", "women", "accessories"],
     network: "cj",
     baseUrl: "https://www.whitehouseblackmarket.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "5-8%",
     cookieDays: 7,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   // ===== BEAUTY - HIGH REPEAT PURCHASES =====
@@ -197,11 +278,12 @@ export const retailers: Retailer[] = [
     category: ["beauty", "skincare", "makeup", "fragrance"],
     network: "rakuten",
     baseUrl: "https://www.sephora.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "5-10%",
     cookieDays: 1,
     featured: true,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
   },
 
   {
@@ -212,11 +294,28 @@ export const retailers: Retailer[] = [
     category: ["beauty", "skincare", "makeup", "hair"],
     network: "rakuten",
     baseUrl: "https://www.ulta.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "2-5%",
     cookieDays: 30,
     featured: false,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
+  },
+
+  {
+    id: "loccitane",
+    name: "L'Occitane",
+    logo: "/images/retailers/loccitane.png",
+    description: "Natural beauty, skincare & bath products from Provence",
+    category: ["beauty", "skincare", "bath", "natural"],
+    network: "cj",
+    baseUrl: "https://www.loccitane.com",
+    affiliateUrl: "",
+    commission: "2.5%",
+    cookieDays: 30,
+    featured: false,
+    active: true,
+    status: "declined", // ❌ CJ - Declined (can reapply)
   },
 
   {
@@ -227,11 +326,12 @@ export const retailers: Retailer[] = [
     category: ["beauty", "skincare", "luxury", "spa"],
     network: "rakuten",
     baseUrl: "https://www.bluemercury.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "4-8%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
   },
 
   // ===== HOME & FURNITURE - BIG TICKET =====
@@ -244,11 +344,12 @@ export const retailers: Retailer[] = [
     category: ["home", "furniture", "decor", "bedding"],
     network: "cj",
     baseUrl: "https://www.wayfair.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "5-7%",
     cookieDays: 7,
     featured: true,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   {
@@ -259,11 +360,12 @@ export const retailers: Retailer[] = [
     category: ["home", "furniture", "decor"],
     network: "rakuten",
     baseUrl: "https://www.potterybarn.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "4-6%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
   },
 
   {
@@ -274,11 +376,12 @@ export const retailers: Retailer[] = [
     category: ["home", "kitchen", "cookware", "gourmet"],
     network: "rakuten",
     baseUrl: "https://www.williams-sonoma.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "4-6%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
   },
 
   {
@@ -289,11 +392,30 @@ export const retailers: Retailer[] = [
     category: ["home", "furniture", "decor", "kitchen"],
     network: "rakuten",
     baseUrl: "https://www.crateandbarrel.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "3-5%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
+  },
+
+  // ===== ELECTRONICS & TECH =====
+
+  {
+    id: "hp",
+    name: "HP",
+    logo: "/images/retailers/hp.png",
+    description: "Computers, laptops, printers & tech accessories",
+    category: ["electronics", "computers", "tech"],
+    network: "cj",
+    baseUrl: "https://www.hp.com",
+    affiliateUrl: "",
+    commission: "1%",
+    cookieDays: 30,
+    featured: false,
+    active: true,
+    status: "declined", // ❌ CJ - Declined (can reapply)
   },
 
   // ===== OUTDOOR & SPORTING - HIGH VALUE =====
@@ -306,11 +428,12 @@ export const retailers: Retailer[] = [
     category: ["outdoors", "sports", "camping", "clothing"],
     network: "direct",
     baseUrl: "https://www.rei.com",
-    affiliateUrl: "", // Apply direct at REI
+    affiliateUrl: "",
     commission: "5%",
     cookieDays: 15,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply direct
   },
 
   {
@@ -321,11 +444,12 @@ export const retailers: Retailer[] = [
     category: ["outdoors", "clothing", "gear"],
     network: "cj",
     baseUrl: "https://www.llbean.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "5-7%",
     cookieDays: 7,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   {
@@ -336,11 +460,28 @@ export const retailers: Retailer[] = [
     category: ["outdoors", "gear", "clothing", "adventure"],
     network: "rakuten",
     baseUrl: "https://www.backcountry.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "5-7%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
+  },
+
+  {
+    id: "duluth",
+    name: "Duluth Trading Co.",
+    logo: "/images/retailers/duluth.png",
+    description: "Rugged workwear, outdoor clothing & gear",
+    category: ["outdoors", "clothing", "workwear"],
+    network: "cj",
+    baseUrl: "https://www.duluthtrading.com",
+    affiliateUrl: "",
+    commission: "1%",
+    cookieDays: 30,
+    featured: false,
+    active: true,
+    status: "declined", // ❌ CJ - Declined (can reapply)
   },
 
   // ===== PETS - RECURRING REVENUE =====
@@ -353,11 +494,12 @@ export const retailers: Retailer[] = [
     category: ["pets", "food", "supplies"],
     network: "cj",
     baseUrl: "https://www.chewy.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "4-8%",
     cookieDays: 15,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   {
@@ -368,11 +510,12 @@ export const retailers: Retailer[] = [
     category: ["pets", "food", "supplies", "grooming"],
     network: "cj",
     baseUrl: "https://www.petco.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "4-6%",
     cookieDays: 7,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   // ===== JEWELRY & ACCESSORIES - HIGH VALUE =====
@@ -385,11 +528,12 @@ export const retailers: Retailer[] = [
     category: ["jewelry", "diamonds", "engagement", "luxury"],
     network: "cj",
     baseUrl: "https://www.bluenile.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "5-7%",
     cookieDays: 30,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   {
@@ -400,11 +544,12 @@ export const retailers: Retailer[] = [
     category: ["jewelry", "diamonds", "watches"],
     network: "cj",
     baseUrl: "https://www.jared.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "3-5%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   {
@@ -415,11 +560,12 @@ export const retailers: Retailer[] = [
     category: ["jewelry", "engagement", "watches"],
     network: "cj",
     baseUrl: "https://www.kay.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "3-5%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   // ===== SHOES - HIGH VALUE =====
@@ -432,11 +578,12 @@ export const retailers: Retailer[] = [
     category: ["shoes", "fashion", "accessories"],
     network: "cj",
     baseUrl: "https://www.zappos.com",
-    affiliateUrl: "", // Add via CJ when approved
+    affiliateUrl: "",
     commission: "7%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "not_applied", // 📝 Need to apply on CJ
   },
 
   {
@@ -447,11 +594,30 @@ export const retailers: Retailer[] = [
     category: ["shoes", "accessories"],
     network: "rakuten",
     baseUrl: "https://www.dsw.com",
-    affiliateUrl: "", // Add via Rakuten when approved
+    affiliateUrl: "",
     commission: "4-7%",
     cookieDays: 14,
     featured: false,
     active: true,
+    status: "pending", // ⏳ Rakuten - PENDING
+  },
+
+  // ===== ART & CRAFT =====
+
+  {
+    id: "blick",
+    name: "Blick Art Materials",
+    logo: "/images/retailers/blick.png",
+    description: "Art supplies, craft materials & creative tools",
+    category: ["art", "craft", "supplies"],
+    network: "cj",
+    baseUrl: "https://www.dickblick.com",
+    affiliateUrl: "",
+    commission: "3%",
+    cookieDays: 30,
+    featured: false,
+    active: true,
+    status: "declined", // ❌ CJ - Declined (can reapply)
   },
 ];
 
@@ -489,6 +655,37 @@ export function getAllCategories(): string[] {
 // Get retailers by network (for tracking which programs to apply for)
 export function getRetailersByNetwork(network: string): Retailer[] {
   return retailers.filter((r) => r.active && r.network === network);
+}
+
+// Get retailers by approval status
+export function getRetailersByStatus(status: AffiliateStatus): Retailer[] {
+  return retailers.filter((r) => r.active && r.status === status);
+}
+
+// Get retailers that are approved and have affiliate links ready
+export function getApprovedRetailers(): Retailer[] {
+  return retailers.filter((r) => r.active && r.status === "active");
+}
+
+// Get retailers pending approval
+export function getPendingRetailers(): Retailer[] {
+  return retailers.filter((r) => r.active && r.status === "pending");
+}
+
+// Get declined retailers (for reapplication tracking)
+export function getDeclinedRetailers(): Retailer[] {
+  return retailers.filter((r) => r.active && r.status === "declined");
+}
+
+// Get status summary for admin dashboard
+export function getStatusSummary(): { active: number; pending: number; declined: number; notApplied: number } {
+  const activeRetailers = retailers.filter(r => r.active);
+  return {
+    active: activeRetailers.filter(r => r.status === "active").length,
+    pending: activeRetailers.filter(r => r.status === "pending").length,
+    declined: activeRetailers.filter(r => r.status === "declined").length,
+    notApplied: activeRetailers.filter(r => r.status === "not_applied").length,
+  };
 }
 
 // Affiliate program application links

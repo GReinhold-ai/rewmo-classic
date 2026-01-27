@@ -2,6 +2,7 @@
 // Shopping page with affiliate tracking for all retailers
 // FIXED: Opens links immediately to work on DuckDuckGo and other privacy browsers
 // UPDATED: Removed proprietary commission language
+// UPDATED: Shows status badges (Active, Pending, Coming Soon)
 import { useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
@@ -10,7 +11,10 @@ import {
   getActiveRetailers,
   getFeaturedRetailers,
   getAllCategories,
+  getApprovedRetailers,
+  getStatusSummary,
   Retailer,
+  AffiliateStatus,
 } from "@/data/retailers";
 import {
   generateAmazonHomepageLink,
@@ -54,13 +58,60 @@ export default function ShoppingPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [amazonSearch, setAmazonSearch] = useState("");
+  const [showStatusFilter, setShowStatusFilter] = useState<"all" | "active" | "pending">("all");
 
   const activeRetailers = getActiveRetailers();
   const featuredRetailers = getFeaturedRetailers();
+  const approvedRetailers = getApprovedRetailers();
   const categories = getAllCategories();
+  const statusSummary = getStatusSummary();
 
-  // Filter retailers by category and search
+  // Get status badge styling and text
+  const getStatusBadge = (status: AffiliateStatus) => {
+    switch (status) {
+      case "active":
+        return {
+          text: "✓ Active",
+          className: "bg-green-500/20 text-green-400 border-green-500/30",
+        };
+      case "pending":
+        return {
+          text: "⏳ Pending",
+          className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+        };
+      case "declined":
+        return {
+          text: "🔄 Reapplying",
+          className: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+        };
+      case "not_applied":
+        return {
+          text: "🔜 Coming Soon",
+          className: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+        };
+      default:
+        return {
+          text: "–",
+          className: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+        };
+    }
+  };
+
+  // Check if retailer is ready for shopping (has active affiliate)
+  const isRetailerReady = (retailer: Retailer): boolean => {
+    return retailer.status === "active";
+  };
+
+  // Filter retailers by category, search, and status
   const filteredRetailers = activeRetailers.filter((r) => {
+    // Status filter
+    if (showStatusFilter === "active" && r.status !== "active") {
+      return false;
+    }
+    if (showStatusFilter === "pending" && r.status === "active") {
+      return false;
+    }
+    
     if (selectedCategory !== "all" && !r.category.includes(selectedCategory)) {
       return false;
     }
@@ -100,6 +151,12 @@ export default function ShoppingPage() {
 
   // Handle retailer click - FIXED: Opens immediately, logs in background
   const handleRetailerClick = (retailer: Retailer) => {
+    // If retailer isn't ready, show message instead of navigating
+    if (!isRetailerReady(retailer)) {
+      alert(`${retailer.name} is coming soon! We're working on getting this partnership set up. Try one of our active stores like Amazon, Expedia, or Orbitz.`);
+      return;
+    }
+
     let url: string;
     
     if (currentUser) {
@@ -218,6 +275,42 @@ export default function ShoppingPage() {
           </p>
         </div>
 
+        {/* Status Summary */}
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+            <button
+              onClick={() => setShowStatusFilter("all")}
+              className={`px-4 py-2 rounded-lg transition ${
+                showStatusFilter === "all"
+                  ? "bg-[#FF9151] text-[#003B49] font-bold"
+                  : "bg-white/10 text-white/70 hover:bg-white/20"
+              }`}
+            >
+              All Stores ({activeRetailers.length})
+            </button>
+            <button
+              onClick={() => setShowStatusFilter("active")}
+              className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                showStatusFilter === "active"
+                  ? "bg-green-500 text-white font-bold"
+                  : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+              }`}
+            >
+              <span>✓</span> Active ({statusSummary.active})
+            </button>
+            <button
+              onClick={() => setShowStatusFilter("pending")}
+              className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                showStatusFilter === "pending"
+                  ? "bg-yellow-500 text-black font-bold"
+                  : "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30"
+              }`}
+            >
+              <span>⏳</span> Coming Soon ({statusSummary.pending + statusSummary.declined + statusSummary.notApplied})
+            </button>
+          </div>
+        </div>
+
         {/* User Status */}
         {currentUser && (
           <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-8 flex items-center justify-between">
@@ -306,30 +399,44 @@ export default function ShoppingPage() {
             ⭐ Featured Retailers
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
-            {featuredRetailers.map((retailer) => (
-              <button
-                key={retailer.id}
-                onClick={() => handleRetailerClick(retailer)}
-                className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 transition text-left group"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-white group-hover:text-[#FF9151]">
-                    {retailer.name}
-                  </h3>
-                  {retailer.commission && (
-                    <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                      Up to {retailer.commission}
+            {featuredRetailers.map((retailer) => {
+              const badge = getStatusBadge(retailer.status);
+              const ready = isRetailerReady(retailer);
+              
+              return (
+                <button
+                  key={retailer.id}
+                  onClick={() => handleRetailerClick(retailer)}
+                  className={`bg-white/5 border rounded-xl p-6 transition text-left group ${
+                    ready 
+                      ? "border-white/10 hover:bg-white/10 cursor-pointer" 
+                      : "border-white/5 opacity-75 cursor-not-allowed"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className={`text-lg font-bold ${ready ? "text-white group-hover:text-[#FF9151]" : "text-white/70"}`}>
+                      {retailer.name}
+                    </h3>
+                    <span className={`text-xs px-2 py-1 rounded border ${badge.className}`}>
+                      {badge.text}
                     </span>
-                  )}
-                </div>
-                <p className="text-white/60 text-sm mb-3">
-                  {retailer.description}
-                </p>
-                <span className="text-[#15C5C1] text-sm font-medium">
-                  Shop Now →
-                </span>
-              </button>
-            ))}
+                  </div>
+                  <p className="text-white/60 text-sm mb-3">
+                    {retailer.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    {retailer.commission && (
+                      <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
+                        Up to {retailer.commission}
+                      </span>
+                    )}
+                    <span className={`text-sm font-medium ${ready ? "text-[#15C5C1]" : "text-white/40"}`}>
+                      {ready ? "Shop Now →" : "Coming Soon"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -373,42 +480,60 @@ export default function ShoppingPage() {
 
         {/* All Retailers Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredRetailers.map((retailer) => (
-            <button
-              key={retailer.id}
-              onClick={() => handleRetailerClick(retailer)}
-              className="bg-white/5 border border-white/10 rounded-xl p-5 hover:bg-white/10 transition text-left group"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-bold text-white group-hover:text-[#FF9151]">
-                  {retailer.name}
-                </h3>
-                {retailer.commission && (
-                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                    Up to {retailer.commission}
+          {filteredRetailers.map((retailer) => {
+            const badge = getStatusBadge(retailer.status);
+            const ready = isRetailerReady(retailer);
+            
+            return (
+              <button
+                key={retailer.id}
+                onClick={() => handleRetailerClick(retailer)}
+                className={`bg-white/5 border rounded-xl p-5 transition text-left group ${
+                  ready 
+                    ? "border-white/10 hover:bg-white/10 cursor-pointer" 
+                    : "border-white/5 opacity-70 cursor-not-allowed"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className={`text-lg font-bold ${ready ? "text-white group-hover:text-[#FF9151]" : "text-white/60"}`}>
+                    {retailer.name}
+                  </h3>
+                  <span className={`text-xs px-2 py-1 rounded border ${badge.className}`}>
+                    {badge.text}
                   </span>
-                )}
-              </div>
-              <p className="text-white/60 text-sm mb-2">
-                {retailer.description}
-              </p>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-1">
-                  {retailer.category.slice(0, 2).map((cat) => (
-                    <span
-                      key={cat}
-                      className="text-xs bg-white/10 text-white/50 px-2 py-0.5 rounded"
-                    >
-                      {cat}
-                    </span>
-                  ))}
                 </div>
-                <span className="text-[#15C5C1] text-sm font-medium opacity-0 group-hover:opacity-100 transition">
-                  Shop →
-                </span>
-              </div>
-            </button>
-          ))}
+                <p className="text-white/60 text-sm mb-2">
+                  {retailer.description}
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1">
+                    {retailer.category.slice(0, 2).map((cat) => (
+                      <span
+                        key={cat}
+                        className="text-xs bg-white/10 text-white/50 px-2 py-0.5 rounded"
+                      >
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {retailer.commission && ready && (
+                      <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
+                        {retailer.commission}
+                      </span>
+                    )}
+                    <span className={`text-sm font-medium transition ${
+                      ready 
+                        ? "text-[#15C5C1] opacity-0 group-hover:opacity-100" 
+                        : "text-white/30"
+                    }`}>
+                      {ready ? "Shop →" : "Soon"}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {filteredRetailers.length === 0 && (
