@@ -33,7 +33,7 @@ const MODULES = [
     fileName: "R-PM Fundamentals Module 3.pptx",
     description: "Dr. Deming's four pillars: Systems, Psychology, Variation, and Knowledge.",
     slides: null,
-    available: false,
+    available: true,
   },
   {
     id: 4,
@@ -41,7 +41,7 @@ const MODULES = [
     fileName: "R-PM Fundamentals Module 4.pptx",
     description: "Deming's management principles adapted for small businesses and individuals.",
     slides: null,
-    available: false,
+    available: true,
   },
   {
     id: 5,
@@ -49,7 +49,7 @@ const MODULES = [
     fileName: "R-PM Fundamentals Module 5.pptx",
     description: "Hands-on tools for the Plan-Do-Check-Act (PDCA) cycle.",
     slides: null,
-    available: false,
+    available: true,
   },
 ];
 
