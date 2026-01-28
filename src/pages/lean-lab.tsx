@@ -6,7 +6,6 @@ export default function LeanLabPage() {
   // UI state
   const [showModule1, setShowModule1] = useState(false);
   const [showModule2, setShowModule2] = useState(false);
-  const [showTraining, setShowTraining] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#003B49] font-sans text-white">
@@ -66,7 +65,7 @@ export default function LeanLabPage() {
             className="px-6 py-4 bg-[#072b33] border-2 border-[#FF9151] rounded-2xl text-[#FF9151] font-bold text-lg shadow hover:bg-[#02404d] hover:text-[#15C5C1] transition"
             onClick={() => setShowModule2((v) => !v)}
           >
-            {showModule2 ? "Hide" : "Show"} Module 2 & More
+            {showModule2 ? "Hide" : "Show"} Modules 2–5
           </button>
 
           {/* AI Training - Direct Link (no modal) */}
@@ -119,7 +118,7 @@ export default function LeanLabPage() {
           </section>
         )}
 
-        {/* Module 2 & More - NOW WITH CONTENT */}
+        {/* Modules 2-5 */}
         {showModule2 && (
           <section className="w-full max-w-3xl mb-10 space-y-6">
             {/* Module 2: Quality Improvement Teams - AVAILABLE */}
@@ -159,34 +158,111 @@ export default function LeanLabPage() {
               </div>
             </div>
 
-            {/* Coming Soon Modules */}
-            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#FF9151]/50 px-8 py-8">
-              <h2 className="text-xl font-bold mb-4 text-[#FFA36C]">Coming Soon</h2>
-              <div className="grid md:grid-cols-3 gap-4">
-                {/* Module 3 */}
-                <div className="bg-[#02404d] rounded-xl p-4 border border-[#15C5C1]/30">
-                  <h3 className="text-[#FF9151] font-bold mb-2">Module 3</h3>
-                  <p className="text-[#15C5C1] font-semibold text-sm mb-1">System of Profound Knowledge</p>
-                  <p className="text-[#B6E7EB] text-xs">
-                    Dr. Deming's four pillars: Systems, Psychology, Variation, and Knowledge.
-                  </p>
-                </div>
-                {/* Module 4 */}
-                <div className="bg-[#02404d] rounded-xl p-4 border border-[#15C5C1]/30">
-                  <h3 className="text-[#FF9151] font-bold mb-2">Module 4</h3>
-                  <p className="text-[#15C5C1] font-semibold text-sm mb-1">The Fourteen Points</p>
-                  <p className="text-[#B6E7EB] text-xs">
-                    Deming's management principles adapted for small businesses and individuals.
-                  </p>
-                </div>
-                {/* Module 5 */}
-                <div className="bg-[#02404d] rounded-xl p-4 border border-[#15C5C1]/30">
-                  <h3 className="text-[#FF9151] font-bold mb-2">Module 5</h3>
-                  <p className="text-[#15C5C1] font-semibold text-sm mb-1">Process Improvement Tools</p>
-                  <p className="text-[#B6E7EB] text-xs">
-                    Hands-on tools for the Plan-Do-Check-Act (PDCA) cycle.
-                  </p>
-                </div>
+            {/* Module 3: System of Profound Knowledge - AVAILABLE */}
+            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="bg-[#15C5C1] text-[#003B49] text-xs font-bold px-3 py-1 rounded-full">NEW</span>
+                <h2 className="text-2xl font-bold text-[#FF9151]">
+                  Module 3: System of Profound Knowledge
+                </h2>
+              </div>
+              <p className="text-lg text-[#15C5C1] mb-4 font-semibold">
+                Dr. Deming's Four Pillars for Transformation
+              </p>
+              <p className="text-[#B6E7EB] mb-4">
+                Discover the theoretical foundation that makes lasting improvement possible. Learn how Systems Thinking, 
+                Psychology, Variation, and Theory of Knowledge work together to transform how you see and improve 
+                your processes.
+              </p>
+              <div className="text-[#B6E7EB] mb-4">
+                <p className="font-semibold text-[#15C5C1] mb-2">What you'll learn:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Systems Thinking: See interconnections, not isolated parts</li>
+                  <li>Psychology: Understand motivation and human behavior in processes</li>
+                  <li>Variation: Distinguish common cause from special cause variation</li>
+                  <li>Theory of Knowledge: Make predictions and learn from results</li>
+                </ul>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/leanai/fundamentals"
+                  className="inline-block px-5 py-2 bg-[#15C5C1] text-[#003B49] font-bold rounded-xl hover:bg-[#FF9151] transition"
+                >
+                  📥 Download Module 3
+                </Link>
+                <span className="text-[#B6E7EB] text-sm self-center">26 slides with discussion notes</span>
+              </div>
+            </div>
+
+            {/* Module 4: The Fourteen Obligations - AVAILABLE */}
+            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="bg-[#15C5C1] text-[#003B49] text-xs font-bold px-3 py-1 rounded-full">NEW</span>
+                <h2 className="text-2xl font-bold text-[#FF9151]">
+                  Module 4: The Fourteen Obligations
+                </h2>
+              </div>
+              <p className="text-lg text-[#15C5C1] mb-4 font-semibold">
+                Management Principles for Small Business Success
+              </p>
+              <p className="text-[#B6E7EB] mb-4">
+                Deming's famous 14 Points, reimagined for individuals and small businesses. Learn practical 
+                management obligations that drive quality, reduce waste, and build trust with customers.
+              </p>
+              <div className="text-[#B6E7EB] mb-4">
+                <p className="font-semibold text-[#15C5C1] mb-2">What you'll learn:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Create constancy of purpose for improvement</li>
+                  <li>Adopt a philosophy of continuous learning</li>
+                  <li>Drive out fear and build trust</li>
+                  <li>Break down barriers between areas</li>
+                  <li>Institute training and self-improvement</li>
+                </ul>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/leanai/fundamentals"
+                  className="inline-block px-5 py-2 bg-[#15C5C1] text-[#003B49] font-bold rounded-xl hover:bg-[#FF9151] transition"
+                >
+                  📥 Download Module 4
+                </Link>
+                <span className="text-[#B6E7EB] text-sm self-center">23 slides with discussion notes</span>
+              </div>
+            </div>
+
+            {/* Module 5: Process Improvement Tools - AVAILABLE */}
+            <div className="bg-[#072b33] rounded-2xl shadow-xl border border-[#15C5C1] px-8 py-8">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="bg-[#15C5C1] text-[#003B49] text-xs font-bold px-3 py-1 rounded-full">NEW</span>
+                <h2 className="text-2xl font-bold text-[#FF9151]">
+                  Module 5: Process Improvement Tools
+                </h2>
+              </div>
+              <p className="text-lg text-[#15C5C1] mb-4 font-semibold">
+                Hands-On Tools for the PDCA Cycle
+              </p>
+              <p className="text-[#B6E7EB] mb-4">
+                Master the practical tools that bring process improvement to life. From flowcharts to control charts, 
+                learn how to visualize, measure, analyze, and improve any process.
+              </p>
+              <div className="text-[#B6E7EB] mb-4">
+                <p className="font-semibold text-[#15C5C1] mb-2">What you'll learn:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Flowcharts: Map and visualize your processes</li>
+                  <li>Brainstorming & Affinity Diagrams: Generate and organize ideas</li>
+                  <li>Pareto Charts: Focus on the vital few</li>
+                  <li>Cause & Effect Diagrams: Find root causes</li>
+                  <li>Control Charts: Monitor variation and stability</li>
+                </ul>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/leanai/fundamentals"
+                  className="inline-block px-5 py-2 bg-[#15C5C1] text-[#003B49] font-bold rounded-xl hover:bg-[#FF9151] transition"
+                >
+                  📥 Download Module 5
+                </Link>
+                <span className="text-[#B6E7EB] text-sm self-center">30 slides with discussion notes</span>
               </div>
             </div>
           </section>
