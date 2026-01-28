@@ -1,8 +1,7 @@
-// src/pages/lean-lab/index.tsx (or wherever your LeanAI Lab page lives)
+// src/pages/lean-lab/index.tsx
 import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext"; // Adjust import path as needed
 
 // Types
 type Tab = "ai" | "rpm" | "finance" | "research";
@@ -27,7 +26,7 @@ const RPM_INTRO_MODULES: Module[] = [
     description: "A quick overview of RewmoAI Process Management principles. Perfect starting point for anyone new to quality management.",
     duration: "30 min",
     slides: 15,
-    downloadUrl: "https://firebasestorage.googleapis.com/v0/b/rewmoai.firebasestorage.app/o/ProcessSync_Module1_LiteDeck%2015Sept2025.pptx?alt=media", // Update with actual URL
+    downloadUrl: "https://firebasestorage.googleapis.com/v0/b/rewmoai.firebasestorage.app/o/ProcessSync_Module1_LiteDeck%2015Sept2025.pptx?alt=media",
   },
 ];
 
@@ -39,7 +38,7 @@ const RPM_FUNDAMENTALS_MODULES: Module[] = [
     duration: "2-2.5 hours",
     slides: 26,
     isPro: true,
-    downloadUrl: "https://firebasestorage.googleapis.com/v0/b/rewmoai.firebasestorage.app/o/R-PM_Fundamentals_Module_1_Expanded.pptx?alt=media", // Update with actual URL
+    downloadUrl: "https://firebasestorage.googleapis.com/v0/b/rewmoai.firebasestorage.app/o/R-PM_Fundamentals_Module_1_Expanded.pptx?alt=media",
   },
   {
     id: "rpm-fund-2",
@@ -82,7 +81,7 @@ const AI_MODULES: Module[] = [
     title: "Prompt Engineering Fundamentals",
     description: "Learn how to craft effective prompts for ChatGPT, Claude, and other AI tools.",
     duration: "1 hour",
-    downloadUrl: "#", // Add actual URL
+    downloadUrl: "#",
   },
   {
     id: "ai-agents",
@@ -101,7 +100,7 @@ const FINANCE_MODULES: Module[] = [
     title: "Personal Finance Fundamentals",
     description: "Budgeting, saving, and building a solid financial foundation.",
     duration: "1.5 hours",
-    downloadUrl: "#", // Add actual URL
+    downloadUrl: "#",
   },
   {
     id: "fin-investing",
@@ -117,9 +116,9 @@ export default function LeanAILab() {
   const [activeTab, setActiveTab] = useState<Tab>("rpm");
   const [rpmSubTab, setRpmSubTab] = useState<SubTab>("intro");
   
-  // Get user auth state - adjust based on your auth setup
-  const { user } = useAuth?.() || { user: null };
-  const isPro = user?.tier === "PRO" || user?.tier === "BUSINESS";
+  // TODO: Replace with your actual auth check
+  // For now, set to true to show all content, or false to show paywall
+  const isPro = true;
 
   return (
     <>
@@ -141,7 +140,7 @@ export default function LeanAILab() {
               Intro to RewmoAI Process Management
             </h2>
             <p className="mt-4 text-slate-300 leading-relaxed">
-              Whether you're running a business, managing a household, or just trying to do more 
+              Whether you&apos;re running a business, managing a household, or just trying to do more 
               with less—how you <span className="text-[#FF6B00] font-semibold">manage your process</span> is 
               the secret to bigger savings, less stress, and better results.
             </p>
@@ -234,7 +233,7 @@ export default function LeanAILab() {
                 <div>
                   <div className="bg-[#052B33] rounded-xl p-6 border border-[#15C5C1]/20 mb-6">
                     <h3 className="text-lg font-semibold text-[#15C5C1] mb-2">
-                      🎉 Start Here — It's Free!
+                      🎉 Start Here — It&apos;s Free!
                     </h3>
                     <p className="text-slate-400 text-sm">
                       Get a quick overview of R-PM principles before diving into the full fundamentals course.
@@ -297,10 +296,10 @@ export default function LeanAILab() {
                 </h3>
                 <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
                   Use advanced AI to analyze stocks, research companies, and get comprehensive 
-                  financial insights powered by OpenAI's latest models.
+                  financial insights powered by OpenAI&apos;s latest models.
                 </p>
                 <a
-                  href="https://chatgpt.com/g/g-..." // Add your actual GPT link
+                  href="https://chatgpt.com/g/g-..."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-8 py-4 bg-[#FF6B00] hover:bg-[#FF9151] text-white font-semibold rounded-lg transition-colors text-lg"
@@ -416,7 +415,6 @@ function ModuleCard({
 }) {
   const canAccess = !module.isPro || userIsPro;
   const isLocked = module.isPro && !userIsPro;
-  const isAvailable = !module.isComingSoon && canAccess;
 
   return (
     <div 
