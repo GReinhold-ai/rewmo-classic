@@ -15,11 +15,20 @@ type Module = {
   duration: string;
   slides?: number;
   downloadUrl?: string;
-  pageUrl?: string; // Link to interactive page with quiz
+  pageUrl?: string;
   isPro?: boolean;
   isComingSoon?: boolean;
   hasQuiz?: boolean;
 };
+
+// ===========================================
+// FIREBASE STORAGE BASE URL
+// ===========================================
+const STORAGE_BASE = "https://firebasestorage.googleapis.com/v0/b/rewmoai.firebasestorage.app/o";
+
+// Helper to create download URLs
+const storageUrl = (filename: string) => 
+  `${STORAGE_BASE}/${encodeURIComponent(filename)}?alt=media`;
 
 // ===========================================
 // MODULE DATA
@@ -29,11 +38,19 @@ const RPM_INTRO_MODULES: Module[] = [
   {
     id: "rpm-intro-foundations",
     title: "R-PM Foundations (Lite)",
-    description: "Quick overview of workflows, customer-defined quality, inspection vs. improvement, and the quality chain reaction. Includes quiz & badge!",
+    description: "Quick overview of workflows, customer-defined quality, inspection vs. improvement, and the quality chain reaction. Includes interactive quiz & badge!",
     duration: "45 min",
     slides: 15,
-    pageUrl: "/learn/rpm", // Your existing page with quiz
+    pageUrl: "/learn/rpm",
     hasQuiz: true,
+  },
+  {
+    id: "rpm-intro-download",
+    title: "ProcessSync Lite Deck",
+    description: "Downloadable slide deck covering the basics of process management. Great for offline review or sharing with your team.",
+    duration: "30 min",
+    slides: 15,
+    downloadUrl: storageUrl("ProcessSync_Module1_LiteDeck 15Sept2025.pptx"),
   },
 ];
 
@@ -45,7 +62,7 @@ const RPM_FUNDAMENTALS_MODULES: Module[] = [
     duration: "2-2.5 hours",
     slides: 26,
     isPro: true,
-    downloadUrl: "https://firebasestorage.googleapis.com/v0/b/rewmoai.firebasestorage.app/o/R-PM_Fundamentals_Module_1_Expanded.pptx?alt=media", // UPDATE THIS URL after upload
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_1_Expanded.pptx"),
   },
   {
     id: "rpm-fund-2",
@@ -53,7 +70,7 @@ const RPM_FUNDAMENTALS_MODULES: Module[] = [
     description: "Team structures, roles, responsibilities, and organizing effective improvement efforts for your business.",
     duration: "2 hours",
     isPro: true,
-    isComingSoon: true,
+    downloadUrl: storageUrl("R-PM Fundamentals Module 2.pptx"),
   },
   {
     id: "rpm-fund-3",
@@ -61,7 +78,7 @@ const RPM_FUNDAMENTALS_MODULES: Module[] = [
     description: "Step-by-step guide to implementing R-PM methodology in your household or small business.",
     duration: "2.5 hours",
     isPro: true,
-    isComingSoon: true,
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_3.pptx"),
   },
   {
     id: "rpm-fund-4",
@@ -69,7 +86,7 @@ const RPM_FUNDAMENTALS_MODULES: Module[] = [
     description: "Advanced tools and techniques for continuous quality improvement and waste reduction.",
     duration: "3 hours",
     isPro: true,
-    isComingSoon: true,
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_4.pptx"),
   },
   {
     id: "rpm-fund-5",
@@ -77,23 +94,23 @@ const RPM_FUNDAMENTALS_MODULES: Module[] = [
     description: "Data-driven decision making and understanding variation in your processes.",
     duration: "2.5 hours",
     isPro: true,
-    isComingSoon: true,
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_5.pptx"),
   },
 ];
 
 const AI_MODULES: Module[] = [
   {
-    id: "ai-prompting",
-    title: "Prompt Engineering Fundamentals",
-    description: "Learn to craft effective prompts for ChatGPT, Claude, and other AI tools to get better results.",
-    duration: "1 hour",
+    id: "ai-genai",
+    title: "GenAI Training",
+    description: "Learn how to plan, prompt, and prototype with modern AI tools like ChatGPT and Claude.",
+    duration: "1-2 hours",
     pageUrl: "/learn/genai",
   },
   {
-    id: "ai-workflows",
-    title: "AI-Powered Workflows",
-    description: "Automate repetitive tasks and build smart workflows using AI agents.",
-    duration: "2 hours",
+    id: "ai-prompting",
+    title: "Prompt Engineering Fundamentals",
+    description: "Master the art of crafting effective prompts to get better results from any AI tool.",
+    duration: "1 hour",
     isPro: true,
     isComingSoon: true,
   },
@@ -101,10 +118,10 @@ const AI_MODULES: Module[] = [
 
 const FINANCE_MODULES: Module[] = [
   {
-    id: "fin-basics",
-    title: "Personal Finance Fundamentals",
-    description: "Budgeting, saving strategies, and building a solid financial foundation for life.",
-    duration: "1.5 hours",
+    id: "fin-track",
+    title: "Finance Training Track",
+    description: "Personal finance, investing fundamentals, and building wealth. Practical money skills for life.",
+    duration: "2+ hours",
     pageUrl: "/learn/finance",
   },
   {
@@ -126,7 +143,7 @@ export default function LeanAILab() {
   const [rpmSubTab, setRpmSubTab] = useState<RpmSubTab>("intro");
   
   // TODO: Replace with your actual auth check when ready
-  // Set to false to show paywall, true to unlock all content
+  // Set to false to show paywall, true to unlock all PRO content
   const isPro = true;
 
   return (
@@ -156,8 +173,7 @@ export default function LeanAILab() {
               </p>
               <p className="mt-4 text-slate-300 text-center leading-relaxed">
                 <span className="text-[#15C5C1] font-semibold">LeanAI Lab</span> makes world-class 
-                process improvement simple, visual, and accessible for everyone. Our AI-driven tools 
-                help you map routines, spot waste, and unlock continuous improvement.
+                process improvement simple, visual, and accessible for everyone.
               </p>
               <p className="mt-4 text-[#15C5C1] text-center text-sm">
                 Ready to get started? Jump into the resources below!
@@ -223,8 +239,7 @@ export default function LeanAILab() {
                       : "bg-[#072b33] text-slate-300 hover:bg-[#0a3d47] border border-[#15C5C1]/30"
                   }`}
                 >
-                  📖 Introduction
-                  <span className="text-xs bg-[#22C55E]/20 text-[#22C55E] px-2 py-0.5 rounded">FREE</span>
+                  📖 Introduction (Free)
                 </button>
                 <button
                   onClick={() => setRpmSubTab("fundamentals")}
@@ -234,7 +249,7 @@ export default function LeanAILab() {
                       : "bg-[#072b33] text-slate-300 hover:bg-[#0a3d47] border border-[#FF6B00]/30"
                   }`}
                 >
-                  🎓 Fundamentals Series
+                  🎓 Fundamentals Series (5 Modules)
                   {!isPro && <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">PRO</span>}
                 </button>
               </div>
@@ -252,8 +267,8 @@ export default function LeanAILab() {
                           🎉 Start Here — It&apos;s Free!
                         </h3>
                         <p className="text-slate-400 text-sm mt-1">
-                          Get a quick overview of R-PM principles, take a quiz, and earn your first badge 
-                          before diving into the full fundamentals course.
+                          Get a quick overview of R-PM principles. Take the interactive course with quiz to earn your first badge, 
+                          or download the slide deck for offline review.
                         </p>
                       </div>
                     </div>
@@ -268,6 +283,22 @@ export default function LeanAILab() {
                   {!isPro && (
                     <ProUpgradeCard />
                   )}
+                  <div className="bg-[#072b33] rounded-xl p-5 border border-[#FF6B00]/20 mb-6">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-[#FF6B00]/10 rounded-lg">
+                        <Award className="w-5 h-5 text-[#FF6B00]" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#FF6B00]">
+                          Complete R-PM Fundamentals Series
+                        </h3>
+                        <p className="text-slate-400 text-sm mt-1">
+                          5 comprehensive modules with full instructor notes, exercises, and methodology. 
+                          Perfect for training yourself, your team, or your small business.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <ModuleGrid modules={RPM_FUNDAMENTALS_MODULES} userIsPro={isPro} />
                 </div>
               )}
