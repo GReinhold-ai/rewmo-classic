@@ -6,13 +6,13 @@ import { BookOpen, Brain, Hammer, Zap, Download, Lock, Play, Award, ExternalLink
 
 // Types
 type Tab = "rpm" | "ai" | "finance" | "research";
-type RpmSubTab = "intro" | "fundamentals";
+type RpmSubTab = "free" | "pro";
 
 type Module = {
   id: string;
   title: string;
   description: string;
-  duration: string;
+  duration?: string;
   slides?: number;
   downloadUrl?: string;
   pageUrl?: string;
@@ -34,70 +34,99 @@ const storageUrl = (filename: string) =>
 // MODULE DATA
 // ===========================================
 
-const RPM_INTRO_MODULES: Module[] = [
+// FREE R-PM Modules
+const RPM_FREE_MODULES: Module[] = [
   {
-    id: "rpm-intro-foundations",
-    title: "R-PM Foundations (Lite)",
-    description: "Quick overview of workflows, customer-defined quality, inspection vs. improvement, and the quality chain reaction. Includes interactive quiz & badge!",
-    duration: "45 min",
-    slides: 15,
-    pageUrl: "/learn/rpm",
+    id: "rpm-quiz",
+    title: "R-PM Quiz",
+    description: "Test your knowledge of RewmoAI Process Management principles with this interactive quiz deck.",
+    duration: "15 min",
+    downloadUrl: storageUrl("ProcessSync_Module1_LiteDeck 15Sept2025.pptx"),
     hasQuiz: true,
   },
   {
-    id: "rpm-intro-download",
-    title: "ProcessSync Lite Deck",
-    description: "Downloadable slide deck covering the basics of process management. Great for offline review or sharing with your team.",
-    duration: "30 min",
-    slides: 15,
-    downloadUrl: storageUrl("ProcessSync_Module1_LiteDeck 15Sept2025.pptx"),
+    id: "rpm-free-1",
+    title: "Fundamentals Module 1",
+    description: "Introduction to quality definitions, customer focus, and the foundations of process management.",
+    duration: "1-1.5 hours",
+    downloadUrl: storageUrl("R-PM Fundamentals Module 1.pptx"),
+  },
+  {
+    id: "rpm-free-2",
+    title: "Fundamentals Module 2",
+    description: "Understanding processes, workflows, and how to identify improvement opportunities.",
+    duration: "1-1.5 hours",
+    downloadUrl: storageUrl("R-PM Fundamentals Module 2.pptx"),
+  },
+  {
+    id: "rpm-free-3",
+    title: "Fundamentals Module 3",
+    description: "Quality improvement techniques and practical tools for everyday use.",
+    duration: "1-1.5 hours",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_3.pptx"),
+  },
+  {
+    id: "rpm-free-4",
+    title: "Fundamentals Module 4",
+    description: "Implementing quality management in your household or small business.",
+    duration: "1-1.5 hours",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_4.pptx"),
+  },
+  {
+    id: "rpm-free-5",
+    title: "Fundamentals Module 5",
+    description: "Advanced concepts and sustaining continuous improvement.",
+    duration: "1-1.5 hours",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_5.pptx"),
   },
 ];
 
-const RPM_FUNDAMENTALS_MODULES: Module[] = [
+// PRO R-PM Modules (Expanded with full instructor notes)
+const RPM_PRO_MODULES: Module[] = [
   {
-    id: "rpm-fund-1",
-    title: "Module 1: The Quality Approach",
-    description: "Complete deep-dive into quality definitions, 14 dimensions, customer focus, process thinking, and the chain reaction. Full instructor notes included.",
+    id: "rpm-pro-1",
+    title: "Module 1: The Quality Approach (Expanded)",
+    description: "Complete deep-dive into quality definitions, 14 dimensions, customer focus, process thinking, and the chain reaction. Full instructor notes, exercises, and comprehensive methodology included.",
     duration: "2-2.5 hours",
     slides: 26,
     isPro: true,
     downloadUrl: storageUrl("R-PM_Fundamentals_Module_1_Expanded.pptx"),
   },
   {
-    id: "rpm-fund-2",
-    title: "Module 2: Quality Improvement Teams",
-    description: "Team structures, roles, responsibilities, and organizing effective improvement efforts for your business.",
+    id: "rpm-pro-2",
+    title: "Module 2: Team Skills (Expanded)",
+    description: "Building effective quality improvement teams with detailed facilitation guides and team exercises.",
     duration: "2 hours",
     isPro: true,
-    downloadUrl: storageUrl("R-PM Fundamentals Module 2.pptx"),
+    isComingSoon: true,
   },
   {
-    id: "rpm-fund-3",
-    title: "Module 3: Implementation",
-    description: "Step-by-step guide to implementing R-PM methodology in your household or small business.",
+    id: "rpm-pro-3",
+    title: "Module 3: Implementation (Expanded)",
+    description: "Step-by-step implementation guide with case studies and real-world examples for small businesses.",
     duration: "2.5 hours",
     isPro: true,
-    downloadUrl: storageUrl("R-PM_Fundamentals_Module_3.pptx"),
+    isComingSoon: true,
   },
   {
-    id: "rpm-fund-4",
-    title: "Module 4: Methods for Managing Quality",
-    description: "Advanced tools and techniques for continuous quality improvement and waste reduction.",
+    id: "rpm-pro-4",
+    title: "Module 4: Methods for Managing Quality (Expanded)",
+    description: "Advanced tools, techniques, and methodologies with full instructor notes.",
     duration: "3 hours",
     isPro: true,
-    downloadUrl: storageUrl("R-PM_Fundamentals_Module_4.pptx"),
+    isComingSoon: true,
   },
   {
-    id: "rpm-fund-5",
-    title: "Module 5: Statistical Thinking",
-    description: "Data-driven decision making and understanding variation in your processes.",
+    id: "rpm-pro-5",
+    title: "Module 5: Statistical Thinking (Expanded)",
+    description: "Data-driven decision making with practical exercises and real-world applications.",
     duration: "2.5 hours",
     isPro: true,
-    downloadUrl: storageUrl("R-PM_Fundamentals_Module_5.pptx"),
+    isComingSoon: true,
   },
 ];
 
+// AI Training Modules
 const AI_MODULES: Module[] = [
   {
     id: "ai-genai",
@@ -116,6 +145,7 @@ const AI_MODULES: Module[] = [
   },
 ];
 
+// Finance Training Modules
 const FINANCE_MODULES: Module[] = [
   {
     id: "fin-track",
@@ -140,7 +170,7 @@ const FINANCE_MODULES: Module[] = [
 
 export default function LeanAILab() {
   const [activeTab, setActiveTab] = useState<Tab>("rpm");
-  const [rpmSubTab, setRpmSubTab] = useState<RpmSubTab>("intro");
+  const [rpmSubTab, setRpmSubTab] = useState<RpmSubTab>("free");
   
   // TODO: Replace with your actual auth check when ready
   // Set to false to show paywall, true to unlock all PRO content
@@ -232,30 +262,30 @@ export default function LeanAILab() {
               {/* R-PM Sub-tabs */}
               <div className="flex flex-wrap gap-3 mb-8">
                 <button
-                  onClick={() => setRpmSubTab("intro")}
+                  onClick={() => setRpmSubTab("free")}
                   className={`px-5 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 ${
-                    rpmSubTab === "intro"
+                    rpmSubTab === "free"
                       ? "bg-[#15C5C1] text-[#003B49]"
                       : "bg-[#072b33] text-slate-300 hover:bg-[#0a3d47] border border-[#15C5C1]/30"
                   }`}
                 >
-                  📖 Introduction (Free)
+                  📖 Free Fundamentals (6 Modules)
                 </button>
                 <button
-                  onClick={() => setRpmSubTab("fundamentals")}
+                  onClick={() => setRpmSubTab("pro")}
                   className={`px-5 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 ${
-                    rpmSubTab === "fundamentals"
+                    rpmSubTab === "pro"
                       ? "bg-[#FF6B00] text-white"
                       : "bg-[#072b33] text-slate-300 hover:bg-[#0a3d47] border border-[#FF6B00]/30"
                   }`}
                 >
-                  🎓 Fundamentals Series (5 Modules)
+                  🎓 PRO Expanded Series
                   {!isPro && <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">PRO</span>}
                 </button>
               </div>
 
-              {/* Introduction Sub-tab */}
-              {rpmSubTab === "intro" && (
+              {/* FREE Modules Sub-tab */}
+              {rpmSubTab === "free" && (
                 <div>
                   <div className="bg-[#072b33] rounded-xl p-5 border border-[#15C5C1]/20 mb-6">
                     <div className="flex items-start gap-3">
@@ -264,21 +294,21 @@ export default function LeanAILab() {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-[#15C5C1]">
-                          🎉 Start Here — It&apos;s Free!
+                          🎉 Free R-PM Fundamentals
                         </h3>
                         <p className="text-slate-400 text-sm mt-1">
-                          Get a quick overview of R-PM principles. Take the interactive course with quiz to earn your first badge, 
-                          or download the slide deck for offline review.
+                          Get started with our complete 5-module fundamentals course plus a quiz to test your knowledge. 
+                          All free to download!
                         </p>
                       </div>
                     </div>
                   </div>
-                  <ModuleGrid modules={RPM_INTRO_MODULES} userIsPro={true} />
+                  <ModuleGrid modules={RPM_FREE_MODULES} userIsPro={true} />
                 </div>
               )}
 
-              {/* Fundamentals Sub-tab */}
-              {rpmSubTab === "fundamentals" && (
+              {/* PRO Modules Sub-tab */}
+              {rpmSubTab === "pro" && (
                 <div>
                   {!isPro && (
                     <ProUpgradeCard />
@@ -290,16 +320,16 @@ export default function LeanAILab() {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-[#FF6B00]">
-                          Complete R-PM Fundamentals Series
+                          PRO Expanded Series
                         </h3>
                         <p className="text-slate-400 text-sm mt-1">
-                          5 comprehensive modules with full instructor notes, exercises, and methodology. 
-                          Perfect for training yourself, your team, or your small business.
+                          Deep-dive versions with comprehensive instructor notes, exercises, discussion questions, 
+                          and full methodology. Perfect for training your team or small business.
                         </p>
                       </div>
                     </div>
                   </div>
-                  <ModuleGrid modules={RPM_FUNDAMENTALS_MODULES} userIsPro={isPro} />
+                  <ModuleGrid modules={RPM_PRO_MODULES} userIsPro={isPro} />
                 </div>
               )}
             </TabPanel>
@@ -466,7 +496,7 @@ function ProUpgradeCard() {
               PRO Content
             </h3>
             <p className="text-slate-300 text-sm mt-1">
-              Unlock the complete R-PM Fundamentals series with detailed instructor notes, 
+              Unlock the expanded series with detailed instructor notes, 
               exercises, and full methodology—perfect for small business training.
             </p>
           </div>
@@ -490,7 +520,7 @@ function ModuleGrid({
   userIsPro: boolean;
 }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {modules.map((module) => (
         <ModuleCard key={module.id} module={module} userIsPro={userIsPro} />
       ))}
@@ -537,7 +567,7 @@ function ModuleCard({
         )}
         {module.hasQuiz && (
           <span className="px-2 py-0.5 text-xs font-bold bg-amber-500/20 text-amber-400 rounded flex items-center gap-1">
-            <Award className="w-3 h-3" /> Quiz + Badge
+            <Award className="w-3 h-3" /> Quiz
           </span>
         )}
       </div>
@@ -554,7 +584,7 @@ function ModuleCard({
 
       {/* Meta Info */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mb-4">
-        <span>⏱️ {module.duration}</span>
+        {module.duration && <span>⏱️ {module.duration}</span>}
         {module.slides && <span>📊 {module.slides} slides</span>}
       </div>
 
