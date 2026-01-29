@@ -94,35 +94,35 @@ const RPM_PRO_MODULES: Module[] = [
   },
   {
     id: "rpm-pro-2",
-    title: "Module 2: Team Skills (Expanded)",
-    description: "Building effective quality improvement teams with detailed facilitation guides and team exercises.",
+    title: "Module 2: Quality Improvement Teams (Expanded)",
+    description: "Building effective quality improvement teams with detailed facilitation guides, team structures, roles, and exercises.",
     duration: "2 hours",
     isPro: true,
-    isComingSoon: true,
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_2_Expanded.pptx"),
   },
   {
     id: "rpm-pro-3",
     title: "Module 3: Implementation (Expanded)",
-    description: "Step-by-step implementation guide with case studies and real-world examples for small businesses.",
+    description: "Step-by-step implementation guide with case studies, real-world examples, and practical frameworks for small businesses.",
     duration: "2.5 hours",
     isPro: true,
-    isComingSoon: true,
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_3_Expanded.pptx"),
   },
   {
     id: "rpm-pro-4",
     title: "Module 4: Methods for Managing Quality (Expanded)",
-    description: "Advanced tools, techniques, and methodologies with full instructor notes.",
+    description: "Advanced tools, techniques, and methodologies with full instructor notes and hands-on exercises.",
     duration: "3 hours",
     isPro: true,
-    isComingSoon: true,
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_4_Expanded.pptx"),
   },
   {
     id: "rpm-pro-5",
     title: "Module 5: Statistical Thinking (Expanded)",
-    description: "Data-driven decision making with practical exercises and real-world applications.",
+    description: "Data-driven decision making with practical exercises, real-world applications, and comprehensive instructor guides.",
     duration: "2.5 hours",
     isPro: true,
-    isComingSoon: true,
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_5_Expanded.pptx"),
   },
 ];
 
@@ -279,7 +279,7 @@ export default function LeanAILab() {
                       : "bg-[#072b33] text-slate-300 hover:bg-[#0a3d47] border border-[#FF6B00]/30"
                   }`}
                 >
-                  🎓 PRO Expanded Series
+                  🎓 PRO Expanded Series (5 Modules)
                   {!isPro && <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">PRO</span>}
                 </button>
               </div>
@@ -320,7 +320,7 @@ export default function LeanAILab() {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-[#FF6B00]">
-                          PRO Expanded Series
+                          PRO Expanded Series — All 5 Modules Available!
                         </h3>
                         <p className="text-slate-400 text-sm mt-1">
                           Deep-dive versions with comprehensive instructor notes, exercises, discussion questions, 
