@@ -1,10 +1,11 @@
 // src/pages/lean-lab/index.tsx
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/router";
+import { useState, useEffect } from "react";
 import { BookOpen, Brain, Hammer, Zap, Download, Lock, Play, Award, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 // Types
 type Tab = "rpm" | "ai" | "finance" | "research";
@@ -16,7 +17,7 @@ type Module = {
   description: string;
   duration?: string;
   slides?: number;
-  downloadId?: string; // ID for protected download API
+  downloadUrl?: string;
   pageUrl?: string;
   isPro?: boolean;
   isComingSoon?: boolean;
@@ -24,17 +25,25 @@ type Module = {
 };
 
 // ===========================================
+// FIREBASE STORAGE BASE URL
+// ===========================================
+const STORAGE_BASE = "https://firebasestorage.googleapis.com/v0/b/rewmoai.firebasestorage.app/o";
+
+const storageUrl = (filename: string) =>
+  `${STORAGE_BASE}/${encodeURIComponent(filename)}?alt=media`;
+
+// ===========================================
 // MODULE DATA
 // ===========================================
 
-// FREE R-PM Modules
+// FREE R-PM Modules - require login to download
 const RPM_FREE_MODULES: Module[] = [
   {
     id: "rpm-quiz",
     title: "R-PM Quiz",
     description: "Test your knowledge of RewmoAI Process Management principles with this interactive quiz deck.",
     duration: "15 min",
-    downloadId: "rpm-quiz",
+    downloadUrl: storageUrl("ProcessSync_Module1_LiteDeck 15Sept2025.pptx"),
     hasQuiz: true,
   },
   {
@@ -42,39 +51,39 @@ const RPM_FREE_MODULES: Module[] = [
     title: "Fundamentals Module 1",
     description: "Introduction to quality definitions, customer focus, and the foundations of process management.",
     duration: "1-1.5 hours",
-    downloadId: "rpm-free-1",
+    downloadUrl: storageUrl("R-PM Fundamentals Module 1.pptx"),
   },
   {
     id: "rpm-free-2",
     title: "Fundamentals Module 2",
     description: "Understanding processes, workflows, and how to identify improvement opportunities.",
     duration: "1-1.5 hours",
-    downloadId: "rpm-free-2",
+    downloadUrl: storageUrl("R-PM Fundamentals Module 2.pptx"),
   },
   {
     id: "rpm-free-3",
     title: "Fundamentals Module 3",
     description: "Quality improvement techniques and practical tools for everyday use.",
     duration: "1-1.5 hours",
-    downloadId: "rpm-free-3",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_3.pptx"),
   },
   {
     id: "rpm-free-4",
     title: "Fundamentals Module 4",
     description: "Implementing quality management in your household or small business.",
     duration: "1-1.5 hours",
-    downloadId: "rpm-free-4",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_4.pptx"),
   },
   {
     id: "rpm-free-5",
     title: "Fundamentals Module 5",
     description: "Advanced concepts and sustaining continuous improvement.",
     duration: "1-1.5 hours",
-    downloadId: "rpm-free-5",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_5.pptx"),
   },
 ];
 
-// PRO R-PM Modules (Expanded with full instructor notes)
+// PRO R-PM Modules - require PRO/BUSINESS tier
 const RPM_PRO_MODULES: Module[] = [
   {
     id: "rpm-pro-1",
@@ -83,7 +92,7 @@ const RPM_PRO_MODULES: Module[] = [
     duration: "2-2.5 hours",
     slides: 26,
     isPro: true,
-    downloadId: "rpm-pro-1",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_1_Expanded.pptx"),
   },
   {
     id: "rpm-pro-2",
@@ -91,7 +100,7 @@ const RPM_PRO_MODULES: Module[] = [
     description: "Building effective quality improvement teams with detailed facilitation guides, team structures, roles, and exercises.",
     duration: "2 hours",
     isPro: true,
-    downloadId: "rpm-pro-2",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_2_Expanded.pptx"),
   },
   {
     id: "rpm-pro-3",
@@ -99,7 +108,7 @@ const RPM_PRO_MODULES: Module[] = [
     description: "Step-by-step implementation guide with case studies, real-world examples, and practical frameworks for small businesses.",
     duration: "2.5 hours",
     isPro: true,
-    downloadId: "rpm-pro-3",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_3_Expanded.pptx"),
   },
   {
     id: "rpm-pro-4",
@@ -107,7 +116,7 @@ const RPM_PRO_MODULES: Module[] = [
     description: "Advanced tools, techniques, and methodologies with full instructor notes and hands-on exercises.",
     duration: "3 hours",
     isPro: true,
-    downloadId: "rpm-pro-4",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_4_Expanded.pptx"),
   },
   {
     id: "rpm-pro-5",
@@ -115,7 +124,7 @@ const RPM_PRO_MODULES: Module[] = [
     description: "Data-driven decision making with practical exercises, real-world applications, and comprehensive instructor guides.",
     duration: "2.5 hours",
     isPro: true,
-    downloadId: "rpm-pro-5",
+    downloadUrl: storageUrl("R-PM_Fundamentals_Module_5_Expanded.pptx"),
   },
 ];
 
@@ -165,11 +174,31 @@ export default function LeanAILab() {
   const [activeTab, setActiveTab] = useState<Tab>("rpm");
   const [rpmSubTab, setRpmSubTab] = useState<RpmSubTab>("free");
   const { currentUser } = useAuth();
-  const router = useRouter();
+  const [userTier, setUserTier] = useState<string>("FREE");
+  const [loading, setLoading] = useState(true);
 
-  // Check user tier from auth context or default to FREE
-  // You may need to adjust this based on how you store tier info
-  const userTier = (currentUser as any)?.tier || "FREE";
+  // Fetch user tier from Firestore when logged in
+  useEffect(() => {
+    async function fetchUserTier() {
+      if (currentUser?.uid) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setUserTier(data?.tier || "FREE");
+          }
+        } catch (error) {
+          console.error("Error fetching user tier:", error);
+        }
+      }
+      setLoading(false);
+    }
+    
+    if (currentUser !== undefined) {
+      fetchUserTier();
+    }
+  }, [currentUser]);
+
   const isPro = userTier === "PRO" || userTier === "BUSINESS";
   const isLoggedIn = !!currentUser;
 
@@ -277,7 +306,7 @@ export default function LeanAILab() {
                   }`}
                 >
                   🎓 PRO Expanded Series (5 Modules)
-                  {!isPro && <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">PRO</span>}
+                  {!isPro && !loading && <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">PRO</span>}
                 </button>
               </div>
 
@@ -294,20 +323,26 @@ export default function LeanAILab() {
                           🎉 Free R-PM Fundamentals
                         </h3>
                         <p className="text-slate-400 text-sm mt-1">
-                          Get started with our complete 5-module fundamentals course plus a quiz to test your knowledge. 
+                          Get started with our complete 5-module fundamentals course plus a quiz to test your knowledge.
                           {!isLoggedIn && " Sign in to download!"}
                         </p>
                       </div>
                     </div>
                   </div>
-                  <ModuleGrid modules={RPM_FREE_MODULES} userIsPro={true} isLoggedIn={isLoggedIn} />
+                  <ModuleGrid 
+                    modules={RPM_FREE_MODULES} 
+                    userIsPro={true} 
+                    isLoggedIn={isLoggedIn} 
+                    loading={loading}
+                    requireLogin={true}
+                  />
                 </div>
               )}
 
               {/* PRO Modules Sub-tab */}
               {rpmSubTab === "pro" && (
                 <div>
-                  {!isPro && (
+                  {!isPro && !loading && (
                     <ProUpgradeCard isLoggedIn={isLoggedIn} />
                   )}
                   <div className="bg-[#072b33] rounded-xl p-5 border border-[#FF6B00]/20 mb-6">
@@ -326,7 +361,13 @@ export default function LeanAILab() {
                       </div>
                     </div>
                   </div>
-                  <ModuleGrid modules={RPM_PRO_MODULES} userIsPro={isPro} isLoggedIn={isLoggedIn} />
+                  <ModuleGrid 
+                    modules={RPM_PRO_MODULES} 
+                    userIsPro={isPro} 
+                    isLoggedIn={isLoggedIn} 
+                    loading={loading}
+                    requireLogin={true}
+                  />
                 </div>
               )}
             </TabPanel>
@@ -340,7 +381,13 @@ export default function LeanAILab() {
                 title="AI Training Courses"
                 description="Learn how to plan, prompt, and prototype with modern AI tools. Supercharge your productivity with practical AI skills."
               />
-              <ModuleGrid modules={AI_MODULES} userIsPro={isPro} isLoggedIn={isLoggedIn} />
+              <ModuleGrid 
+                modules={AI_MODULES} 
+                userIsPro={isPro} 
+                isLoggedIn={isLoggedIn} 
+                loading={loading}
+                requireLogin={false}
+              />
             </TabPanel>
           )}
 
@@ -352,7 +399,13 @@ export default function LeanAILab() {
                 title="Finance Training"
                 description="Personal finance, investing fundamentals, and building wealth. Practical money skills for life."
               />
-              <ModuleGrid modules={FINANCE_MODULES} userIsPro={isPro} isLoggedIn={isLoggedIn} />
+              <ModuleGrid 
+                modules={FINANCE_MODULES} 
+                userIsPro={isPro} 
+                isLoggedIn={isLoggedIn} 
+                loading={loading}
+                requireLogin={false}
+              />
             </TabPanel>
           )}
 
@@ -514,16 +567,27 @@ function ProUpgradeCard({ isLoggedIn }: { isLoggedIn: boolean }) {
 function ModuleGrid({ 
   modules, 
   userIsPro,
-  isLoggedIn
+  isLoggedIn,
+  loading,
+  requireLogin
 }: { 
   modules: Module[]; 
   userIsPro: boolean;
   isLoggedIn: boolean;
+  loading: boolean;
+  requireLogin: boolean;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {modules.map((module) => (
-        <ModuleCard key={module.id} module={module} userIsPro={userIsPro} isLoggedIn={isLoggedIn} />
+        <ModuleCard 
+          key={module.id} 
+          module={module} 
+          userIsPro={userIsPro} 
+          isLoggedIn={isLoggedIn}
+          loading={loading}
+          requireLogin={requireLogin}
+        />
       ))}
     </div>
   );
@@ -532,18 +596,35 @@ function ModuleGrid({
 function ModuleCard({ 
   module, 
   userIsPro,
-  isLoggedIn
+  isLoggedIn,
+  loading,
+  requireLogin
 }: { 
   module: Module; 
   userIsPro: boolean;
   isLoggedIn: boolean;
+  loading: boolean;
+  requireLogin: boolean;
 }) {
-  const canAccess = !module.isPro || userIsPro;
   const isLocked = module.isPro && !userIsPro;
-  const needsLogin = !isLoggedIn && module.downloadId;
+  const needsLogin = requireLogin && !isLoggedIn && module.downloadUrl;
 
-  // Build the download URL through our protected API
-  const downloadUrl = module.downloadId ? `/api/download/${module.downloadId}` : undefined;
+  // Handle download with client-side auth check
+  const handleDownload = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (requireLogin && !isLoggedIn) {
+      e.preventDefault();
+      window.location.href = "/account?redirect=" + encodeURIComponent(window.location.pathname);
+      return;
+    }
+    
+    if (module.isPro && !userIsPro) {
+      e.preventDefault();
+      window.location.href = "/account/upgrade?plan=PRO";
+      return;
+    }
+    
+    // Allow download to proceed
+  };
 
   return (
     <div 
@@ -596,7 +677,14 @@ function ModuleCard({
       </div>
 
       {/* Action Button */}
-      {module.isComingSoon ? (
+      {loading ? (
+        <button 
+          disabled 
+          className="w-full py-2.5 px-4 bg-slate-700/50 text-slate-400 rounded-lg cursor-wait font-semibold"
+        >
+          Loading...
+        </button>
+      ) : module.isComingSoon ? (
         <button 
           disabled 
           className="w-full py-2.5 px-4 bg-slate-700/50 text-slate-500 rounded-lg cursor-not-allowed font-semibold"
@@ -627,9 +715,12 @@ function ModuleCard({
           <Play className="w-4 h-4" />
           Start Learning
         </Link>
-      ) : downloadUrl ? (
+      ) : module.downloadUrl ? (
         <a
-          href={downloadUrl}
+          href={module.downloadUrl}
+          onClick={handleDownload}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-[#15C5C1] hover:bg-[#1ad4d0] text-[#003B49] font-bold rounded-lg transition-colors"
         >
           <Download className="w-4 h-4" />
