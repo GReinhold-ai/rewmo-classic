@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { BookOpen, Brain, Hammer, Zap, Download, Lock, Play, Award, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebaseClient";
 
 // Types
 type Tab = "rpm" | "ai" | "finance" | "research";
