@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { onAuthStateChanged } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseClient";
+import AuthGuard from "@/components/AuthGuard";
 
 const ENTITLEMENT_KEY = "leanai.fundamentals";
 
@@ -53,7 +53,7 @@ const MODULES = [
   },
 ];
 
-export default function FundamentalsPage() {
+function FundamentalsContent() {
   const router = useRouter();
   const [uid, setUid] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -68,19 +68,18 @@ export default function FundamentalsPage() {
   const [downloadUrls, setDownloadUrls] = useState<Record<number, string | null>>({});
   const [loadingUrls, setLoadingUrls] = useState<Record<number, boolean>>({});
 
-  // Watch auth
+  // Get current user info
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUid(u?.uid ?? null);
-      setEmail(u?.email ?? null);
-    });
-    return () => unsub();
+    const user = auth.currentUser;
+    if (user) {
+      setUid(user.uid);
+      setEmail(user.email);
+    }
   }, []);
 
   // Live subscribe to entitlements for this user
   useEffect(() => {
     if (!uid) {
-      setHasAccess(false);
       setChecking(false);
       return;
     }
@@ -220,30 +219,15 @@ export default function FundamentalsPage() {
             </div>
           )}
 
-          {/* Not signed in */}
-          {!uid && (
-            <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-5">
-              <p className="text-white/85">Please sign in to continue.</p>
-              <div className="mt-3">
-                <Link
-                  href="/login"
-                  className="inline-flex items-center rounded-lg bg-[#FF9151] px-4 py-2 font-bold text-[#062025] hover:bg-[#FFA36C]"
-                >
-                  Sign in
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Signed in, checking entitlements */}
-          {uid && checking && (
+          {/* Checking entitlements */}
+          {checking && (
             <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-5">
               Checking your access&hellip;
             </div>
           )}
 
           {/* No access yet: upsell + button */}
-          {uid && !checking && !hasAccess && (
+          {!checking && !hasAccess && (
             <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-5">
               <h2 className="text-xl font-semibold text-teal-300">Unlock R-PM Fundamentals</h2>
               <p className="mt-2 text-white/80">
@@ -282,7 +266,7 @@ export default function FundamentalsPage() {
           )}
 
           {/* Access granted: show all modules */}
-          {uid && !checking && hasAccess && (
+          {!checking && hasAccess && (
             <div className="mt-8 space-y-4">
               <div className="rounded-xl border border-teal-500/40 bg-teal-500/10 p-4 mb-6">
                 <h2 className="text-xl font-semibold text-teal-300">You have access ✅</h2>
@@ -362,5 +346,14 @@ export default function FundamentalsPage() {
         </div>
       </main>
     </>
+  );
+}
+
+// Wrap the page with AuthGuard
+export default function FundamentalsPage() {
+  return (
+    <AuthGuard>
+      <FundamentalsContent />
+    </AuthGuard>
   );
 }
