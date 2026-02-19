@@ -1,34 +1,43 @@
 // src/lib/serverAdmin.ts
-import { getApps, initializeApp, cert, App } from "firebase-admin/app";
-import { getFirestore, Firestore } from "firebase-admin/firestore";
+import admin from "firebase-admin";
 
-const {
-  FB_ADMIN_PROJECT_ID,
-  FB_ADMIN_CLIENT_EMAIL,
-  FB_ADMIN_PRIVATE_KEY,
-} = process.env;
+function normalizePrivateKey(raw: string) {
+  let k = (raw || "").trim();
 
-let adminApp: App | undefined;
-
-function ensureAdminApp(): App {
-  if (!adminApp) {
-    if (!getApps().length) {
-      adminApp = initializeApp({
-        credential: cert({
-          projectId: FB_ADMIN_PROJECT_ID,
-          clientEmail: FB_ADMIN_CLIENT_EMAIL,
-          // Vercel stores newlines escaped — unescape them:
-          privateKey: (FB_ADMIN_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
-        }),
-        projectId: FB_ADMIN_PROJECT_ID,
-      });
-    } else {
-      adminApp = getApps()[0]!;
-    }
+  // Remove surrounding quotes if present
+  if (
+    (k.startsWith('"') && k.endsWith('"')) ||
+    (k.startsWith("'") && k.endsWith("'"))
+  ) {
+    k = k.slice(1, -1);
   }
-  return adminApp!;
+
+  // Convert escaped newlines to real newlines and strip CR
+  k = k.replace(/\\n/g, "\n").replace(/\\r/g, "").replace(/\r/g, "");
+
+  return k.trim();
 }
 
-export function getAdminDb(): Firestore {
-  return getFirestore(ensureAdminApp());
+export function getAdminDb() {
+  if (!admin.apps.length) {
+    const projectId = process.env.FB_ADMIN_PROJECT_ID;
+    const clientEmail = process.env.FB_ADMIN_CLIENT_EMAIL;
+    const privateKeyRaw = process.env.FB_ADMIN_PRIVATE_KEY;
+
+    if (!projectId) throw new Error("[serverAdmin] Missing FB_ADMIN_PROJECT_ID");
+    if (!clientEmail) throw new Error("[serverAdmin] Missing FB_ADMIN_CLIENT_EMAIL");
+    if (!privateKeyRaw) throw new Error("[serverAdmin] Missing FB_ADMIN_PRIVATE_KEY");
+
+    const privateKey = normalizePrivateKey(privateKeyRaw);
+
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId,
+        clientEmail,
+        privateKey,
+      }),
+    });
+  }
+
+  return admin.firestore();
 }
