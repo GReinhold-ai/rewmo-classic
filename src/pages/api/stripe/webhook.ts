@@ -15,7 +15,8 @@ const {
   FUNDAMENTALS_ENTITLEMENT = "leanai.fundamentals",
 } = process.env;
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2020-08-27" });
+const stripe = new Stripe(STRIPE_SECRET_KEY);
+
 
 // Read raw body so Stripe can verify signature
 async function readRawBody(req: NextApiRequest): Promise<Buffer> {

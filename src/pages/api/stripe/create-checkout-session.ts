@@ -16,7 +16,7 @@ const {
 if (!STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY is not set");
 if (!SITE_URL) throw new Error("SITE_URL is not set");
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2020-08-27" });
+const stripe = new Stripe(STRIPE_SECRET_KEY);
 
 const PRICE_BY_PLAN: Record<string, string | undefined> = {
   pro: STRIPE_PRICE_PRO,
