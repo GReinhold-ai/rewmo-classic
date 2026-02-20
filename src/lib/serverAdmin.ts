@@ -1,43 +1,36 @@
 // src/lib/serverAdmin.ts
-import admin from "firebase-admin";
+import * as admin from "firebase-admin";
 
-function normalizePrivateKey(raw: string) {
-  let k = (raw || "").trim();
+function getServiceAccount(): admin.ServiceAccount {
+  const privateKey = process.env.FB_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-  // Remove surrounding quotes if present
-  if (
-    (k.startsWith('"') && k.endsWith('"')) ||
-    (k.startsWith("'") && k.endsWith("'"))
-  ) {
-    k = k.slice(1, -1);
+  if (!privateKey) {
+    throw new Error("FB_ADMIN_PRIVATE_KEY environment variable is not set");
   }
 
-  // Convert escaped newlines to real newlines and strip CR
-  k = k.replace(/\\n/g, "\n").replace(/\\r/g, "").replace(/\r/g, "");
+  return {
+    projectId: "rewmoai",
+    clientEmail: "firebase-adminsdk-fbsvc@rewmoai.iam.gserviceaccount.com",
+    privateKey: privateKey,
+  };
+}
 
-  return k.trim();
+function initAdmin() {
+  if (admin.apps.length) return;
+
+  const sa = getServiceAccount();
+
+  admin.initializeApp({
+    credential: admin.credential.cert(sa),
+  });
 }
 
 export function getAdminDb() {
-  if (!admin.apps.length) {
-    const projectId = process.env.FB_ADMIN_PROJECT_ID;
-    const clientEmail = process.env.FB_ADMIN_CLIENT_EMAIL;
-    const privateKeyRaw = process.env.FB_ADMIN_PRIVATE_KEY;
-
-    if (!projectId) throw new Error("[serverAdmin] Missing FB_ADMIN_PROJECT_ID");
-    if (!clientEmail) throw new Error("[serverAdmin] Missing FB_ADMIN_CLIENT_EMAIL");
-    if (!privateKeyRaw) throw new Error("[serverAdmin] Missing FB_ADMIN_PRIVATE_KEY");
-
-    const privateKey = normalizePrivateKey(privateKeyRaw);
-
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId,
-        clientEmail,
-        privateKey,
-      }),
-    });
-  }
-
+  initAdmin();
   return admin.firestore();
+}
+
+export function getAdminAuth() {
+  initAdmin();
+  return admin.auth();
 }
