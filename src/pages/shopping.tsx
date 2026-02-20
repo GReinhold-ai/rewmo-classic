@@ -3,10 +3,12 @@
 // FIXED: Opens links immediately to work on DuckDuckGo and other privacy browsers
 // UPDATED: Removed proprietary commission language
 // UPDATED: Shows status badges (Active, Pending, Coming Soon)
+// UPDATED: Added sign-in overlay for guests
 import { useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthProvider";
+import SignInOverlay from "@/components/SignInOverlay";
 import {
   getActiveRetailers,
   getFeaturedRetailers,
@@ -255,6 +257,14 @@ export default function ShoppingPage() {
           content="Shop at your favorite stores and earn cashback rewards"
         />
       </Head>
+
+      {/* Sign-in overlay for guests */}
+      {!currentUser && (
+        <SignInOverlay 
+          title="Sign in to start earning"
+          description="Shop through our links and earn cashback rewards on every purchase."
+        />
+      )}
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
