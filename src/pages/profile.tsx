@@ -1,58 +1,50 @@
-// src/pages/profile.tsx
+﻿// src/pages/profile.tsx
 import Head from "next/head";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthProvider";
+import SignInOverlay from "@/components/SignInOverlay";
 import RewardHistory from "@/components/RewardHistory";
 
 export default function Profile() {
   const { currentUser } = useAuth();
 
-  // Logged-out view
-  if (!currentUser) {
-    return (
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Head>
-          <title>Profile • Rewmo</title>
-        </Head>
-        <h1 className="text-2xl font-bold mb-3">Profile</h1>
-        <p className="mb-6">Please sign in to view your profile and rewards.</p>
-        <Link
-          href="/login"
-          className="inline-block rounded-lg bg-orange-500 text-white px-4 py-2"
-        >
-          Log in
-        </Link>
-      </main>
-    );
-  }
-
-  // Logged-in view
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
+    <main className="min-h-screen bg-[#003B49] text-white">
       <Head>
-        <title>Profile • Rewmo</title>
+        <title>Profile | RewmoAI</title>
       </Head>
 
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold">Profile</h1>
-        <p className="opacity-80">
-          Signed in as <span className="font-mono">{currentUser.email}</span>
-        </p>
-      </header>
+      {/* Sign-in overlay for guests */}
+      {!currentUser && (
+        <SignInOverlay 
+          title="Sign in to view your profile"
+          description="Access your account details, rewards history, and settings."
+        />
+      )}
 
-      <section className="rounded-xl border border-white/10 bg-white/5 p-5">
-        <h2 className="text-lg font-semibold mb-3">Reward history</h2>
-        {/* Renders live updates from Firestore via useUserRewards(uid) */}
-        <RewardHistory />
-      </section>
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <header className="mb-8">
+          <h1 className="text-2xl font-bold text-[#FF9151]">Profile</h1>
+          {currentUser && (
+            <p className="text-[#B6E7EB]">
+              Signed in as <span className="font-mono">{currentUser.email}</span>
+            </p>
+          )}
+        </header>
 
-      <div className="mt-8 flex gap-4">
-        <Link href="/rewards/shopping" className="underline">
-          Browse shopping partners →
-        </Link>
-        <Link href="/training" className="underline">
-          Go to Training →
-        </Link>
+        <section className="rounded-xl border border-[#15C5C1]/40 bg-[#072b33] p-5">
+          <h2 className="text-lg font-semibold text-[#15C5C1] mb-3">Reward history</h2>
+          <RewardHistory />
+        </section>
+
+        <div className="mt-8 flex gap-4">
+          <Link href="/shopping" className="underline text-[#B6E7EB] hover:text-[#FF9151]">
+            Browse shopping partners 
+          </Link>
+          <Link href="/training" className="underline text-[#B6E7EB] hover:text-[#FF9151]">
+            Go to Training 
+          </Link>
+        </div>
       </div>
     </main>
   );

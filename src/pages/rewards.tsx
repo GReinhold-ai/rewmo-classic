@@ -1,8 +1,9 @@
-// src/pages/rewards.tsx
+﻿// src/pages/rewards.tsx
 import Head from "next/head";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/AuthProvider";
+import SignInOverlay from "@/components/SignInOverlay";
 import RewardHistory from "@/components/RewardHistory";
 import { useUserRewards } from "@/lib/useUserRewards";
 
@@ -10,7 +11,6 @@ export default function RewardsPage() {
   const { currentUser } = useAuth();
   const uid = currentUser?.uid ?? null;
 
-  // ✅ unconditional hook call, but safe when uid is null
   const { rewards, loading } = useUserRewards(uid);
 
   const totalPoints = useMemo(
@@ -42,26 +42,17 @@ export default function RewardsPage() {
     }
   }
 
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#003B49]">
-        <div className="max-w-md mx-auto p-6 rounded-2xl border border-[#15C5C1]/40 bg-[#072b33] text-[#B6E7EB] text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">Rewards</h1>
-          <p className="mb-4">Please sign in to view your rewards.</p>
-          <Link
-            href="/login"
-            className="inline-flex items-center rounded-lg bg-[#FF6B00] px-4 py-2 text-sm font-bold text-white hover:bg-[#ff7d22]"
-          >
-            Log in
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#003B49] py-10">
-      <Head><title>Rewards</title></Head>
+      <Head><title>Rewards | RewmoAI</title></Head>
+
+      {/* Sign-in overlay for guests */}
+      {!currentUser && (
+        <SignInOverlay 
+          title="Sign in to view your rewards"
+          description="Track your points, referral bonuses, and shopping cashback."
+        />
+      )}
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <h1 className="text-3xl font-black text-white mb-6">Rewards</h1>
@@ -70,7 +61,7 @@ export default function RewardsPage() {
           <div className="rounded-xl border border-[#15C5C1]/40 bg-[#072b33] p-4">
             <div className="text-sm text-[#B6E7EB]">Total points</div>
             <div className="text-3xl font-black text-[#FF9151]">
-              {loading ? "—" : totalPoints}
+              {loading ? "" : totalPoints}
             </div>
           </div>
 
@@ -96,7 +87,6 @@ export default function RewardsPage() {
         </div>
 
         <h2 className="text-xl font-bold text-white mt-8 mb-3">History</h2>
-        {/* ✅ use the shared component */}
         <div className="rounded-xl overflow-hidden border border-white/10">
           <div className="bg-[#072b33] p-4 text-[#B6E7EB]">
             <RewardHistory />
@@ -104,8 +94,8 @@ export default function RewardsPage() {
         </div>
 
         <div className="mt-8">
-          <Link href="/rewards/shopping" className="underline text-[#B6E7EB]">
-            Go to Shopping Rewards →
+          <Link href="/shopping" className="underline text-[#B6E7EB]">
+            Go to Shopping Rewards 
           </Link>
         </div>
       </div>

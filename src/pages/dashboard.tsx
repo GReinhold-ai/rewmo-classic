@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -16,9 +16,8 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 
-// If you already have a custom AuthProvider that exposes `currentUser`,
-// keep this import. Otherwise, swap for whatever hook you use.
 import { useAuth } from "@/lib/AuthProvider";
+import SignInOverlay from "@/components/SignInOverlay";
 
 /* =============================
    Types
@@ -73,7 +72,7 @@ function useUserStats(userId?: string) {
           const d = snap.data() as any;
           setRewards(d.rewards ?? 0);
           setReferralCount(d.referralCount ?? 0);
-          setReferralCode(d.referralCode ?? userId); // fallback to uid
+          setReferralCode(d.referralCode ?? userId);
         }
       } finally {
         setLoading(false);
@@ -89,8 +88,6 @@ function useUserStats(userId?: string) {
 
 /* =============================
    Hooks: Referral History (supports BOTH schemas)
-   - New/canonical: /referrals (root) where referrerId == userId
-   - Legacy:       /users/{uid}/referrals subcollection
 ============================= */
 function useReferralHistory(userId?: string) {
   const [loading, setLoading] = useState(false);
@@ -103,7 +100,6 @@ function useReferralHistory(userId?: string) {
     (async () => {
       setLoading(true);
       try {
-        // Try canonical root collection first
         const qRoot = query(
           collection(db, "referrals"),
           where("referrerId", "==", userId),
@@ -118,7 +114,6 @@ function useReferralHistory(userId?: string) {
           return;
         }
 
-        // Fallback to legacy subcollection: users/{uid}/referrals
         const qLegacy = query(
           collection(db, "users", userId, "referrals"),
           orderBy("date", "desc"),
@@ -287,7 +282,7 @@ function ReferralTracker({ data }: { data: RefItem[] }) {
           const displayDate = tsToDate(r.timestamp || (r as any).date);
           const dateStr = displayDate ? displayDate.toLocaleDateString() : "";
           const who = r.email || r.referredEmail || r.referredUserId || "New member";
-          const pts = r.points ?? 500; // base referral award fallback
+          const pts = r.points ?? 500;
           const st = r.status || "Joined";
           return (
             <li
@@ -355,27 +350,16 @@ export default function DashboardPage() {
   const { referralHistory, loading: loadingReferrals } = useReferralHistory(userId);
   const { shoppingRewards, loading: loadingRewards } = useShoppingRewards(userId);
 
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-[#003B49] font-sans flex flex-col items-center px-4 py-16">
-        <div className="mx-auto w-full max-w-md rounded-xl border border-white/10 bg-white/5 p-6 text-center copy-justify">
-          <h1 className="text-2xl font-bold text-[#FF9151]">Please sign in</h1>
-          <p className="mt-2 text-[#B6E7EB]">
-            You need to be signed in to view your dashboard.
-          </p>
-          <Link
-            href="/"
-            className="mt-4 inline-block rounded-lg bg-[#FF9151] text-[#003B49] px-5 py-2 font-semibold hover:bg-[#FFA36C]"
-          >
-            Go to Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#003B49] font-sans flex flex-col items-center px-2">
+      {/* Sign-in overlay for guests */}
+      {!currentUser && (
+        <SignInOverlay 
+          title="Sign in to view your dashboard"
+          description="Track your rewards, referrals, and shopping earnings all in one place."
+        />
+      )}
+
       {/* Main Content */}
       <main className="w-full max-w-2xl mx-auto py-8 flex flex-col gap-8">
         <StatsHeader rewards={rewards} referralCount={referralCount} />
@@ -385,7 +369,7 @@ export default function DashboardPage() {
         {/* Referral Tracker */}
         <div className="bg-[#072b33] rounded-xl border border-[#15C5C1] p-6 shadow-md">
           {loadingReferrals ? (
-            <div className="text-[#B6E7EB]">Loading referrals…</div>
+            <div className="text-[#B6E7EB]">Loading referrals</div>
           ) : (
             <ReferralTracker data={referralHistory} />
           )}
@@ -394,7 +378,7 @@ export default function DashboardPage() {
         {/* Amazon Reward History */}
         <div className="bg-[#072b33] rounded-xl border border-[#FF9151] p-6 shadow-md">
           {loadingRewards ? (
-            <div className="text-[#B6E7EB]">Loading shopping rewards…</div>
+            <div className="text-[#B6E7EB]">Loading shopping rewards</div>
           ) : (
             <ShoppingRewardHistory data={shoppingRewards} />
           )}
@@ -404,7 +388,7 @@ export default function DashboardPage() {
       {/* Footer */}
       <footer className="text-[#F7F6F2] text-xs py-4 text-center border-t border-[#072b33] w-full">
         <span>
-          © {new Date().getFullYear()} RewmoAI |{" "}
+           {new Date().getFullYear()} RewmoAI |{" "}
           <Link href="/affiliate-disclosure" className="underline hover:text-[#FFA36C] text-[#FF9151]">
             Affiliate Disclosure
           </Link>{" "}
