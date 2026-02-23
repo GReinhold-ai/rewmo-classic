@@ -15,6 +15,8 @@ const links = [
   { href: "/lean-lab", label: "Lean Lab" },
   { href: "/shopping", label: "Shopping" },
   { href: "/rewards", label: "Rewards" },
+  { href: "/ponder", label: "Ponder This" },
+  { href: "/ai-transparency", label: "Know Your AI" },
   { href: "/about", label: "About" },
   { href: "/faq", label: "FAQ" },
 ];
