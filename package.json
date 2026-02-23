@@ -16,6 +16,7 @@
     "seed:finance:dry": "ts-node -P tools/tsconfig.tools.json tools/seed-finance.ts --dry-run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@capacitor/android": "^7.4.2",
     "@capacitor/cli": "^7.4.2",
     "@capacitor/core": "^7.4.2",
