@@ -659,7 +659,7 @@ function ModuleSection({
           <LessonCard
             key={lesson.id}
             lesson={lesson}
-            isLocked={moduleLocked || (lesson.isPro && !isPro) || (lesson.isBusiness && !isBusiness)}
+            isLocked={moduleLocked || (!!lesson.isPro && !isPro) || (!!lesson.isBusiness && !isBusiness)}
             isCompleted={completedLessons.includes(lesson.id)}
             isLoggedIn={isLoggedIn}
             loading={loading}
