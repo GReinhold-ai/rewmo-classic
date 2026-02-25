@@ -22,7 +22,13 @@ import {
   Play,
   CheckCircle,
   Clock,
-  Award
+  Award,
+  Sparkles,
+  ExternalLink,
+  Bot,
+  FileSpreadsheet,
+  Presentation,
+  Database
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { doc, getDoc } from "firebase/firestore";
@@ -364,7 +370,7 @@ const BUSINESS_FINANCE_MODULES: Module[] = [
       },
       {
         id: "bf-4-2",
-        slug: "tax-deductions",
+        slug: "tax-deductions-business",
         title: "Maximizing Deductions",
         description: "Legal deductions you might be missing: home office, vehicles, travel, and more.",
         duration: "18 min",
@@ -393,6 +399,16 @@ const BUSINESS_FINANCE_MODULES: Module[] = [
     lessons: [
       {
         id: "bf-5-1",
+        slug: "pricing-strategy",
+        title: "Pricing Strategy",
+        description: "How to price your products and services for profit, not just revenue.",
+        duration: "18 min",
+        icon: <Target className="w-5 h-5" />,
+        isBusiness: true,
+        points: 75,
+      },
+      {
+        id: "bf-5-2",
         slug: "funding-options",
         title: "Funding Options Explained",
         description: "Bootstrapping, loans, lines of credit, investors—pros and cons of each.",
@@ -402,22 +418,12 @@ const BUSINESS_FINANCE_MODULES: Module[] = [
         points: 75,
       },
       {
-        id: "bf-5-2",
+        id: "bf-5-3",
         slug: "business-credit",
         title: "Building Business Credit",
         description: "Establish and grow your business credit score for better financing options.",
         duration: "15 min",
         icon: <CreditCard className="w-5 h-5" />,
-        isBusiness: true,
-        points: 75,
-      },
-      {
-        id: "bf-5-3",
-        slug: "pricing-strategy",
-        title: "Pricing Strategy",
-        description: "How to price your products and services for profit, not just revenue.",
-        duration: "18 min",
-        icon: <Target className="w-5 h-5" />,
         isBusiness: true,
         points: 75,
       },
@@ -507,6 +513,125 @@ export default function FinanceTraining() {
             </div>
           )}
         </div>
+
+        {/* ================================================ */}
+        {/* CLAUDE FINANCE COWORKER BANNER - NEW SECTION */}
+        {/* ================================================ */}
+        <div className="mx-auto max-w-6xl px-4 mb-8">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] border border-purple-500/30">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
+              <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
+            </div>
+            
+            <div className="relative p-6 md:p-8">
+              <div className="flex flex-col md:flex-row md:items-center gap-6">
+                {/* Icon and Badge */}
+                <div className="flex-shrink-0">
+                  <div className="relative">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+                      <Bot className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                    </div>
+                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-green-500 text-white text-[10px] font-bold rounded-full flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> NEW
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1">
+                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
+                    Claude Finance Coworker
+                  </h2>
+                  <p className="text-slate-300 text-sm md:text-base mb-4">
+                    Automate your financial workflows with AI. Model → memo → deck. Excel → PowerPoint. Data → decision. All in one continuous session.
+                  </p>
+                  
+                  {/* Feature pills */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {[
+                      { icon: <BarChart3 className="w-3 h-3" />, label: "Financial Analysis" },
+                      { icon: <Building className="w-3 h-3" />, label: "Investment Banking" },
+                      { icon: <TrendingUp className="w-3 h-3" />, label: "Equity Research" },
+                      { icon: <Briefcase className="w-3 h-3" />, label: "Private Equity" },
+                      { icon: <Wallet className="w-3 h-3" />, label: "Wealth Management" },
+                    ].map((feature, i) => (
+                      <span 
+                        key={i}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 text-slate-200 text-xs rounded-full"
+                      >
+                        {feature.icon}
+                        {feature.label}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Data sources */}
+                  <p className="text-xs text-slate-400 mb-4">
+                    <Database className="w-3 h-3 inline mr-1" />
+                    Direct data from <span className="text-slate-300">FactSet</span>, <span className="text-slate-300">MSCI</span>, <span className="text-slate-300">S&P Global</span> & <span className="text-slate-300">London Stock Exchange Group</span>
+                  </p>
+                </div>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-col gap-3 md:flex-shrink-0">
+                  <a
+                    href="https://claude.ai/download"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 text-white font-bold rounded-xl hover:from-purple-600 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/25"
+                  >
+                    Download Cowork
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                  <a
+                    href="https://www.anthropic.com/news/cowork"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white/10 text-white font-medium rounded-xl hover:bg-white/20 transition border border-white/10"
+                  >
+                    Learn More
+                  </a>
+                </div>
+              </div>
+
+              {/* Bottom feature highlight */}
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-500/20 rounded-lg">
+                      <FileSpreadsheet className="w-5 h-5 text-green-400" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-white">Excel Integration</div>
+                      <div className="text-xs text-slate-400">Update models automatically</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                      <Presentation className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-white">PowerPoint Sync</div>
+                      <div className="text-xs text-slate-400">Auto-refresh slide decks</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-500/20 rounded-lg">
+                      <Sparkles className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-white">Cross-App Memory</div>
+                      <div className="text-xs text-slate-400">Continuous workflow sessions</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* END CLAUDE FINANCE COWORKER BANNER */}
 
         {/* Section Tabs */}
         <div className="mx-auto max-w-6xl px-4">
