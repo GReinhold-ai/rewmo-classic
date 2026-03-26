@@ -1,4 +1,4 @@
-// src/pages/index.tsx
+﻿// src/pages/index.tsx
 import { useEffect, useState, FormEvent } from "react";
 import Head from "next/head";
 import Link from "next/link";
@@ -54,7 +54,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#003B49] text-white font-sans flex flex-col">
       <Head>
-        <title>RewmoAI — Rewards Mobile AI</title>
+        <title>RewmoAI â€” Rewards Mobile AI</title>
         <meta
           name="description"
           content="Earn rewards on shopping, learn AI/TQM/Finance with short modules, and grow your savings with RewmoAI."
@@ -116,7 +116,7 @@ export default function HomePage() {
               disabled={loading}
               className="rounded-lg bg-[#FF9151] px-4 py-2 font-bold text-[#003B49] hover:bg-[#FFA36C] disabled:opacity-60"
             >
-              {loading ? "Joining…" : "Join free"}
+              {loading ? "Joiningâ€¦" : "Join free"}
             </button>
           </form>
 
@@ -139,10 +139,10 @@ export default function HomePage() {
           {/* ======= /EMAIL CAPTURE FORM ======= */}
         </div>
 
-        {/* 🚀 LAUNCH ANNOUNCEMENT - Replaced Beta box */}
+        {/* ðŸš€ LAUNCH ANNOUNCEMENT - Replaced Beta box */}
         <div className="mt-8 border border-[#15C5C1]/60 rounded-2xl p-5 max-w-xl w-full bg-gradient-to-br from-[#072b33] to-[#003B49] shadow-lg">
           <div className="flex items-start gap-3">
-            <span className="text-3xl">🤖</span>
+            <span className="text-3xl">ðŸ¤–</span>
             <div>
               <p className="text-[#15C5C1] font-bold text-lg">
                 Introducing Your First AI Agent
@@ -156,13 +156,13 @@ export default function HomePage() {
                   href="/shopping"
                   className="inline-block px-4 py-2 bg-[#FF9151] text-[#003B49] rounded-lg font-bold text-sm hover:bg-[#FFA36C] transition"
                 >
-                  Start Shopping →
+                  Start Shopping â†’
                 </Link>
                 <Link
-                  href="/learn/genai"
+                  href="https://learnai.centriv.ai/learn/ai"
                   className="inline-block px-4 py-2 bg-[#15C5C1]/20 text-[#15C5C1] border border-[#15C5C1]/40 rounded-lg font-bold text-sm hover:bg-[#15C5C1]/30 transition"
                 >
-                  AI Training →
+                  AI Training â†’
                 </Link>
               </div>
             </div>
@@ -182,12 +182,12 @@ export default function HomePage() {
                   <span className="text-[#15C5C1] font-semibold">Intro track</span>, then
                   unlock advanced modules like{" "}
                   <span className="text-[#FFA36C] font-semibold">
-                    R-PM Fundamentals — Module 1
+                    R-PM Fundamentals â€” Module 1
                   </span>.
                 </p>
               </div>
               <Link
-                href="/lean-lab"
+                href="https://learnai.centriv.ai"
                 className="inline-block px-6 py-3 rounded-xl bg-[#15C5C1] text-[#003B49] font-bold border-2 border-[#15C5C1] hover:bg-[#0fb5b1]"
               >
                 Open LeanAI Lab
@@ -197,16 +197,16 @@ export default function HomePage() {
             {/* Quick links (kept inside the same box) */}
             <div className="mt-6 grid sm:grid-cols-2 gap-3">
               <Link
-                href="/training/rpm" // Intro (free)
+                href="https://learnai.centriv.ai/learn/rpm" // Intro (free)
                 className="block px-5 py-4 rounded-xl bg-[#003B49] border border-[#15C5C1] text-[#15C5C1] font-semibold hover:bg-[#0a2e35]"
               >
                 Intro Track (Free)
               </Link>
               <Link
-                href="/leanai/fundamentals" // Paid module
+                href="https://learnai.centriv.ai/learn/rpm" // Paid module
                 className="block px-5 py-4 rounded-xl bg-[#003B49] border border-[#FF9151] text-[#FFA36C] font-semibold hover:bg-[#143f49]"
               >
-                R-PM Fundamentals — Module 1
+                R-PM Fundamentals â€” Module 1
               </Link>
             </div>
           </div>
@@ -219,13 +219,13 @@ export default function HomePage() {
             <h2 className="text-[#FF9151] font-bold">Personal Shopping Rewards</h2>
             <p className="text-sm mt-2 text-white/90">
               Earn instant cash back &amp; bonus points when you shop your favorite brands.
-              Simple, secure, automatic savings—groceries, Amazon, and more!
+              Simple, secure, automatic savingsâ€”groceries, Amazon, and more!
             </p>
             <Link
               href="/shopping"
               className="mt-3 inline-block text-orange-300 underline underline-offset-2"
             >
-              See eligible stores →
+              See eligible stores â†’
             </Link>
           </div>
 
@@ -239,7 +239,7 @@ export default function HomePage() {
               href="/shopping?tab=business"
               className="mt-3 inline-block text-teal-300 underline underline-offset-2"
             >
-              Shop for your business →
+              Shop for your business â†’
             </Link>
           </div>
         </div>
@@ -247,13 +247,15 @@ export default function HomePage() {
 
       {/* FOOTER */}
       <footer className="text-center text-sm text-white/70 py-6">
-        © {new Date().getFullYear()} RewmoAI ·{" "}
+        Â© {new Date().getFullYear()} RewmoAI Â·{" "}
         <Link href="/affiliate-disclosure" className="underline underline-offset-2">
           Affiliate Disclosure
         </Link>{" "}
-        · <Link href="/privacy" className="underline underline-offset-2">Privacy</Link> ·{" "}
+        Â· <Link href="/privacy" className="underline underline-offset-2">Privacy</Link> Â·{" "}
         <Link href="/terms" className="underline underline-offset-2">Terms</Link>
       </footer>
     </div>
   );
 }
+
+
