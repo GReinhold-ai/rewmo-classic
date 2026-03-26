@@ -142,7 +142,7 @@ export default function HomePage() {
         {/* ðŸš€ LAUNCH ANNOUNCEMENT - Replaced Beta box */}
         <div className="mt-8 border border-[#15C5C1]/60 rounded-2xl p-5 max-w-xl w-full bg-gradient-to-br from-[#072b33] to-[#003B49] shadow-lg">
           <div className="flex items-start gap-3">
-            <span className="text-3xl">ðŸ¤–</span>
+            <span className="text-3xl">🤖</span>
             <div>
               <p className="text-[#15C5C1] font-bold text-lg">
                 Introducing Your First AI Agent
@@ -257,5 +257,6 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
