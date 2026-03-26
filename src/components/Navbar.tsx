@@ -35,12 +35,8 @@ export default function Navbar() {
   const router = useRouter();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [labOpen, setLabOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
-
-  const labRef = useRef<HTMLDivElement | null>(null);
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auth subscription
   useEffect(() => {
@@ -49,42 +45,19 @@ export default function Navbar() {
     return () => unsub();
   }, []);
 
-  // Close menus on outside click / esc / route change
+  // Close mobile menu on route change / esc
   useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!labRef.current) return;
-      if (!labRef.current.contains(e.target as Node)) setLabOpen(false);
-    }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setLabOpen(false);
-        setMobileOpen(false);
-      }
+      if (e.key === "Escape") setMobileOpen(false);
     }
-    const handleRoute = () => {
-      setLabOpen(false);
-      setMobileOpen(false);
-    };
+    const handleRoute = () => setMobileOpen(false);
     router.events.on("routeChangeStart", handleRoute);
-
-    document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onKey);
       router.events.off("routeChangeStart", handleRoute);
     };
   }, [router.events]);
-
-  // Stable hover timing
-  const openLabSoon = () => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => setLabOpen(true), 80);
-  };
-  const closeLabSoon = () => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => setLabOpen(false), 140);
-  };
 
   const NavLink = ({
     href,
@@ -107,7 +80,6 @@ export default function Navbar() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      setLabOpen(false);
       setMobileOpen(false);
       router.push("/");
     } catch (err) {
@@ -144,67 +116,15 @@ export default function Navbar() {
             <NavLink href="/features">Features</NavLink>
             <NavLink href="/shopping">Shopping</NavLink>
 
-            {/* Lean Lab dropdown */}
-            <div
-              ref={labRef}
-              className="relative"
-              onMouseEnter={openLabSoon}
-              onMouseLeave={closeLabSoon}
+            {/* Lean Lab — single direct link to standalone site */}
+            <a
+              href="https://learnai.centriv.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={NAV_LINK}
             >
-              <button
-                type="button"
-                aria-haspopup="menu"
-                aria-expanded={labOpen}
-                className={clsx(
-                  "inline-flex items-center gap-1 px-3 py-2 rounded-md text-[15px] md:text-base font-semibold tracking-wide",
-                  "text-[#EAF5F6]/95 hover:text-white hover:bg-[#0A3A40]",
-                  "transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#15C5C1] focus-visible:ring-offset-2 focus-visible:ring-offset-[#001F24]"
-                )}
-                onClick={() => setLabOpen((s) => !s)}
-                onFocus={openLabSoon}
-              >
-                Lean Lab
-                <ChevronDown className={clsx(labOpen && "rotate-180")} />
-              </button>
-
-              <div
-                role="menu"
-                aria-label="Lean Lab"
-                className={clsx(
-                  "absolute left-0 mt-2 w-60 rounded-xl border border-[#0A3A40] bg-[#07333B] shadow-lg ring-1 ring-black/5 py-1",
-                  labOpen ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-1 opacity-0",
-                  "transition"
-                )}
-                onMouseEnter={openLabSoon}
-                onMouseLeave={closeLabSoon}
-              >
-                {/* ── UPDATED: external link to learnai.centriv.ai ── */}
-                <a
-                  role="menuitem"
-                  href="https://learnai.centriv.ai"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
-                >
-                  Open LeanAI Lab ↗
-                </a>
-                <div className="my-1 border-t border-[#0A3A40]" />
-                <Link
-                  role="menuitem"
-                  href="/training/rpm"
-                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
-                >
-                  Intro Track (Free)
-                </Link>
-                <Link
-                  role="menuitem"
-                  href="/leanai/fundamentals"
-                  className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
-                >
-                  R-PM Fundamentals — Module 1
-                </Link>
-              </div>
-            </div>
+              Lean Lab ↗
+            </a>
 
             <NavLink href="/rewards">Rewards</NavLink>
             <NavLink href="/about">About</NavLink>
@@ -282,33 +202,16 @@ export default function Navbar() {
               Shopping
             </NavLink>
 
-            {/* Lean Lab group */}
-            <details className="group">
-              <summary className="list-none">
-                <div className="flex items-center justify-between px-3 py-2 rounded-md text-[15px] font-bold text-[#EAF5F6] hover:text-white hover:bg-[#07333B] transition cursor-pointer">
-                  <span>Lean Lab</span>
-                  <ChevronDown className="group-open:rotate-180" />
-                </div>
-              </summary>
-              <div className="pl-2 bg-[#072b33] rounded-lg mx-2 mt-1">
-                {/* ── UPDATED: external link to learnai.centriv.ai ── */}
-                <a
-                  href="https://learnai.centriv.ai"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMobileOpen(false)}
-                  className={NAV_LINK}
-                >
-                  Open LeanAI Lab ↗
-                </a>
-                <NavLink href="/training/rpm" onClick={() => setMobileOpen(false)}>
-                  Intro Track (Free)
-                </NavLink>
-                <NavLink href="/leanai/fundamentals" onClick={() => setMobileOpen(false)}>
-                  R-PM Fundamentals — Module 1
-                </NavLink>
-              </div>
-            </details>
+            {/* Lean Lab — single direct link */}
+            <a
+              href="https://learnai.centriv.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMobileOpen(false)}
+              className={NAV_LINK}
+            >
+              Lean Lab ↗
+            </a>
 
             <NavLink href="/rewards" onClick={() => setMobileOpen(false)}>
               Rewards
