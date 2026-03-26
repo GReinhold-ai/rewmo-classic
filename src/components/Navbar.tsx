@@ -144,7 +144,7 @@ export default function Navbar() {
             <NavLink href="/features">Features</NavLink>
             <NavLink href="/shopping">Shopping</NavLink>
 
-            {/* Lean Lab dropdown (replaces Training) */}
+            {/* Lean Lab dropdown */}
             <div
               ref={labRef}
               className="relative"
@@ -178,13 +178,16 @@ export default function Navbar() {
                 onMouseEnter={openLabSoon}
                 onMouseLeave={closeLabSoon}
               >
-                <Link
+                {/* ── UPDATED: external link to learnai.centriv.ai ── */}
+                <a
                   role="menuitem"
-                  href="/lean-lab"
+                  href="https://learnai.centriv.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="block px-3 py-2 text-sm text-[#CFEAEC] hover:text-white hover:bg-[#0A3A40]"
                 >
-                  Open LeanAI Lab
-                </Link>
+                  Open LeanAI Lab ↗
+                </a>
                 <div className="my-1 border-t border-[#0A3A40]" />
                 <Link
                   role="menuitem"
@@ -263,11 +266,11 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile menu - FIXED: Added explicit background color */}
+        {/* Mobile menu */}
         <div
           className={clsx(
             "md:hidden overflow-hidden transition-[max-height,opacity] duration-300",
-            "bg-[#003B49] rounded-b-xl", // Added background color
+            "bg-[#003B49] rounded-b-xl",
             mobileOpen ? "max-h-[80vh] opacity-100 pb-4" : "max-h-0 opacity-0"
           )}
         >
@@ -279,7 +282,7 @@ export default function Navbar() {
               Shopping
             </NavLink>
 
-            {/* Lean Lab group replacing "Training" */}
+            {/* Lean Lab group */}
             <details className="group">
               <summary className="list-none">
                 <div className="flex items-center justify-between px-3 py-2 rounded-md text-[15px] font-bold text-[#EAF5F6] hover:text-white hover:bg-[#07333B] transition cursor-pointer">
@@ -288,9 +291,16 @@ export default function Navbar() {
                 </div>
               </summary>
               <div className="pl-2 bg-[#072b33] rounded-lg mx-2 mt-1">
-                <NavLink href="/lean-lab" onClick={() => setMobileOpen(false)}>
-                  Open LeanAI Lab
-                </NavLink>
+                {/* ── UPDATED: external link to learnai.centriv.ai ── */}
+                <a
+                  href="https://learnai.centriv.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMobileOpen(false)}
+                  className={NAV_LINK}
+                >
+                  Open LeanAI Lab ↗
+                </a>
                 <NavLink href="/training/rpm" onClick={() => setMobileOpen(false)}>
                   Intro Track (Free)
                 </NavLink>
@@ -310,7 +320,6 @@ export default function Navbar() {
               FAQ
             </NavLink>
 
-            {/* Divider */}
             <div className="my-2 mx-3 border-t border-[#15C5C1]/30" />
 
             {/* Mobile Go Premium CTA */}
@@ -320,7 +329,7 @@ export default function Navbar() {
               className="font-extrabold text-[#062025] mx-2"
               style={{ backgroundColor: "#FF9151", borderColor: "#FF9151" }}
             >
-              ⭐ Go Premium
+              ★ Go Premium
             </NavLink>
 
             {user ? (
